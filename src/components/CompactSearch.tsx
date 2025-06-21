@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Bot, Search } from 'lucide-react';
 
@@ -8,8 +8,16 @@ interface CompactSearchProps {
 }
 
 const CompactSearch = ({ onExpand }: CompactSearchProps) => {
-  const handleFocus = () => {
-    onExpand('');
+  const [inputValue, setInputValue] = useState('');
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInputValue(value);
+    
+    // Активируем чат при первом введенном символе
+    if (value.length === 1) {
+      onExpand(value);
+    }
   };
 
   const handleSampleClick = (sample: string) => {
@@ -23,7 +31,7 @@ const CompactSearch = ({ onExpand }: CompactSearchProps) => {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
       {/* Main Search Bar */}
       <div className="relative group">
         <div className="bg-card/30 backdrop-blur-sm border border-border/50 rounded-2xl p-4 glow-effect hover:glow-effect-strong transition-all duration-300">
@@ -35,7 +43,8 @@ const CompactSearch = ({ onExpand }: CompactSearchProps) => {
               <input
                 type="text"
                 placeholder="Введите ваш запрос для Trigma AI..."
-                onFocus={handleFocus}
+                value={inputValue}
+                onChange={handleInputChange}
                 className="w-full bg-transparent text-lg placeholder:text-muted-foreground/70 focus:outline-none"
               />
             </div>

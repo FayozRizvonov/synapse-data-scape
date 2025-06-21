@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Paperclip, Bot, User } from 'lucide-react';
+import { Send, Paperclip, Bot, User, X } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -87,11 +87,11 @@ const ChatInterface = ({ isExpanded, onCollapse, initialQuestion }: ChatInterfac
     }
   };
 
-  if (!isExpanded) return null;
-
   return (
-    <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-lg flex items-center justify-center animate-fade-in">
-      <div className="w-full max-w-4xl h-[80vh] bg-card/50 backdrop-blur-lg border border-border/50 rounded-2xl glow-effect animate-scale-in">
+    <div className={`transition-all duration-500 ease-out overflow-hidden ${
+      isExpanded ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
+    }`}>
+      <div className="max-w-4xl mx-auto bg-card/30 backdrop-blur-sm border border-border/50 rounded-2xl glow-effect animate-scale-in">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border/50">
           <div className="flex items-center gap-3">
@@ -108,12 +108,12 @@ const ChatInterface = ({ isExpanded, onCollapse, initialQuestion }: ChatInterfac
             onClick={onCollapse}
             className="text-muted-foreground hover:text-foreground"
           >
-            ✕
+            <X className="w-4 h-4" />
           </Button>
         </div>
 
         {/* Messages */}
-        <div className="flex-1 p-6 overflow-y-auto space-y-4" style={{ height: 'calc(100% - 180px)' }}>
+        <div className="p-6 overflow-y-auto space-y-4 max-h-[400px]">
           {messages.map((message) => (
             <div
               key={message.id}

@@ -18,7 +18,7 @@ const QuestionInput = () => {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full space-y-8">
       {/* Header */}
       <div className="text-center mb-12">
         <div className="flex items-center justify-center gap-3 mb-6">
@@ -35,16 +35,19 @@ const QuestionInput = () => {
         </p>
       </div>
 
-      {/* Compact Search or Expanded Chat */}
-      {!isExpanded ? (
+      {/* Compact Search - скрывается когда чат развернут */}
+      <div className={`transition-all duration-500 ease-out ${
+        isExpanded ? 'opacity-0 pointer-events-none transform scale-95' : 'opacity-100'
+      }`}>
         <CompactSearch onExpand={handleExpand} />
-      ) : (
-        <ChatInterface 
-          isExpanded={isExpanded} 
-          onCollapse={handleCollapse}
-          initialQuestion={initialQuestion}
-        />
-      )}
+      </div>
+
+      {/* Expanded Chat Interface */}
+      <ChatInterface 
+        isExpanded={isExpanded} 
+        onCollapse={handleCollapse}
+        initialQuestion={initialQuestion}
+      />
     </div>
   );
 };
