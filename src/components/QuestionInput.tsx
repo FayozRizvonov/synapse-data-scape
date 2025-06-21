@@ -1,25 +1,24 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import CompactSearch from './CompactSearch';
+import ChatInterface from './ChatInterface';
 
 const QuestionInput = () => {
-  const [question, setQuestion] = useState('');
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [initialQuestion, setInitialQuestion] = useState('');
 
-  const sampleQuestions = [
-    'How can I optimize working capital in Q2? What are the top 3 risks in my supply chain?',
-    'How can IT incident resolution be improved by 20%?'
-  ];
+  const handleExpand = (question: string) => {
+    setInitialQuestion(question);
+    setIsExpanded(true);
+  };
 
-  const handleSubmit = () => {
-    if (question.trim()) {
-      console.log('Submitted question:', question);
-      setQuestion('');
-    }
+  const handleCollapse = () => {
+    setIsExpanded(false);
+    setInitialQuestion('');
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="w-full">
       {/* Header */}
       <div className="text-center mb-12">
         <div className="flex items-center justify-center gap-3 mb-6">
@@ -36,45 +35,16 @@ const QuestionInput = () => {
         </p>
       </div>
 
-      {/* Sample Questions */}
-      <div className="mb-8">
-        <div className="bg-card/30 backdrop-blur-sm rounded-2xl p-6 border border-border/50 glow-effect">
-          <div className="text-sm text-muted-foreground mb-4">Try asking:</div>
-          {sampleQuestions.map((sample, index) => (
-            <div
-              key={index}
-              className="text-muted-foreground cursor-pointer hover:text-foreground transition-colors mb-2 last:mb-0"
-              onClick={() => setQuestion(sample)}
-            >
-              {sample}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Input Area */}
-      <div className="relative">
-        <div className="bg-card/50 backdrop-blur-lg rounded-2xl border border-border/50 p-6 glow-effect">
-          <Textarea
-            placeholder="Enter your business question here..."
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            className="min-h-[120px] bg-transparent border-none resize-none text-lg placeholder:text-muted-foreground/70 focus:ring-0 focus:outline-none"
-          />
-          <div className="flex justify-between items-center mt-4 pt-4 border-t border-border/50">
-            <div className="text-sm text-muted-foreground">
-              {question.length}/1000 characters
-            </div>
-            <Button
-              onClick={handleSubmit}
-              disabled={!question.trim()}
-              className="bg-primary hover:bg-primary/80 text-primary-foreground px-8 py-2 rounded-xl font-medium transition-all duration-300 glow-effect disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Ask GSIS →
-            </Button>
-          </div>
-        </div>
-      </div>
+      {/* Compact Search or Expanded Chat */}
+      {!isExpanded ? (
+        <CompactSearch onExpand={handleExpand} />
+      ) : (
+        <ChatInterface 
+          isExpanded={isExpanded} 
+          onCollapse={handleCollapse}
+          initialQuestion={initialQuestion}
+        />
+      )}
     </div>
   );
 };
