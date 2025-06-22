@@ -244,7 +244,7 @@ export const findMetricByQuery = (query: string): MetricCard | null => {
   const keywordMatch = metricsKnowledgeBase.find(metric => 
     keywords.some(keyword => 
       metric.title.toLowerCase().includes(keyword) ||
-      metric.details?.description.toLowerCase().includes(keyword)
+      metric.description?.toLowerCase().includes(keyword)
     )
   );
   
