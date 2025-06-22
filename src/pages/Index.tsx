@@ -4,6 +4,7 @@ import Sidebar from '@/components/Sidebar';
 import FarmaMetricsWithAssistant from '@/components/FarmaMetricsWithAssistant';
 import ChatInput from '@/components/ChatInput';
 import ChatView from '@/components/ChatView';
+import QuestionInput from '@/components/QuestionInput';
 import { Bot } from 'lucide-react';
 
 const Index = () => {
@@ -26,6 +27,10 @@ const Index = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
 
+  const handleNavigateToSection = (section: string) => {
+    setActiveSection(section);
+  };
+
   const renderContent = () => {
     switch (activeSection) {
       case 'pharma-sm':
@@ -33,15 +38,9 @@ const Index = () => {
       case 'ai-insights':
       default:
         return (
-            <div className="w-full h-full flex flex-col items-center justify-center text-center">
-                 <div className="inline-block bg-primary/10 p-5 rounded-2xl mb-6">
-                    <img src="/images/gsisai_logo.png" alt="GSIS AI Logo" className="w-16 h-16 object-contain" />
-                </div>
-                <h1 className="text-5xl font-bold text-white">GSIS AI Assistant</h1>
-                <p className="text-white/60 mt-4 text-xl max-w-2xl">
-                    Welcome to the future of business intelligence. Ask me anything about your data.
-                </p>
-            </div>
+          <div className="w-full h-full flex flex-col items-center justify-center text-center px-8">
+            <QuestionInput onNavigateToSection={handleNavigateToSection} />
+          </div>
         );
     }
   };
@@ -65,7 +64,7 @@ const Index = () => {
         </main>
       </div>
 
-      {!isChatOpen && (
+      {!isChatOpen && activeSection !== 'ai-insights' && (
         <ChatInput onSendMessage={handleSendMessage} isSidebarCollapsed={isSidebarCollapsed} />
       )}
 

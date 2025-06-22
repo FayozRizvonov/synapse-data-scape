@@ -1,39 +1,40 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Send, Paperclip, Bot, User, X } from 'lucide-react';
+import ChatMetricCard from './ChatMetricCard';
+import SituationDetailModal from './SituationDetailModal';
+import { useAIAssistant } from '@/hooks/useAIAssistant';
+import { MetricCard } from '@/data/metricsKnowledgeBase';
 
 interface Message {
   id: string;
   content: string;
   sender: 'user' | 'ai';
   timestamp: Date;
+  metric?: MetricCard;
+  action?: 'show_card' | 'show_chart';
 }
 
 interface ChatInterfaceProps {
   isExpanded: boolean;
   onCollapse: () => void;
   initialQuestion?: string;
+  onNavigateToSection?: (section: string) => void;
 }
 
-const ChatInterface = ({ isExpanded, onCollapse, initialQuestion }: ChatInterfaceProps) => {
+const ChatInterface = ({ isExpanded, onCollapse, initialQuestion, onNavigateToSection }: ChatInterfaceProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentMessage, setCurrentMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
   const [neuralLoad, setNeuralLoad] = useState(23);
+  const [selectedCard, setSelectedCard] = useState<MetricCard | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const { sendMessage, isLoading } = useAIAssistant();
 
   useEffect(() => {
     if (initialQuestion && messages.length === 0) {
-      const userMessage: Message = {
-        id: Date.now().toString(),
-        content: initialQuestion,
-        sender: 'user',
-        timestamp: new Date()
-      };
-      setMessages([userMessage]);
-      simulateAIResponse(initialQuestion);
+      handleSendMessage(initialQuestion);
     }
   }, [initialQuestion]);
 
@@ -41,49 +42,76 @@ const ChatInterface = ({ isExpanded, onCollapse, initialQuestion }: ChatInterfac
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const simulateAIResponse = async (question: string) => {
-    setIsTyping(true);
-    setNeuralLoad(Math.floor(Math.random() * 50) + 20);
-    
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const responses = [
-      "Analyzing your request... Based on the data patterns I'm seeing, I recommend focusing on optimizing your Q2 working capital through automated inventory management and predictive cash flow modeling.",
-      "Processing pharmaceutical compliance data... I've identified 3 critical supply chain risks: supplier diversification gaps, regulatory compliance bottlenecks, and demand forecasting accuracy issues.",
-      "IT incident analysis complete... To improve resolution by 20%, implement automated ticket categorization, predictive maintenance alerts, and cross-team knowledge sharing protocols."
-    ];
-    
-    const aiMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      content: responses[Math.floor(Math.random() * responses.length)],
-      sender: 'ai',
-      timestamp: new Date()
-    };
-    
-    setMessages(prev => [...prev, aiMessage]);
-    setIsTyping(false);
-    setNeuralLoad(Math.floor(Math.random() * 30) + 10);
-  };
-
-  const handleSendMessage = async () => {
-    if (!currentMessage.trim()) return;
+  const handleSendMessage = async (messageText?: string) => {
+    const text = messageText || currentMessage;
+    if (!text.trim()) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      content: currentMessage,
+      content: text,
       sender: 'user',
       timestamp: new Date()
     };
 
     setMessages(prev => [...prev, userMessage]);
     setCurrentMessage('');
-    await simulateAIResponse(currentMessage);
+    setNeuralLoad(Math.floor(Math.random() * 50) + 40);
+
+    try {
+      const aiResponse = await sendMessage(text);
+      
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: aiResponse.text,
+        sender: 'ai',
+        timestamp: new Date(),
+        metric: aiResponse.metric,
+        action: aiResponse.action
+      };
+      
+      setMessages(prev => [...prev, aiMessage]);
+      setNeuralLoad(Math.floor(Math.random() * 30) + 15);
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: 'Извините, произошла ошибка. Попробуйте снова.',
+        sender: 'ai',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+
+  const handleGoToCard = (metricId: string, section: string) => {
+    if (onNavigateToSection) {
+      if (section === 'key-metrics' || section === 'situation') {
+        onNavigateToSection('pharma-sm');
+      }
+    }
+    
+    // Scroll to the specific card
+    setTimeout(() => {
+      const cardElement = document.getElementById(metricId);
+      if (cardElement) {
+        cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        cardElement.classList.add('highlight-card');
+        setTimeout(() => cardElement.classList.remove('highlight-card'), 3000);
+      }
+    }, 500);
+  };
+
+  const handleShowChart = (metricId: string) => {
+    const metric = messages.find(m => m.metric?.id === metricId)?.metric;
+    if (metric) {
+      setSelectedCard(metric);
     }
   };
 
@@ -99,7 +127,7 @@ const ChatInterface = ({ isExpanded, onCollapse, initialQuestion }: ChatInterfac
               <Bot className="w-4 h-4 text-primary pulse-glow" />
             </div>
             <div>
-              <h3 className="font-semibold">Trigma AI Assistant</h3>
+              <h3 className="font-semibold">GSIS AI Assistant</h3>
               <p className="text-sm text-muted-foreground">Neural Load: {neuralLoad}%</p>
             </div>
           </div>
@@ -128,7 +156,7 @@ const ChatInterface = ({ isExpanded, onCollapse, initialQuestion }: ChatInterfac
                   <User className="w-4 h-4 text-blue-400" />
                 )}
               </div>
-              <div className={`flex-1 ${message.sender === 'user' ? 'text-right' : ''}`}>
+              <div className={`flex-1 space-y-3 ${message.sender === 'user' ? 'text-right' : ''}`}>
                 <div
                   className={`inline-block p-4 rounded-2xl max-w-[80%] ${
                     message.sender === 'user'
@@ -138,6 +166,18 @@ const ChatInterface = ({ isExpanded, onCollapse, initialQuestion }: ChatInterfac
                 >
                   <p className="text-sm leading-relaxed">{message.content}</p>
                 </div>
+                
+                {/* Show metric card if present */}
+                {message.metric && message.sender === 'ai' && (
+                  <div className="max-w-[80%]">
+                    <ChatMetricCard 
+                      metric={message.metric}
+                      onGoToCard={handleGoToCard}
+                      onShowChart={handleShowChart}
+                    />
+                  </div>
+                )}
+                
                 <p className="text-xs text-muted-foreground mt-1">
                   {message.timestamp.toLocaleTimeString()}
                 </p>
@@ -145,7 +185,7 @@ const ChatInterface = ({ isExpanded, onCollapse, initialQuestion }: ChatInterfac
             </div>
           ))}
           
-          {isTyping && (
+          {isLoading && (
             <div className="flex gap-3 animate-fade-in">
               <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
                 <Bot className="w-4 h-4 text-primary pulse-glow" />
@@ -166,7 +206,7 @@ const ChatInterface = ({ isExpanded, onCollapse, initialQuestion }: ChatInterfac
         <div className="p-6 border-t border-border/50">
           <div className="bg-muted/30 rounded-2xl border border-border/50 p-4">
             <Textarea
-              placeholder="Введите ваш вопрос о бизнес-аналитике..."
+              placeholder="Спросите о любой метрике или попросите показать данные..."
               value={currentMessage}
               onChange={(e) => setCurrentMessage(e.target.value)}
               onKeyPress={handleKeyPress}
@@ -179,8 +219,8 @@ const ChatInterface = ({ isExpanded, onCollapse, initialQuestion }: ChatInterfac
                 </Button>
               </div>
               <Button
-                onClick={handleSendMessage}
-                disabled={!currentMessage.trim() || isTyping}
+                onClick={() => handleSendMessage()}
+                disabled={!currentMessage.trim() || isLoading}
                 className="bg-primary hover:bg-primary/80 text-primary-foreground px-6"
               >
                 <Send className="w-4 h-4 mr-2" />
@@ -190,6 +230,19 @@ const ChatInterface = ({ isExpanded, onCollapse, initialQuestion }: ChatInterfac
           </div>
         </div>
       </div>
+
+      {/* Chart Modal */}
+      <SituationDetailModal
+        card={selectedCard}
+        open={!!selectedCard}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedCard(null);
+          }
+        }}
+      >
+        <div/>
+      </SituationDetailModal>
     </div>
   );
 };

@@ -4,338 +4,159 @@
 
 @layer base {
   :root {
-    --background: 0 0% 3%;
+    --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
-
-    --card: 0 0% 5%;
+    --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
-
-    --popover: 0 0% 5%;
+    --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 215 28% 17%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
-
-    --muted: 215 28% 17%;
-    --muted-foreground: 215 20% 65%;
-
-    --accent: 215 28% 17%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 84% 60%;
+    --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-
-    --border: 215 28% 17%;
-    --input: 215 28% 17%;
-    --ring: 217 91% 60%;
-
-    --radius: 0.75rem;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
   }
+}
 
+@layer base {
   * {
     @apply border-border;
   }
-
   body {
-    @apply bg-background text-foreground font-sans;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    @apply bg-background text-foreground;
   }
+}
 
-  .tech-grid {
-    background-image: 
-      linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
-    background-size: 50px 50px;
+/* Custom animations and effects */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
-
-  .glow-effect {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
-    transition: box-shadow 0.3s ease;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
+}
 
-  .glow-effect-strong {
-    box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.6;
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
   }
-
-  .text-glow {
-    text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
   }
+}
 
-  /* Half Rectangle (вырез сверху) effects */
-  .half-rect-shadow {
-    box-shadow: 
-      0 6px 24px rgba(0, 0, 0, 0.4),
-      0 3px 12px rgba(0, 0, 0, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+@keyframes text-glow {
+  0%, 100% {
+    text-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
   }
-
-  .half-rect-expanded-shadow {
-    box-shadow: 
-      0 8px 32px rgba(0, 0, 0, 0.4),
-      0 4px 16px rgba(0, 0, 0, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  50% {
+    text-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
   }
+}
 
-  .ios-blur {
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
+.pulse-glow {
+  animation: pulse-glow 2s infinite;
+}
+
+.text-glow {
+  animation: text-glow 3s infinite;
+}
+
+.glow-effect {
+  box-shadow: 0 0 30px rgba(59, 130, 246, 0.15);
+}
+
+.glow-effect-strong {
+  box-shadow: 0 0 50px rgba(59, 130, 246, 0.3);
+}
+
+/* Highlight effect for card navigation */
+@keyframes highlight-card {
+  0% {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0);
+    transform: scale(1);
   }
-
-  /* Специальные стили для половины прямоугольника */
-  .half-rectangle {
-    border-top: none;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-  }
-
-  .half-rectangle-hover {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .half-rectangle-hover:hover {
-    transform: translateY(1px);
-    box-shadow: 
-      0 8px 28px rgba(0, 0, 0, 0.45),
-      0 4px 14px rgba(0, 0, 0, 0.35),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  }
-
-  /* Эффект настоящего выреза */
-  .notch-effect {
-    position: relative;
-  }
-
-  .notch-effect::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    height: 4px;
-    background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.1));
-    border-radius: 0 0 24px 24px;
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-  }
-
-  @keyframes pulse-glow {
-    0%, 100% { 
-      opacity: 0.6;
-      transform: scale(1);
-    }
-    50% { 
-      opacity: 1;
-      transform: scale(1.1);
-    }
-  }
-
-  @keyframes fade-in {
-    0% {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes scale-in {
-    0% {
-      opacity: 0;
-      transform: scale(0.9);
-    }
-    100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  @keyframes slide-in-right {
-    0% {
-      opacity: 0;
-      transform: translateX(30px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  /* Анимация трансформации половины прямоугольника */
-  @keyframes half-rect-expand {
-    0% {
-      width: 400px;
-      height: 64px;
-      border-radius: 0 0 24px 24px;
-      top: 0px;
-      padding-top: 12px;
-    }
-    100% {
-      width: 100%;
-      max-width: 896px;
-      height: 64px;
-      border-radius: 24px;
-      top: 16px;
-      padding-top: 0px;
-    }
-  }
-
-  @keyframes half-rect-collapse {
-    0% {
-      width: 100%;
-      max-width: 896px;
-      height: 64px;
-      border-radius: 24px;
-      top: 16px;
-      padding-top: 0px;
-    }
-    100% {
-      width: 400px;
-      height: 64px;
-      border-radius: 0 0 24px 24px;
-      top: 0px;
-      padding-top: 12px;
-    }
-  }
-
-  @keyframes slide-down-expand {
-    0% {
-      transform: translateY(-10px);
-      opacity: 0;
-    }
-    100% {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-
-  .float-animation {
-    animation: float 6s ease-in-out infinite;
-  }
-
-  .pulse-glow {
-    animation: pulse-glow 3s ease-in-out infinite;
-  }
-
-  .animate-fade-in {
-    animation: fade-in 0.5s ease-out;
-  }
-
-  .animate-scale-in {
-    animation: scale-in 0.4s ease-out;
-  }
-
-  .animate-slide-in-right {
-    animation: slide-in-right 0.3s ease-out;
-  }
-
-  .animate-half-rect-expand {
-    animation: half-rect-expand 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  }
-
-  .animate-half-rect-collapse {
-    animation: half-rect-collapse 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  }
-
-  .animate-slide-down-expand {
-    animation: slide-down-expand 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  }
-
-  /* Улучшенные переходы для плавности */
-  .smooth-transform {
-    transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .smooth-opacity {
-    transition: opacity 0.5s ease-in-out;
-  }
-
-  .smooth-height {
-    transition: max-height 0.7s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  /* Эффект морфинга для поля ввода */
-  .input-morph {
-    transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  }
-
-  .input-morph:focus-within {
+  50% {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.8);
     transform: scale(1.02);
-    box-shadow: 0 0 25px rgba(59, 130, 246, 0.4);
   }
+  100% {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0);
+    transform: scale(1);
+  }
+}
 
-  /* iOS-style spring animations */
-  .spring-bounce {
-    transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  }
+.highlight-card {
+  animation: highlight-card 1s ease-in-out 3;
+}
 
-  .spring-bounce:hover {
-    transform: scale(1.05);
-  }
-
-  .spring-bounce:active {
-    transform: scale(0.95);
-  }
-
-  /* Специальные эффекты для полуовала */
-  .half-oval-glow {
-    box-shadow: 
-      0 0 20px rgba(59, 130, 246, 0.15),
-      0 6px 20px rgba(0, 0, 0, 0.35),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  }
-
-  .half-oval-glow:focus-within {
-    box-shadow: 
-      0 0 30px rgba(59, 130, 246, 0.3),
-      0 8px 24px rgba(0, 0, 0, 0.4),
-      inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  }
-
-  /* Эффект плавного появления чата */
-  .chat-slide-in {
-    animation: slide-down-expand 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  }
+/* Chat input glow effect */
+.chat-input-glow {
+  position: relative;
 }
 
 .chat-input-glow::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-radius: 9999px;
-  box-shadow: 0 0 60px 10px rgba(59, 130, 246, 0.4);
-  opacity: 0;
-  transition: opacity 0.3s ease-in-out;
-  z-index: -1;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(45deg, 
+    rgba(59, 130, 246, 0.1), 
+    rgba(147, 51, 234, 0.1), 
+    rgba(59, 130, 246, 0.1)
+  );
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask-composite: xor;
+  animation: gradient-rotate 3s linear infinite;
 }
 
-.chat-input-glow:focus-within::before {
-  opacity: 1;
-}
-
-.typing-indicator {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: #fff;
-  animation: typing-bounce 1s infinite ease-in-out;
-}
-
-@keyframes typing-bounce {
-  0%, 70%, 100% {
-    transform: scale(0);
+@keyframes gradient-rotate {
+  0% {
+    background: linear-gradient(45deg, 
+      rgba(59, 130, 246, 0.1), 
+      rgba(147, 51, 234, 0.1), 
+      rgba(59, 130, 246, 0.1)
+    );
   }
-  35% {
-    transform: scale(1);
+  33% {
+    background: linear-gradient(45deg, 
+      rgba(147, 51, 234, 0.1), 
+      rgba(59, 130, 246, 0.1), 
+      rgba(147, 51, 234, 0.1)
+    );
+  }
+  66% {
+    background: linear-gradient(45deg, 
+      rgba(59, 130, 246, 0.1), 
+      rgba(147, 51, 234, 0.1), 
+      rgba(59, 130, 246, 0.1)
+    );
+  }
+  100% {
+    background: linear-gradient(45deg, 
+      rgba(59, 130, 246, 0.1), 
+      rgba(147, 51, 234, 0.1), 
+      rgba(59, 130, 246, 0.1)
+    );
   }
 }

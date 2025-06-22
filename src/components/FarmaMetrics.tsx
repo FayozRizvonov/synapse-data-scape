@@ -396,6 +396,7 @@ const FarmaMetrics = () => {
     const cardElement = (
         <Card 
             key={card.id} 
+            id={card.id}
             className="bg-card/50 backdrop-blur-sm border-white/10 flex flex-col transition-all duration-300 hover:bg-card/80 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/10 opacity-0"
             style={{ animation: `fade-in 0.5s ease-out ${index * 0.1}s forwards` }}
             onClick={() => handleCardClick(card)}
@@ -574,4 +575,4 @@ const FarmaMetrics = () => {
   );
 };
 
-export default FarmaMetrics; 
+export default FarmaMetrics;
