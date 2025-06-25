@@ -67,7 +67,10 @@ INSTRUCTIONS:
 `;
 
 serve(async (req) => {
-  console.log('Received request:', req.method, req.url);
+  console.log('=== AI Assistant Function Called ===');
+  console.log('Method:', req.method);
+  console.log('URL:', req.url);
+  console.log('Headers:', Object.fromEntries(req.headers.entries()));
   
   if (req.method === 'OPTIONS') {
     console.log('Handling CORS preflight request');
@@ -78,18 +81,20 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Processing request...');
+    console.log('Processing AI request...');
     
     if (!openAIApiKey) {
-      console.error('OpenAI API key not configured');
+      console.error('❌ OpenAI API key not configured');
       throw new Error('OpenAI API key not configured');
     }
+    console.log('✅ OpenAI API key found');
 
     const requestBody = await req.json();
     const { message } = requestBody;
     
-    console.log('Received message:', message);
+    console.log('📨 Received message:', message);
 
+    console.log('🤖 Calling OpenAI API...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -115,12 +120,12 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`OpenAI API error: ${response.status} ${response.statusText}`, errorText);
+      console.error(`❌ OpenAI API error: ${response.status} ${response.statusText}`, errorText);
       throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
-    console.log('OpenAI response received');
+    console.log('✅ OpenAI response received');
     
     const assistantMessage = data.choices[0].message.content;
 
@@ -129,7 +134,7 @@ serve(async (req) => {
       timestamp: new Date().toISOString()
     };
 
-    console.log('Sending response back to client');
+    console.log('📤 Sending response back to client');
     
     return new Response(JSON.stringify(result), {
       headers: { 
@@ -140,7 +145,7 @@ serve(async (req) => {
     });
     
   } catch (error) {
-    console.error('Error in ai-assistant function:', error);
+    console.error('❌ Error in ai-assistant function:', error);
     
     const errorResponse = { 
       error: error.message || 'Unknown error occurred',
