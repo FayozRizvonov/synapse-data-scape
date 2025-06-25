@@ -1,4 +1,3 @@
-
 import { useState, useCallback, createContext, useContext, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { metricsKnowledgeBase, findMetricByQuery, MetricCard, getTopPerformingChannels, getRegionalPerformance, getMarketingRecommendations, getScenarioComparisons } from '@/data/metricsKnowledgeBase';
@@ -55,73 +54,61 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
     setMessages(prev => [...prev, userMessage]);
 
     try {
-      const lowerCaseMessage = message.toLowerCase();
+      console.log('Sending message to AI assistant:', message);
       
-      let aiResponse: AIResponse;
+      const { data, error: supabaseError } = await supabase.functions.invoke('ai-assistant', {
+        body: { message }
+      });
 
-      // Check for navigation commands
-      if (lowerCaseMessage.includes('pharma') || lowerCaseMessage.includes('analytics')) {
-        aiResponse = {
-          text: `Navigating to Pharma S&M Analytics section.`,
-          action: 'navigate',
-          details: {
-            section: 'pharma-sm'
-          }
-        };
-      } else {
-        // Call Supabase Edge Function
-        console.log('Calling ai-assistant function with message:', message);
-        
-        const { data, error: supabaseError } = await supabase.functions.invoke('ai-assistant', {
-          body: { message }
-        });
-
-        if (supabaseError) {
-          console.error('Supabase function error:', supabaseError);
-          throw new Error(supabaseError.message);
-        }
-        
-        console.log('Supabase function response:', data);
-        
-        const responseText = data.response || 'Sorry, unable to get a response.';
-        
-        // Parse JSON action from response
-        let action: AIResponse['action'];
-        let metric: MetricCard | undefined;
-        let metricId: string | undefined;
-        
-        try {
-          const actionMatch = responseText.match(/\{"action":\s*"(show_card|show_chart)",\s*"metric_id":\s*"([^"]+)"\}/);
-          if (actionMatch) {
-            action = actionMatch[1] as 'show_card' | 'show_chart';
-            metricId = actionMatch[2];
-            metric = metricsKnowledgeBase.find(m => m.id === metricId);
-          }
-        } catch (parseError) {
-          console.warn('Failed to parse action from response:', parseError);
-        }
-
-        // If no action found in JSON, search by keywords
-        if (!action && !metric) {
-          const foundMetric = findMetricByQuery(message);
-          if (foundMetric) {
-            metric = foundMetric;
-            action = message.toLowerCase().includes('chart') || message.toLowerCase().includes('graph')
-              ? 'show_chart'
-              : 'show_card';
-          }
-        }
-
-        // Clean text from JSON
-        const cleanText = responseText.replace(/\{"action":[^}]+\}/, '').trim();
-
-        aiResponse = {
-          text: cleanText,
-          action,
-          metric,
-          details: metricId ? { metricId } : undefined
-        };
+      if (supabaseError) {
+        console.error('Supabase function error:', supabaseError);
+        throw new Error(`Ошибка вызова функции: ${supabaseError.message}`);
       }
+      
+      console.log('Response from AI assistant:', data);
+      
+      if (!data) {
+        throw new Error('Получен пустой ответ от AI ассистента');
+      }
+
+      const responseText = data.response || 'Извините, не удалось получить ответ.';
+      
+      // Parse JSON action from response
+      let action: AIResponse['action'];
+      let metric: MetricCard | undefined;
+      let metricId: string | undefined;
+      
+      try {
+        const actionMatch = responseText.match(/\{"action":\s*"(show_card|show_chart)",\s*"metric_id":\s*"([^"]+)"\}/);
+        if (actionMatch) {
+          action = actionMatch[1] as 'show_card' | 'show_chart';
+          metricId = actionMatch[2];
+          metric = metricsKnowledgeBase.find(m => m.id === metricId);
+        }
+      } catch (parseError) {
+        console.warn('Failed to parse action from response:', parseError);
+      }
+
+      // If no action found in JSON, search by keywords
+      if (!action && !metric) {
+        const foundMetric = findMetricByQuery(message);
+        if (foundMetric) {
+          metric = foundMetric;
+          action = message.toLowerCase().includes('chart') || message.toLowerCase().includes('graph')
+            ? 'show_chart'
+            : 'show_card';
+        }
+      }
+
+      // Clean text from JSON
+      const cleanText = responseText.replace(/\{"action":[^}]+\}/, '').trim();
+
+      const aiResponse: AIResponse = {
+        text: cleanText,
+        action,
+        metric,
+        details: metricId ? { metricId } : undefined
+      };
 
       setLastAIResponse(aiResponse);
       
@@ -137,10 +124,10 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
 
     } catch (err) {
       console.error('Error in sendMessage:', err);
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred while contacting AI';
+      const errorMessage = err instanceof Error ? err.message : 'Произошла неизвестная ошибка';
       setError(errorMessage);
       
-      const errorMessageContent = 'Sorry, an error occurred. Please try again.';
+      const errorMessageContent = `Извините, произошла ошибка: ${errorMessage}. Пожалуйста, попробуйте еще раз.`;
       const errorAIMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: errorMessageContent,
@@ -161,7 +148,6 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
     setError(null);
   }, []);
 
-  // Functions for working with extended data
   const getTopChannels = useCallback(() => {
     return getTopPerformingChannels();
   }, []);
