@@ -211,6 +211,22 @@ const ChatInput: React.FC<ChatInputProps> = ({
               </div>
             </div>
           )}
+          {/* SUGGESTIONS BLOCK */}
+          {(isActive || message) && (
+            <div className="w-full max-w-2xl mx-auto bg-transparent border-0 backdrop-blur-0 shadow-none rounded-b-2xl px-3 py-2 flex flex-wrap gap-3 animate-fade-in mt-2">
+              {["Show sales", "Show channels", "Show F2F", "Show YoY", "Export data", "Help"].map((s, i) => (
+                <button
+                  key={i}
+                  className="text-sm text-white/90 hover:bg-white/10 rounded-full px-4 py-2 transition border border-white/10 font-medium"
+                  onClick={() => setMessage(s)}
+                  type="button"
+                  style={{lineHeight: 1.2}}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </motion.div>
     </div>

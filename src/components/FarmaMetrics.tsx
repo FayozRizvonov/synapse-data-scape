@@ -18,7 +18,8 @@ import {
   BarChart3,
   Target,
   Stethoscope,
-  Calendar
+  Calendar,
+  Mail
 } from 'lucide-react';
 import SituationDetailModal from './SituationDetailModal';
 import ScenarioComparison from './ScenarioComparison';
@@ -194,6 +195,24 @@ const FarmaMetrics = () => {
       }
     },
     {
+      id: 'incremental',
+      title: 'Incremental',
+      value: '$2.5M',
+      change: '+18.2%',
+      changeType: 'positive',
+      comparison: 'Incremental Revenue',
+      icon: 'BarChart3',
+      category: 'situation',
+      section: 'situation',
+      details: {
+        description: 'Revenue generated above the baseline due to marketing activities.',
+        breakdown: [
+          { label: 'Marketing Impact', value: '$2.0M' },
+          { label: 'Other Factors', value: '$0.5M' }
+        ]
+      }
+    },
+    {
       id: 'promotional-spend',
       title: 'Promotional Spend',
       value: '$3.7M',
@@ -270,6 +289,78 @@ const FarmaMetrics = () => {
       }
     },
     {
+      id: 'f2f-calls',
+      title: 'F2F Calls',
+      value: '$1.1M',
+      change: '+7.5%',
+      changeType: 'positive',
+      comparison: 'Revenue Attribution',
+      icon: 'Users',
+      category: 'situation',
+      section: 'situation',
+      details: {
+        description: 'Revenue attributed to face-to-face sales calls.',
+        breakdown: [
+          { label: 'Number of Calls', value: '3,200' },
+          { label: 'Conversion Rate', value: '12.5%' }
+        ]
+      }
+    },
+    {
+      id: 'web-virtual-calls',
+      title: 'WEB Virtual Calls',
+      value: '$0.9M',
+      change: '+5.2%',
+      changeType: 'positive',
+      comparison: 'Revenue Attribution',
+      icon: 'Stethoscope',
+      category: 'situation',
+      section: 'situation',
+      details: {
+        description: 'Revenue attributed to web-based virtual sales calls.',
+        breakdown: [
+          { label: 'Virtual Calls', value: '2,100' },
+          { label: 'Engagement Rate', value: '9.8%' }
+        ]
+      }
+    },
+    {
+      id: 'symposium',
+      title: 'Symposium',
+      value: '$0.7M',
+      change: '+3.9%',
+      changeType: 'positive',
+      comparison: 'Revenue Attribution',
+      icon: 'Calendar',
+      category: 'situation',
+      section: 'situation',
+      details: {
+        description: 'Revenue generated from symposium events and conferences.',
+        breakdown: [
+          { label: 'Events Held', value: '8' },
+          { label: 'Attendees', value: '1,200' }
+        ]
+      }
+    },
+    {
+      id: 'sfmc-emails',
+      title: 'SFMC Emails',
+      value: '$0.5M',
+      change: '+2.7%',
+      changeType: 'positive',
+      comparison: 'Revenue Attribution',
+      icon: 'Mail',
+      category: 'situation',
+      section: 'situation',
+      details: {
+        description: 'Revenue attributed to Salesforce Marketing Cloud email campaigns.',
+        breakdown: [
+          { label: 'Emails Sent', value: '45,000' },
+          { label: 'Open Rate', value: '22.1%' }
+        ]
+      }
+    },
+    {
       id: 'promotion',
       title: 'Promotion',
       value: '$2.1M',
@@ -323,7 +414,8 @@ const FarmaMetrics = () => {
       DollarSign,
       BarChart3,
       Target,
-      Calendar
+      Calendar,
+      Mail
     };
 
     const IconComponent = iconMap[card.icon] || Activity;

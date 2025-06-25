@@ -12,7 +12,8 @@ import {
   Target,
   Stethoscope,
   Calendar,
-  BarChart3
+  BarChart3,
+  Mail
 } from 'lucide-react';
 import SituationDetailModal from './SituationDetailModal';
 import ScenarioComparison from './ScenarioComparison';
@@ -161,7 +162,7 @@ const FarmaMetricsWithAssistant = () => {
     {
       id: 'total-sales',
       title: 'Total Sales',
-      value: '$19.5M',
+      value: '$21.3M',
       change: '+85.2%',
       changeType: 'positive',
       comparison: 'Total Revenue',
@@ -172,7 +173,7 @@ const FarmaMetricsWithAssistant = () => {
       details: {
         description: 'Total sales revenue including all attributions for the current period.',
         breakdown: [
-          { label: 'All Channels', value: '$19.5M' },
+          { label: 'All Channels', value: '$21.3M' },
           { label: 'Growth YoY', value: '+85.2%' },
           { label: 'Net Sales', value: '$18.7M' }
         ]
@@ -199,9 +200,28 @@ const FarmaMetricsWithAssistant = () => {
       }
     },
     {
+      id: 'incremental',
+      title: 'Incremental',
+      value: '$1.0M',
+      change: '+18.2%',
+      changeType: 'positive',
+      comparison: 'Incremental Revenue',
+      icon: BarChart3,
+      category: 'situation',
+      section: 'situation',
+      description: 'Revenue generated above the baseline due to marketing activities.',
+      details: {
+        description: 'Revenue generated above the baseline due to marketing activities.',
+        breakdown: [
+          { label: 'Marketing Impact', value: '$0.8M' },
+          { label: 'Other Factors', value: '$0.2M' }
+        ]
+      }
+    },
+    {
       id: 'promotional-spend',
       title: 'Promotional Spend',
-      value: '$3.7M',
+      value: '$0.7M',
       change: '+12.5%',
       changeType: 'positive',
       comparison: 'Total Promotional Budget',
@@ -212,16 +232,16 @@ const FarmaMetricsWithAssistant = () => {
       details: {
         description: 'Total spend on promotional activities for the current period.',
         breakdown: [
-          { label: 'Digital', value: '$1.5M' },
-          { label: 'Field Force', value: '$1.7M' },
-          { label: 'Events', value: '$0.5M' }
+          { label: 'Digital', value: '$0.3M' },
+          { label: 'Field Force', value: '$0.3M' },
+          { label: 'Events', value: '$0.1M' }
         ]
       }
     },
     {
       id: 'roi',
       title: 'ROI',
-      value: '5.3x',
+      value: '1.0x',
       change: '+21.7%',
       changeType: 'positive',
       comparison: 'Return on Investment',
@@ -232,16 +252,16 @@ const FarmaMetricsWithAssistant = () => {
       details: {
         description: 'Overall return on investment for all marketing and sales activities.',
         breakdown: [
-          { label: 'Total Revenue', value: '$19.5M' },
-          { label: 'Total Spend', value: '$3.7M' },
-          { label: 'ROI', value: '5.3x' }
+          { label: 'Total Revenue', value: '$21.3M' },
+          { label: 'Total Spend', value: '$0.7M' },
+          { label: 'ROI', value: '1.0x' }
         ]
       }
     },
     {
       id: 'seasonality',
       title: 'Seasonality',
-      value: '$1.2M',
+      value: '$0.3M',
       change: '+6.86%',
       changeType: 'positive',
       comparison: 'Revenue Attribution',
@@ -252,16 +272,16 @@ const FarmaMetricsWithAssistant = () => {
       details: {
         description: 'Seasonal revenue patterns and cyclical business variations',
         breakdown: [
-          { label: 'Q1 Seasonal Impact', value: '$0.3M' },
-          { label: 'Q2 Seasonal Impact', value: '$0.4M' },
-          { label: 'Q3 Seasonal Impact', value: '$0.5M' }
+          { label: 'Q1 Seasonal Impact', value: '$0.1M' },
+          { label: 'Q2 Seasonal Impact', value: '$0.1M' },
+          { label: 'Q3 Seasonal Impact', value: '$0.1M' }
         ]
       }
     },
     {
       id: 'trend',
       title: 'Trend',
-      value: '$0.8M',
+      value: '$0.5M',
       change: '+2.1%',
       changeType: 'positive',
       comparison: 'Revenue Attribution',
@@ -279,9 +299,85 @@ const FarmaMetricsWithAssistant = () => {
       }
     },
     {
+      id: 'f2f-calls',
+      title: 'F2F Calls',
+      value: '$4.0M',
+      change: '+7.5%',
+      changeType: 'positive',
+      comparison: 'Revenue Attribution',
+      icon: Users,
+      category: 'situation',
+      section: 'situation',
+      description: 'Revenue attributed to face-to-face sales calls.',
+      details: {
+        description: 'Revenue attributed to face-to-face sales calls.',
+        breakdown: [
+          { label: 'Number of Calls', value: '3,200' },
+          { label: 'Conversion Rate', value: '12.5%' }
+        ]
+      }
+    },
+    {
+      id: 'web-virtual-calls',
+      title: 'WEB Virtual Calls',
+      value: '$0.6M',
+      change: '+5.2%',
+      changeType: 'positive',
+      comparison: 'Revenue Attribution',
+      icon: Stethoscope,
+      category: 'situation',
+      section: 'situation',
+      description: 'Revenue attributed to web-based virtual sales calls.',
+      details: {
+        description: 'Revenue attributed to web-based virtual sales calls.',
+        breakdown: [
+          { label: 'Virtual Calls', value: '2,100' },
+          { label: 'Engagement Rate', value: '9.8%' }
+        ]
+      }
+    },
+    {
+      id: 'symposium',
+      title: 'Symposium',
+      value: '$0.5M',
+      change: '+3.9%',
+      changeType: 'positive',
+      comparison: 'Revenue Attribution',
+      icon: Calendar,
+      category: 'situation',
+      section: 'situation',
+      description: 'Revenue generated from symposium events and conferences.',
+      details: {
+        description: 'Revenue generated from symposium events and conferences.',
+        breakdown: [
+          { label: 'Events Held', value: '8' },
+          { label: 'Attendees', value: '1,200' }
+        ]
+      }
+    },
+    {
+      id: 'sfmc-emails',
+      title: 'SFMC Emails',
+      value: '$0.3M',
+      change: '+2.7%',
+      changeType: 'positive',
+      comparison: 'Revenue Attribution',
+      icon: Mail,
+      category: 'situation',
+      section: 'situation',
+      description: 'Revenue attributed to Salesforce Marketing Cloud email campaigns.',
+      details: {
+        description: 'Revenue attributed to Salesforce Marketing Cloud email campaigns.',
+        breakdown: [
+          { label: 'Emails Sent', value: '45,000' },
+          { label: 'Open Rate', value: '22.1%' }
+        ]
+      }
+    },
+    {
       id: 'promotion',
       title: 'Promotion Impact',
-      value: '$2.1M',
+      value: '$0.4M',
       change: '+15.3%',
       changeType: 'positive',
       comparison: 'Revenue Attribution',
@@ -292,16 +388,16 @@ const FarmaMetricsWithAssistant = () => {
       details: {
         description: 'Direct impact of promotional activities on revenue generation',
         breakdown: [
-          { label: 'Digital Marketing', value: '$0.8M' },
-          { label: 'Field Force', value: '$1.1M' },
-          { label: 'Events & Conferences', value: '$0.2M' }
+          { label: 'Digital Marketing', value: '$0.2M' },
+          { label: 'Field Force', value: '$0.15M' },
+          { label: 'Events & Conferences', value: '$0.05M' }
         ]
       }
     },
     {
       id: 'page-visit-exchange',
       title: 'Page Visit Exchange',
-      value: '$2.1M',
+      value: '$0.5M',
       change: '+15.2%',
       changeType: 'positive',
       comparison: 'Revenue Attribution',
@@ -321,7 +417,7 @@ const FarmaMetricsWithAssistant = () => {
     {
       id: 'digital-display',
       title: 'Digital Display',
-      value: '$1.8M',
+      value: '$0.6M',
       change: '+22.4%',
       changeType: 'positive',
       comparison: 'Revenue Attribution',
@@ -341,7 +437,7 @@ const FarmaMetricsWithAssistant = () => {
     {
       id: 'digital-video',
       title: 'Digital Video',
-      value: '$1.5M',
+      value: '$0.4M',
       change: '+18.7%',
       changeType: 'positive',
       comparison: 'Revenue Attribution',

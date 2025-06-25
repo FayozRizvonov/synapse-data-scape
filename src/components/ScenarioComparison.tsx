@@ -55,7 +55,7 @@ const scenarioComparisonData = [
 
 const comparisonTableData = {
     metrics: [
-        { metric: 'Total Sales', baseline: '21.3', optimistic: '24.5M', pessimistic: '24.5M' },
+        { metric: 'Total Sales', baseline: '21.3', optimistic: '24.5M', pessimistic: '19.17M' },
         { metric: 'Total Spend', baseline: '$265K', optimistic: '$305K', pessimistic: '$239K' },
         { metric: 'Overall ROI', baseline: '2.7x', optimistic: '2.9x', pessimistic: '2.4x' },
         { metric: 'Profit Margin', baseline: '18%', optimistic: '21%', pessimistic: '15%' },
@@ -209,7 +209,7 @@ const ScenarioComparison = () => {
           <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 hover:border-white/20 transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-gradient-to-r from-red-500/20 to-pink-500/20 border border-red-500/30">
+                <div className="p-2 rounded-lg bg-gradient-to-r from-red-500/20 to-rose-500/20 border border-red-500/30">
                   <TrendingDown className="w-5 h-5 text-red-400" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Pessimistic</h3>
@@ -218,7 +218,7 @@ const ScenarioComparison = () => {
             </div>
             <div className="space-y-4">
               <div className="flex items-end gap-2">
-                <span className="text-3xl font-bold text-gray-900 dark:text-white">24.5M</span>
+                <span className="text-3xl font-bold text-gray-900 dark:text-white">19.17M</span>
                 <span className="text-sm text-gray-600 dark:text-white/60">Projected Sales</span>
               </div>
               <div className="space-y-2">
