@@ -1,0 +1,203 @@
+{
+    "theme": {
+      "name": "pharma-light-enhanced",
+      "description": "Enhanced bright and energetic light mode for pharmaceutical analytics platform with improved colors and shadows"
+    },
+    "colors": {
+      "backgrounds": {
+        "primary": "#FFFFFF",
+        "secondary": "#F8FAFC",
+        "tertiary": "#F1F5F9",
+        "card": "#FFFFFF",
+        "cardHover": "#EFF6FF",
+        "sidebar": "#F7F9FC",
+        "modal": "#FFFFFF"
+      },
+      "text": {
+        "primary": "#0F172A",
+        "secondary": "#475569",
+        "tertiary": "#64748B",
+        "muted": "#94A3B8",
+        "inverse": "#FFFFFF"
+      },
+      "accents": {
+        "primary": "#2563EB",
+        "primaryHover": "#1D4ED8",
+        "secondary": "#0891B2",
+        "success": "#059669",
+        "successLight": "#10B981",
+        "warning": "#D97706",
+        "warningLight": "#F59E0B",
+        "error": "#DC2626",
+        "info": "#2563EB"
+      },
+      "gradients": {
+        "primary": "linear-gradient(135deg, #2563EB 0%, #0891B2 100%)",
+        "success": "linear-gradient(135deg, #059669 0%, #10B981 100%)",
+        "warning": "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)",
+        "purple": "linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%)",
+        "card": "linear-gradient(145deg, #FFFFFF 0%, #F8FAFC 100%)",
+        "background": "linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)"
+      },
+      "borders": {
+        "light": "#E2E8F0",
+        "medium": "#CBD5E1",
+        "dark": "#94A3B8",
+        "accent": "#2563EB"
+      }
+    },
+    "shadows": {
+      "small": "0 1px 2px 0 rgba(15, 23, 42, 0.05)",
+      "medium": "0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -1px rgba(15, 23, 42, 0.04)",
+      "large": "0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -2px rgba(15, 23, 42, 0.05)",
+      "xl": "0 20px 25px -5px rgba(15, 23, 42, 0.12), 0 10px 10px -5px rgba(15, 23, 42, 0.04)",
+      "2xl": "0 25px 50px -12px rgba(15, 23, 42, 0.15)",
+      "blue": {
+        "small": "0 1px 2px 0 rgba(37, 99, 235, 0.08)",
+        "medium": "0 4px 6px -1px rgba(37, 99, 235, 0.12), 0 2px 4px -1px rgba(37, 99, 235, 0.06)",
+        "large": "0 10px 15px -3px rgba(37, 99, 235, 0.15), 0 4px 6px -2px rgba(37, 99, 235, 0.08)",
+        "xl": "0 20px 25px -5px rgba(37, 99, 235, 0.18), 0 10px 10px -5px rgba(37, 99, 235, 0.06)"
+      },
+      "hover": "0 8px 25px -5px rgba(15, 23, 42, 0.15), 0 4px 6px -2px rgba(15, 23, 42, 0.08)",
+      "blueHover": "0 8px 25px -5px rgba(37, 99, 235, 0.2), 0 4px 6px -2px rgba(37, 99, 235, 0.1)",
+      "modal": "0 25px 50px -12px rgba(15, 23, 42, 0.25)",
+      "dropdown": "0 10px 15px -3px rgba(15, 23, 42, 0.15), 0 4px 6px -2px rgba(15, 23, 42, 0.08)"
+    },
+    "typography": {
+      "fontFamily": {
+        "primary": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+        "mono": "JetBrains Mono, Consolas, monospace"
+      },
+      "fontSize": {
+        "xs": "0.75rem",
+        "sm": "0.875rem",
+        "base": "1rem",
+        "lg": "1.125rem",
+        "xl": "1.25rem",
+        "2xl": "1.5rem",
+        "3xl": "1.875rem",
+        "4xl": "2.25rem"
+      },
+      "fontWeight": {
+        "normal": "400",
+        "medium": "500",
+        "semibold": "600",
+        "bold": "700"
+      }
+    },
+    "components": {
+      "card": {
+        "background": "#FFFFFF",
+        "border": "1px solid #E2E8F0",
+        "borderRadius": "12px",
+        "padding": "24px",
+        "shadow": "0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -1px rgba(15, 23, 42, 0.04)",
+        "hover": {
+          "background": "linear-gradient(145deg, #FFFFFF 0%, #F8FAFC 100%)",
+          "shadow": "0 8px 25px -5px rgba(15, 23, 42, 0.15), 0 4px 6px -2px rgba(15, 23, 42, 0.08)",
+          "transform": "translateY(-2px)"
+        }
+      },
+      "button": {
+        "primary": {
+          "background": "linear-gradient(135deg, #2563EB 0%, #0891B2 100%)",
+          "color": "#FFFFFF",
+          "border": "none",
+          "borderRadius": "8px",
+          "padding": "12px 24px",
+          "shadow": "0 4px 12px rgba(37, 99, 235, 0.3)",
+          "hover": {
+            "background": "linear-gradient(135deg, #1D4ED8 0%, #0E7490 100%)",
+            "shadow": "0 6px 16px rgba(37, 99, 235, 0.4)"
+          }
+        },
+        "secondary": {
+          "background": "#FFFFFF",
+          "color": "#2563EB",
+          "border": "2px solid #2563EB",
+          "borderRadius": "8px",
+          "padding": "12px 24px",
+          "hover": {
+            "background": "#EFF6FF",
+            "shadow": "0 4px 12px rgba(37, 99, 235, 0.2)"
+          }
+        }
+      },
+      "input": {
+        "background": "#FFFFFF",
+        "border": "2px solid #E2E8F0",
+        "borderRadius": "8px",
+        "padding": "12px 16px",
+        "focus": {
+          "border": "2px solid #2563EB",
+          "shadow": "0 0 0 3px rgba(37, 99, 235, 0.1)"
+        }
+      },
+      "sidebar": {
+        "background": "linear-gradient(180deg, #F7F9FC 0%, #EDF2F7 100%)",
+        "border": "1px solid #E2E8F0",
+        "activeItem": {
+          "background": "linear-gradient(135deg, #2563EB 0%, #0891B2 100%)",
+          "color": "#FFFFFF",
+          "borderRadius": "8px"
+        }
+      },
+      "metric": {
+        "value": {
+          "fontSize": "2.25rem",
+          "fontWeight": "700",
+          "background": "linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)",
+          "backgroundClip": "text",
+          "textFillColor": "transparent"
+        },
+        "label": {
+          "fontSize": "0.875rem",
+          "color": "#475569",
+          "fontWeight": "500"
+        },
+        "change": {
+          "positive": "#059669",
+          "negative": "#DC2626"
+        }
+      }
+    },
+    "animations": {
+      "hover": {
+        "duration": "0.2s",
+        "easing": "ease-in-out"
+      },
+      "pulse": {
+        "keyframes": "0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; }",
+        "duration": "2s",
+        "iteration": "infinite"
+      },
+      "slideIn": {
+        "duration": "0.3s",
+        "easing": "cubic-bezier(0.4, 0, 0.2, 1)"
+      },
+      "glow": {
+        "keyframes": "0% { box-shadow: 0 0 5px rgba(37, 99, 235, 0.3); } 50% { box-shadow: 0 0 20px rgba(37, 99, 235, 0.6); } 100% { box-shadow: 0 0 5px rgba(37, 99, 235, 0.3); }",
+        "duration": "3s",
+        "iteration": "infinite"
+      }
+    },
+    "effects": {
+      "glassmorphism": {
+        "background": "rgba(255, 255, 255, 0.9)",
+        "backdropFilter": "blur(10px)",
+        "border": "1px solid rgba(255, 255, 255, 0.2)"
+      },
+      "particles": {
+        "color": "rgba(37, 99, 235, 0.1)",
+        "size": "2px",
+        "animation": "float 6s ease-in-out infinite"
+      }
+    },
+    "breakpoints": {
+      "sm": "640px",
+      "md": "768px",
+      "lg": "1024px",
+      "xl": "1280px",
+      "2xl": "1536px"
+    }
+  }

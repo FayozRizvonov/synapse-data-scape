@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
 	darkMode: ["class"],
@@ -18,6 +19,10 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				sans: ['Inter', 'system-ui', 'sans-serif'],
+				'host-grotesk': ['Inter', 'system-ui', 'sans-serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -61,7 +66,42 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				cyan: {
+					400: 'hsl(var(--cyan-400))',
+					500: 'hsl(var(--cyan-500))',
+				},
+				blue: {
+					500: 'hsl(var(--blue-500))',
+				},
+				indigo: {
+					500: 'hsl(var(--indigo-500))',
+				},
+				purple: {
+					500: 'hsl(var(--purple-500))',
+				},
+				pink: {
+					500: 'hsl(var(--pink-500))',
+				},
+				green: {
+					500: 'hsl(var(--green-500))',
+				},
+				teal: {
+					500: 'hsl(var(--teal-500))',
+				},
+				yellow: {
+					500: 'hsl(var(--yellow-500))',
+				},
+				orange: {
+					500: 'hsl(var(--orange-500))',
+				},
+			},
+			backgroundImage: {
+				'gradient-cyan': 'var(--gradient-cyan)',
+				'gradient-blue': 'var(--gradient-blue)',
+				'gradient-purple': 'var(--gradient-purple)',
+				'gradient-green': 'var(--gradient-green)',
+				'gradient-yellow': 'var(--gradient-yellow)',
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -84,13 +124,57 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'holographic-pulse': {
+					'0%, 100%': {
+						borderColor: 'var(--holo-border)',
+						boxShadow: 'var(--holo-shadow)'
+					},
+					'50%': {
+						borderColor: 'var(--holo-border-strong)',
+						boxShadow: 'var(--holo-shadow-strong)'
+					}
+				},
+				'float': {
+					'0%, 100%': {
+						transform: 'translateY(0px) rotate(0deg)',
+						opacity: '0.6'
+					},
+					'50%': {
+						transform: 'translateY(-20px) rotate(180deg)',
+						opacity: '1'
+					}
+				},
+				'neural-pulse': {
+					'0%, 100%': {
+						opacity: '0.3',
+						transform: 'scale(1)'
+					},
+					'50%': {
+						opacity: '0.8',
+						transform: 'scale(1.05)'
+					}
+				},
+				'wave-spread': {
+					'0%': {
+						transform: 'translate(-50%, -50%) scale(0)',
+						opacity: '1'
+					},
+					'100%': {
+						transform: 'translate(-50%, -50%) scale(1)',
+						opacity: '0'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'holographic-pulse': 'holographic-pulse 2s infinite',
+				'float': 'float 6s ease-in-out infinite',
+				'neural-pulse': 'neural-pulse 2s infinite',
+				'wave-spread': 'wave-spread 4s infinite'
 			}
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [tailwindcssAnimate],
 } satisfies Config;

@@ -1,4 +1,3 @@
-
 export interface MetricCard {
   id: string;
   title: string;
@@ -8,12 +7,16 @@ export interface MetricCard {
   comparison: string;
   icon: string;
   category: 'key' | 'situation' | 'scenario';
+  description?: string;
   details?: {
     description: string;
     breakdown: Array<{ label: string; value: string; }>;
   };
   section: 'key-metrics' | 'situation' | 'scenario-comparison';
-  chartData?: any;
+  chartData?: {
+    type: string;
+    data: Array<{ name: string; revenue: number; }>;
+  };
 }
 
 export const metricsKnowledgeBase: MetricCard[] = [
@@ -167,6 +170,15 @@ export const metricsKnowledgeBase: MetricCard[] = [
         { label: 'Q2 Seasonal Impact', value: '$0.4M' },
         { label: 'Q3 Seasonal Impact', value: '$0.5M' }
       ]
+    },
+    chartData: {
+      type: 'bar',
+      data: [
+        { name: 'Q1', revenue: 300000 },
+        { name: 'Q2', revenue: 400000 },
+        { name: 'Q3', revenue: 500000 },
+        { name: 'Q4', revenue: 450000 },
+      ]
     }
   },
   {
@@ -185,6 +197,23 @@ export const metricsKnowledgeBase: MetricCard[] = [
         { label: 'Recommended Spend', value: '$400K' },
         { label: 'Optimal Frequency', value: '8/month' },
         { label: 'Response Lag', value: '2 weeks' }
+      ]
+    },
+    chartData: {
+      type: 'bar',
+      data: [
+        { name: 'Jan', revenue: 75000 },
+        { name: 'Feb', revenue: 82000 },
+        { name: 'Mar', revenue: 89000 },
+        { name: 'Apr', revenue: 95000 },
+        { name: 'May', revenue: 88000 },
+        { name: 'Jun', revenue: 92000 },
+        { name: 'Jul', revenue: 85000 },
+        { name: 'Aug', revenue: 98000 },
+        { name: 'Sep', revenue: 102000 },
+        { name: 'Oct', revenue: 95000 },
+        { name: 'Nov', revenue: 87000 },
+        { name: 'Dec', revenue: 105000 },
       ]
     }
   },
@@ -205,6 +234,23 @@ export const metricsKnowledgeBase: MetricCard[] = [
         { label: 'Optimal Frequency', value: '12/month' },
         { label: 'Decay Rate', value: '8% monthly' }
       ]
+    },
+    chartData: {
+      type: 'bar',
+      data: [
+        { name: 'Jan', revenue: 95000 },
+        { name: 'Feb', revenue: 105000 },
+        { name: 'Mar', revenue: 115000 },
+        { name: 'Apr', revenue: 125000 },
+        { name: 'May', revenue: 118000 },
+        { name: 'Jun', revenue: 122000 },
+        { name: 'Jul', revenue: 115000 },
+        { name: 'Aug', revenue: 128000 },
+        { name: 'Sep', revenue: 135000 },
+        { name: 'Oct', revenue: 130000 },
+        { name: 'Nov', revenue: 125000 },
+        { name: 'Dec', revenue: 140000 },
+      ]
     }
   },
   {
@@ -223,6 +269,267 @@ export const metricsKnowledgeBase: MetricCard[] = [
         { label: 'Recommended Spend', value: '$630K' },
         { label: 'Optimal Frequency', value: '11/month' },
         { label: 'Response Lag', value: '4 weeks' }
+      ]
+    },
+    chartData: {
+      type: 'bar',
+      data: [
+        { name: 'Jan', revenue: 40000 },
+        { name: 'Feb', revenue: 45000 },
+        { name: 'Mar', revenue: 50000 },
+        { name: 'Apr', revenue: 55000 },
+        { name: 'May', revenue: 52000 },
+        { name: 'Jun', revenue: 48000 },
+        { name: 'Jul', revenue: 53000 },
+        { name: 'Aug', revenue: 57000 },
+        { name: 'Sep', revenue: 60000 },
+        { name: 'Oct', revenue: 58000 },
+        { name: 'Nov', revenue: 54000 },
+        { name: 'Dec', revenue: 62000 },
+      ]
+    }
+  },
+  {
+    id: 'trend',
+    title: 'Trend',
+    value: '$0.8M',
+    change: '+2.1%',
+    changeType: 'positive',
+    comparison: 'Revenue Attribution',
+    icon: 'TrendingUp',
+    category: 'situation',
+    section: 'situation',
+    details: {
+      description: 'Long-term trend analysis and market direction',
+      breakdown: [
+        { label: 'Trend Direction', value: 'Upward' },
+        { label: 'Confidence Level', value: '95%' },
+        { label: 'Projected Growth', value: '+15%' }
+      ]
+    },
+    chartData: {
+      type: 'bar',
+      data: [
+        { name: 'Jan', revenue: 65000 },
+        { name: 'Feb', revenue: 68000 },
+        { name: 'Mar', revenue: 72000 },
+        { name: 'Apr', revenue: 75000 },
+        { name: 'May', revenue: 78000 },
+        { name: 'Jun', revenue: 82000 },
+        { name: 'Jul', revenue: 85000 },
+        { name: 'Aug', revenue: 88000 },
+        { name: 'Sep', revenue: 92000 },
+        { name: 'Oct', revenue: 95000 },
+        { name: 'Nov', revenue: 98000 },
+        { name: 'Dec', revenue: 102000 },
+      ]
+    }
+  },
+  {
+    id: 'medscape-alert',
+    title: 'Medscape HiV Brand Alert',
+    value: '$0.7M',
+    change: '+1.8x',
+    changeType: 'positive',
+    comparison: 'ROI',
+    icon: 'Activity',
+    category: 'situation',
+    section: 'situation',
+    details: {
+      description: 'Medscape platform brand awareness and engagement',
+      breakdown: [
+        { label: 'Recommended Spend', value: '$390K' },
+        { label: 'Optimal Frequency', value: '6/month' },
+        { label: 'Response Lag', value: '3 weeks' }
+      ]
+    },
+    chartData: {
+      type: 'bar',
+      data: [
+        { name: 'Jan', revenue: 55000 },
+        { name: 'Feb', revenue: 60000 },
+        { name: 'Mar', revenue: 65000 },
+        { name: 'Apr', revenue: 70000 },
+        { name: 'May', revenue: 68000 },
+        { name: 'Jun', revenue: 72000 },
+        { name: 'Jul', revenue: 75000 },
+        { name: 'Aug', revenue: 78000 },
+        { name: 'Sep', revenue: 82000 },
+        { name: 'Oct', revenue: 80000 },
+        { name: 'Nov', revenue: 77000 },
+        { name: 'Dec', revenue: 85000 },
+      ]
+    }
+  },
+  {
+    id: 'ola-attendees',
+    title: 'OLA Attendees',
+    value: '$0.4M',
+    change: '+1.4x',
+    changeType: 'positive',
+    comparison: 'ROI',
+    icon: 'Users',
+    category: 'situation',
+    section: 'situation',
+    details: {
+      description: 'OLA conference attendance and engagement metrics',
+      breakdown: [
+        { label: 'Recommended Spend', value: '$286K' },
+        { label: 'Optimal Frequency', value: '2/year' },
+        { label: 'Response Lag', value: '6 weeks' }
+      ]
+    },
+    chartData: {
+      type: 'bar',
+      data: [
+        { name: 'Q1', revenue: 80000 },
+        { name: 'Q2', revenue: 120000 },
+        { name: 'Q3', revenue: 100000 },
+        { name: 'Q4', revenue: 100000 },
+      ]
+    }
+  },
+  {
+    id: 'ooh-pharma',
+    title: 'OOH Pharma',
+    value: '$0.6M',
+    change: '+1.6x',
+    changeType: 'positive',
+    comparison: 'ROI',
+    icon: 'Target',
+    category: 'situation',
+    section: 'situation',
+    details: {
+      description: 'Out-of-home pharmaceutical advertising performance',
+      breakdown: [
+        { label: 'Recommended Spend', value: '$375K' },
+        { label: 'Optimal Frequency', value: '4/month' },
+        { label: 'Response Lag', value: '5 weeks' }
+      ]
+    },
+    chartData: {
+      type: 'bar',
+      data: [
+        { name: 'Jan', revenue: 45000 },
+        { name: 'Feb', revenue: 50000 },
+        { name: 'Mar', revenue: 55000 },
+        { name: 'Apr', revenue: 60000 },
+        { name: 'May', revenue: 58000 },
+        { name: 'Jun', revenue: 62000 },
+        { name: 'Jul', revenue: 65000 },
+        { name: 'Aug', revenue: 68000 },
+        { name: 'Sep', revenue: 72000 },
+        { name: 'Oct', revenue: 70000 },
+        { name: 'Nov', revenue: 67000 },
+        { name: 'Dec', revenue: 75000 },
+      ]
+    }
+  },
+  {
+    id: 'phone-calls',
+    title: 'Phone Calls ABC',
+    value: '$1.3M',
+    change: '+2.5x',
+    changeType: 'positive',
+    comparison: 'ROI',
+    icon: 'Activity',
+    category: 'situation',
+    section: 'situation',
+    details: {
+      description: 'Phone call campaign performance and conversion rates',
+      breakdown: [
+        { label: 'Recommended Spend', value: '$520K' },
+        { label: 'Optimal Frequency', value: '15/month' },
+        { label: 'Response Lag', value: '1 week' }
+      ]
+    },
+    chartData: {
+      type: 'bar',
+      data: [
+        { name: 'Jan', revenue: 100000 },
+        { name: 'Feb', revenue: 110000 },
+        { name: 'Mar', revenue: 120000 },
+        { name: 'Apr', revenue: 130000 },
+        { name: 'May', revenue: 125000 },
+        { name: 'Jun', revenue: 135000 },
+        { name: 'Jul', revenue: 140000 },
+        { name: 'Aug', revenue: 145000 },
+        { name: 'Sep', revenue: 150000 },
+        { name: 'Oct', revenue: 148000 },
+        { name: 'Nov', revenue: 145000 },
+        { name: 'Dec', revenue: 155000 },
+      ]
+    }
+  },
+  {
+    id: 'veeva-emails',
+    title: 'Veeva Emails',
+    value: '$0.8M',
+    change: '+1.9x',
+    changeType: 'positive',
+    comparison: 'ROI',
+    icon: 'Activity',
+    category: 'situation',
+    section: 'situation',
+    details: {
+      description: 'Veeva CRM email campaign effectiveness',
+      breakdown: [
+        { label: 'Recommended Spend', value: '$421K' },
+        { label: 'Optimal Frequency', value: '10/month' },
+        { label: 'Response Lag', value: '2 weeks' }
+      ]
+    },
+    chartData: {
+      type: 'bar',
+      data: [
+        { name: 'Jan', revenue: 60000 },
+        { name: 'Feb', revenue: 65000 },
+        { name: 'Mar', revenue: 70000 },
+        { name: 'Apr', revenue: 75000 },
+        { name: 'May', revenue: 72000 },
+        { name: 'Jun', revenue: 78000 },
+        { name: 'Jul', revenue: 82000 },
+        { name: 'Aug', revenue: 85000 },
+        { name: 'Sep', revenue: 88000 },
+        { name: 'Oct', revenue: 86000 },
+        { name: 'Nov', revenue: 83000 },
+        { name: 'Dec', revenue: 90000 },
+      ]
+    }
+  },
+  {
+    id: 'web-virtual-calls',
+    title: 'Web Virtual Calls ABC',
+    value: '$1.1M',
+    change: '+2.2x',
+    changeType: 'positive',
+    comparison: 'ROI',
+    icon: 'Activity',
+    category: 'situation',
+    section: 'situation',
+    details: {
+      description: 'Virtual call center performance and digital engagement',
+      breakdown: [
+        { label: 'Recommended Spend', value: '$500K' },
+        { label: 'Optimal Frequency', value: '12/month' },
+        { label: 'Response Lag', value: '1 week' }
+      ]
+    },
+    chartData: {
+      type: 'bar',
+      data: [
+        { name: 'Jan', revenue: 85000 },
+        { name: 'Feb', revenue: 90000 },
+        { name: 'Mar', revenue: 95000 },
+        { name: 'Apr', revenue: 100000 },
+        { name: 'May', revenue: 98000 },
+        { name: 'Jun', revenue: 105000 },
+        { name: 'Jul', revenue: 110000 },
+        { name: 'Aug', revenue: 115000 },
+        { name: 'Sep', revenue: 120000 },
+        { name: 'Oct', revenue: 118000 },
+        { name: 'Nov', revenue: 115000 },
+        { name: 'Dec', revenue: 125000 },
       ]
     }
   }

@@ -39,14 +39,14 @@ INSTRUCTIONS:
 2. If they want to see a card, respond with: {"action": "show_card", "metric_id": "metric-id"}
 3. If they want to see a chart, respond with: {"action": "show_chart", "metric_id": "metric-id"}
 4. Always be helpful and provide insights about the data
-5. Respond in English - this is the primary language for the AI assistant
+5. Respond in English - this is the primary language for the voice assistant
 6. You can analyze trends, provide recommendations, and explain metric relationships
 7. When users ask for "more information" or "details", show the expanded card with charts
 8. Always include relevant metric cards when discussing performance, trends, or specific channels
-9. Be professional but friendly in your tone
-10. Provide actionable insights and recommendations when possible
-11. Explain complex metrics in simple terms
-12. Highlight key performance indicators and their significance
+9. Keep responses conversational and natural for voice interaction
+10. Avoid repeating information that was already mentioned in the conversation
+11. Be concise but informative for voice responses
+12. Use professional but friendly tone
 
 EXAMPLES:
 User: "How are Base Sales performing?"
@@ -66,9 +66,6 @@ Response: "Digital campaigns are performing excellently! Digital Pharma Video le
 
 User: "Give me more information about Base Sales"
 Response: "Of course! Base Sales represents baseline revenue without marketing efforts in the marketing mix model. Current value of $12.0M with +93.14% growth shows strong market positioning. Confidence Interval is 85%, P-value 0.01, indicating statistical significance. Data covers 2019-2023 period. {"action": "show_card", "metric_id": "base-sales"}"
-
-User: "What are the best performing channels?"
-Response: "Based on the data, Phone Calls ABC is our top performer with $1.3M revenue and 2.5x ROI, followed by Digital Pharma Video with $1.2M and 2.4x ROI. Web Virtual Calls ABC also shows strong performance with $1.1M and 2.2x ROI. These channels demonstrate excellent efficiency and should be prioritized in future campaigns. {"action": "show_card", "metric_id": "phone-calls"}"
 `;
 
 serve(async (req) => {
@@ -77,11 +74,35 @@ serve(async (req) => {
   }
 
   try {
-    const { message } = await req.json();
+    const { audioData, audioFormat = 'webm' } = await req.json();
     
-    console.log('Received message:', message);
+    console.log('Received voice request, audio format:', audioFormat);
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // 1. Транскрипция аудио через OpenAI Whisper
+    const formData = new FormData();
+    formData.append('file', new Blob([audioData], { type: `audio/${audioFormat}` }), `audio.${audioFormat}`);
+    formData.append('model', 'whisper-1');
+    formData.append('language', 'en');
+    formData.append('response_format', 'json');
+    const transcriptionResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+      },
+      body: formData
+    });
+
+    if (!transcriptionResponse.ok) {
+      throw new Error(`Whisper API error: ${transcriptionResponse.statusText}`);
+    }
+
+    const transcriptionData = await transcriptionResponse.json();
+    const transcript = transcriptionData.text;
+    
+    console.log('Transcription:', transcript);
+
+    // 2. Отправка текста в GPT-4o
+    const chatResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
@@ -96,33 +117,67 @@ serve(async (req) => {
           },
           { 
             role: 'user', 
-            content: message 
+            content: transcript 
           }
         ],
-        temperature: 0.7,
+        temperature: 0.5,
         max_tokens: 800
       }),
     });
 
-    const data = await response.json();
-    console.log('OpenAI response:', data);
+    if (!chatResponse.ok) {
+      throw new Error(`Chat API error: ${chatResponse.statusText}`);
+    }
+
+    const chatData = await chatResponse.json();
+    const assistantMessage = chatData.choices[0].message.content;
     
-    const assistantMessage = data.choices[0].message.content;
+    console.log('AI Response:', assistantMessage);
+
+    // 3. Синтез речи через OpenAI TTS с голосом Ash
+    const ttsResponse = await fetch('https://api.openai.com/v1/audio/speech', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'tts-1-hd',
+        input: `<speak><break time='200ms'/>${assistantMessage}<break time='500ms'/></speak>`,
+        voice: 'ash',
+        response_format: 'mp3',
+        speed: 1.1
+      }),
+    });
+
+    if (!ttsResponse.ok) {
+      throw new Error(`TTS API error: ${ttsResponse.statusText}`);
+    }
+
+    const audioBlob = await ttsResponse.blob();
+    const audioArrayBuffer = await audioBlob.arrayBuffer();
+    const audioBase64 = btoa(String.fromCharCode(...new Uint8Array(audioArrayBuffer)));
 
     return new Response(JSON.stringify({ 
+      transcript,
       response: assistantMessage,
+      audio: audioBase64,
+      audioFormat: 'mp3',
       timestamp: new Date().toISOString()
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+
   } catch (error) {
-    console.error('Error in ai-assistant function:', error);
+    console.error('Error in voice-assistant function:', error);
     return new Response(JSON.stringify({ 
       error: error.message,
-      response: 'Sorry, an error occurred. Please try again.'
+      transcript: '',
+      response: 'Sorry, there was an error processing your voice request.',
+      audio: null
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
-});
+}); 

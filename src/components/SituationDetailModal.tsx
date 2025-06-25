@@ -3,182 +3,258 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Button } from '@/components/ui/button';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { X, Download, Share2, DollarSign, TrendingUp, TrendingDown, BarChart3, Clock, Zap, Sun, Users } from 'lucide-react';
-
-interface MetricCard {
-  id: string;
-  title: string;
-  value: string;
-  change: string;
-  changeType: 'positive' | 'negative';
-  comparison: string;
-  icon: React.ElementType;
-  category: 'key' | 'situation';
-  details?: {
-    description: string;
-    breakdown: Array<{ label: string; value: string; }>;
-  };
-}
+import { X, Download, Share2, DollarSign, TrendingUp, TrendingDown, BarChart3, Users } from 'lucide-react';
+import { MetricCard } from '@/data/metricsKnowledgeBase';
+import { useTheme } from '@/hooks/useTheme';
 
 interface SituationDetailModalProps {
   card: MetricCard | null;
-  children: React.ReactNode;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  children?: React.ReactNode;
 }
 
-// Mock data for the chart
-const monthlyData = [
-  { name: 'J', revenue: 210000 },
-  { name: 'F', revenue: 320000 },
-  { name: 'M', revenue: 380000 },
-  { name: 'A', revenue: 450000 },
-  { name: 'M', revenue: 520000 },
-  { name: 'J', revenue: 410000 },
-  { name: 'J', revenue: 350000 },
-  { name: 'A', revenue: 460000 },
-  { name: 'S', revenue: 490000 },
-  { name: 'O', revenue: 380000 },
-  { name: 'N', revenue: 310000 },
-  { name: 'D', revenue: 470000 },
-];
-
-const formatCurrency = (value: number) => {
-    if (value >= 1_000_000) {
-      return `$${(value / 1_000_000).toFixed(1)}M`;
-    }
-    if (value >= 1_000) {
-      return `$${Math.round(value / 1_000)}K`;
-    }
-    return `$${value}`;
-  };
-
-const SituationDetailModal: React.FC<SituationDetailModalProps> = ({ card, children, open, onOpenChange }) => {
+const SituationDetailModal: React.FC<SituationDetailModalProps> = ({ 
+  card, 
+  open, 
+  onOpenChange,
+  children 
+}) => {
+  const { theme } = useTheme();
+  
   if (!card) return null;
 
-  const externalFactors = [
-    { label: 'Market', value: 2, color: 'bg-green-500' },
-    { label: 'Compet.', value: 10, color: 'bg-red-500' },
-    { label: 'Seasonality', value: 20, color: 'bg-blue-500' },
-  ];
+  const handleShare = () => {
+    const shareText = `${card.title}: ${card.value} (${card.change} ${card.comparison})`;
+    if (navigator.share) {
+      navigator.share({
+        title: card.title,
+        text: shareText,
+        url: window.location.href
+      });
+    } else {
+      navigator.clipboard.writeText(shareText);
+    }
+  };
+
+  const handleDownload = () => {
+    const data = {
+      title: card.title,
+      value: card.value,
+      change: card.change,
+      comparison: card.comparison,
+      description: card.details?.description,
+      breakdown: card.details?.breakdown,
+      chartData: card.chartData
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${card.id}-detailed-data.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const getChartTitle = (card: MetricCard) => {
+    if (!card.chartData) return '';
+    if (card.id === 'base-sales' || card.id === 'seasonality') return 'Historical Impact';
+    if (card.id === 'page-visit-exchange' || card.id === 'digital-display' || card.id === 'digital-video') return 'Monthly Revenue Breakdown';
+    return 'Performance Chart';
+  };
+
+  const renderExtraBreakdown = (card: MetricCard) => {
+    if (!card.details?.breakdown) return null;
+    // Example: show recommended spend, decay rate, etc. as separate rows
+    const spend = card.details.breakdown.find(b => b.label.toLowerCase().includes('spend'));
+    const freq = card.details.breakdown.find(b => b.label.toLowerCase().includes('frequency'));
+    const lag = card.details.breakdown.find(b => b.label.toLowerCase().includes('lag'));
+    const decay = card.details.breakdown.find(b => b.label.toLowerCase().includes('decay'));
+    const seasonality = card.details.breakdown.find(b => b.label.toLowerCase().includes('seasonality'));
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-2">
+        {spend && (
+          <div className="flex justify-between items-center p-3 rounded-lg bg-gray-100/80 dark:bg-white/10">
+            <span className="text-sm text-gray-600 dark:text-white/60">Recommended Spend</span>
+            <span className="font-semibold text-gray-900 dark:text-white">{spend.value}</span>
+          </div>
+        )}
+        {freq && (
+          <div className="flex justify-between items-center p-3 rounded-lg bg-gray-100/80 dark:bg-white/10">
+            <span className="text-sm text-gray-600 dark:text-white/60">Optimal Frequency</span>
+            <span className="font-semibold text-gray-900 dark:text-white">{freq.value}</span>
+          </div>
+        )}
+        {lag && (
+          <div className="flex justify-between items-center p-3 rounded-lg bg-gray-100/80 dark:bg-white/10">
+            <span className="text-sm text-gray-600 dark:text-white/60">Response Lag</span>
+            <span className="font-semibold text-gray-900 dark:text-white">{lag.value}</span>
+          </div>
+        )}
+        {decay && (
+          <div className="flex justify-between items-center p-3 rounded-lg bg-gray-100/80 dark:bg-white/10">
+            <span className="text-sm text-gray-600 dark:text-white/60">Decay Rate</span>
+            <span className="font-semibold text-gray-900 dark:text-white">{decay.value}</span>
+          </div>
+        )}
+        {seasonality && (
+          <div className="flex justify-between items-center p-3 rounded-lg bg-gray-100/80 dark:bg-white/10">
+            <span className="text-sm text-gray-600 dark:text-white/60">Seasonality</span>
+            <span className="font-semibold text-gray-900 dark:text-white">{seasonality.value}</span>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-4xl bg-background border-border p-0">
-        <div className="p-6">
-            <DialogHeader className='flex flex-row justify-between items-start'>
-                <div>
-                    <Badge variant="outline" className="mb-2 border-primary text-primary">DIGITAL</Badge>
-                    <DialogTitle className="text-2xl font-bold text-white mb-4">{card.title}</DialogTitle>
-                    <div className="flex items-center space-x-8 text-white">
-                        <div>
-                            <p className="text-sm text-white/60">Revenue Attribution</p>
-                            <p className="text-xl font-bold">{card.value}</p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-white/60">ROI</p>
-                            <p className="text-xl font-bold">{card.change}</p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-white/60">Diminishing Returns Threshold</p>
-                            <p className="text-xl font-bold">$150K</p> 
-                        </div>
-                    </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <Button variant="ghost" size="icon"><Download className="w-5 h-5" /></Button>
-                    <Button variant="ghost" size="icon"><Share2 className="w-5 h-5" /></Button>
-                    <DialogClose asChild>
-                        <Button variant="ghost" size="icon"><X className="w-5 h-5" /></Button>
-                    </DialogClose>
-                </div>
-            </DialogHeader>
-
-            <div className="mt-6">
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-white">Monthly Revenue Breakdown</h3>
-                    <div className='flex items-center gap-2'>
-                        <Button variant="outline" size="sm" className="bg-zinc-800">Last 6M</Button>
-                        <Button variant="default" size="sm">Last 12M</Button>
-                    </div>
-                </div>
-                <div className="w-full h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={monthlyData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-                            <XAxis dataKey="name" tick={{ fill: '#a1a1aa' }} axisLine={{ stroke: '#a1a1aa' }} />
-                            <YAxis tickFormatter={(value) => formatCurrency(Number(value))} tick={{ fill: '#a1a1aa' }} axisLine={{ stroke: '#a1a1aa' }}/>
-                            <Tooltip
-                                contentStyle={{
-                                    background: 'rgba(10, 10, 10, 0.8)',
-                                    borderColor: '#333',
-                                    color: '#fff',
-                                    borderRadius: '0.5rem'
-                                }}
-                                formatter={(value: number) => [formatCurrency(value), 'Revenue']}
-                            />
-                            <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto backdrop-blur-[2px] bg-white/90 dark:bg-white/5 border border-gray-200/50 dark:border-white/10 rounded-2xl p-0">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 pt-6 pb-2 border-b border-gray-200/50 dark:border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-xl bg-gradient-to-r from-blue-500/20 to-cyan-500/20 dark:from-cyan-500/20 dark:to-blue-500/20 border border-blue-500/30 dark:border-cyan-500/30">
+              <BarChart3 className="w-6 h-6 text-blue-600 dark:text-cyan-400" />
             </div>
-
-            <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-6">
-                 {/* Recommended Spend */}
-                <div className="flex items-start space-x-3">
-                    <div className="p-2 bg-primary/10 rounded-md"><DollarSign className="w-5 h-5 text-primary"/></div>
-                    <div>
-                        <p className="text-sm text-white/60">Recommended Spend</p>
-                        <p className="text-lg font-bold text-white">$630K</p>
-                    </div>
-                </div>
-                 {/* Optimal Frequency */}
-                <div className="flex items-start space-x-3">
-                    <div className="p-2 bg-primary/10 rounded-md"><TrendingUp className="w-5 h-5 text-primary"/></div>
-                    <div>
-                        <p className="text-sm text-white/60">Optimal Frequency</p>
-                        <p className="text-lg font-bold text-white">11/month</p>
-                    </div>
-                </div>
-                 {/* Response Lag */}
-                <div className="flex items-start space-x-3">
-                    <div className="p-2 bg-primary/10 rounded-md"><Clock className="w-5 h-5 text-primary"/></div>
-                    <div>
-                        <p className="text-sm text-white/60">Response Lag</p>
-                        <p className="text-lg font-bold text-white">4 weeks</p>
-                    </div>
-                </div>
-                 {/* Decay Rate */}
-                <div className="flex items-start space-x-3">
-                    <div className="p-2 bg-primary/10 rounded-md"><TrendingDown className="w-5 h-5 text-primary"/></div>
-                    <div>
-                        <p className="text-sm text-white/60">Decay Rate</p>
-                        <p className="text-lg font-bold text-white">13% monthly</p>
-                    </div>
-                </div>
+            <div>
+              <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white">
+                {card.title}
+              </DialogTitle>
+              <p className="text-sm text-gray-600 dark:text-white/60">
+                {card.category === 'key' ? 'Key Metric' : card.category === 'situation' ? 'Situation Analysis' : 'Scenario Comparison'}
+              </p>
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={handleShare} className="hover:bg-gray-100/80 dark:hover:bg-white/10">
+              <Share2 className="w-4 h-4 text-gray-600 dark:text-white/80" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={handleDownload} className="hover:bg-gray-100/80 dark:hover:bg-white/10">
+              <Download className="w-4 h-4 text-gray-600 dark:text-white/80" />
+            </Button>
+            <DialogClose asChild>
+              <Button variant="ghost" size="icon" className="hover:bg-gray-100/80 dark:hover:bg-white/10">
+                <X className="w-4 h-4 text-gray-600 dark:text-white/80" />
+              </Button>
+            </DialogClose>
+          </div>
+        </div>
 
-            <div className="mt-8">
-                <h3 className="text-lg font-semibold text-white mb-4">External Factors Impact</h3>
-                <div className="space-y-4">
-                    {externalFactors.map(factor => (
-                        <div key={factor.label} className="grid grid-cols-6 items-center gap-4">
-                            <div className="col-span-1 flex items-center gap-2">
-                                {factor.label === 'Market' && <BarChart3 className="w-4 h-4 text-white/60"/>}
-                                {factor.label === 'Compet.' && <Users className="w-4 h-4 text-white/60"/>}
-                                {factor.label === 'Seasonality' && <Sun className="w-4 h-4 text-white/60"/>}
-                                <p className="text-sm text-white/80">{factor.label}</p>
-                            </div>
-                            <div className="col-span-5 flex items-center gap-4">
-                                <Progress value={factor.value} className="h-2" />
-                                <p className="text-sm font-bold text-white/80 w-12 text-right">{factor.value}%</p>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+        <div className="space-y-6 px-6 py-6">
+          {/* Main Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="backdrop-blur-[2px] bg-gray-100/80 dark:bg-white/5 border border-gray-200/50 dark:border-white/10 rounded-xl p-4 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-blue-600 dark:text-cyan-400" />
+                <span className="text-sm text-gray-600 dark:text-white/60">Current Value</span>
+              </div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">{card.value}</div>
             </div>
+            <div className="backdrop-blur-[2px] bg-gray-100/80 dark:bg-white/5 border border-gray-200/50 dark:border-white/10 rounded-xl p-4 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                {card.changeType === 'positive' ? (
+                  <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
+                ) : (
+                  <TrendingDown className="w-5 h-5 text-red-600 dark:text-red-400" />
+                )}
+                <span className="text-sm text-gray-600 dark:text-white/60">Change</span>
+              </div>
+              <div className={`text-2xl font-bold ${card.changeType === 'positive' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{card.change}</div>
+              <div className="text-xs text-gray-500 dark:text-white/40">{card.comparison}</div>
+            </div>
+            <div className="backdrop-blur-[2px] bg-gray-100/80 dark:bg-white/5 border border-gray-200/50 dark:border-white/10 rounded-xl p-4 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-blue-600 dark:text-cyan-400" />
+                <span className="text-sm text-gray-600 dark:text-white/60">Category</span>
+              </div>
+              <div className="text-lg font-semibold text-blue-600 dark:text-cyan-400 capitalize">{card.category}</div>
+            </div>
+          </div>
+
+          {/* Description */}
+          {card.details?.description && (
+            <div className="backdrop-blur-[2px] bg-gray-100/80 dark:bg-white/5 border border-gray-200/50 dark:border-white/10 rounded-xl p-4">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2">Description</h3>
+              <p className="text-gray-700 dark:text-white/70">{card.details.description}</p>
+            </div>
+          )}
+
+          {/* Breakdown */}
+          {card.details?.breakdown && (
+            <div className="backdrop-blur-[2px] bg-gray-100/80 dark:bg-white/5 border border-gray-200/50 dark:border-white/10 rounded-xl p-4">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Detailed Breakdown</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {card.details.breakdown.map((item, index) => (
+                  <div key={index} className="flex justify-between items-center p-3 rounded-lg bg-white/80 dark:bg-white/10">
+                    <span className="text-sm text-gray-600 dark:text-white/60">{item.label}</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Chart */}
+          {card.chartData && (
+            <div className="backdrop-blur-[2px] bg-gray-100/80 dark:bg-white/5 border border-gray-200/50 dark:border-white/10 rounded-xl p-4">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">{getChartTitle(card)}</h3>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={card.chartData.data}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid-stroke)" />
+                    <XAxis dataKey="name" tick={{ fill: 'var(--chart-axis-color)', fontWeight: 600, fontSize: 13 }} />
+                    <YAxis tick={{ fill: 'var(--chart-axis-color)', fontWeight: 600, fontSize: 13 }} tickFormatter={v => `$${(v/1000).toFixed(0)}K`} />
+                    <Tooltip
+                      contentStyle={{
+                        background: 'var(--chart-tooltip-bg)',
+                        borderColor: 'var(--chart-primary-color)',
+                        color: 'var(--chart-tooltip-text)',
+                        borderRadius: '8px',
+                        fontSize: 14,
+                        boxShadow: 'var(--chart-tooltip-shadow)',
+                        backdropFilter: 'blur(10px)'
+                      }}
+                      formatter={(value: number) => [`$${(value/1000).toFixed(1)}K`, 'Revenue']}
+                    />
+                    <Bar dataKey="revenue" fill="var(--chart-primary-color)" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {/* Extra breakdown for digital/modal cards */}
+          {renderExtraBreakdown(card)}
+
+          {/* Insights */}
+          <div className="backdrop-blur-[2px] bg-gray-100/80 dark:bg-white/5 border border-gray-200/50 dark:border-white/10 rounded-xl p-4">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3">Key Insights</h3>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 ${card.changeType === 'positive' ? 'bg-green-600 dark:bg-green-400' : 'bg-red-600 dark:bg-red-400'} rounded-full`}></div>
+                <span className="text-sm text-gray-700 dark:text-white/70">
+                  {card.changeType === 'positive' ? 'Positive trend' : 'Negative trend'} with {card.change} change
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-cyan-400 rounded-full"></div>
+                <span className="text-sm text-gray-700 dark:text-white/70">
+                  {card.comparison} comparison shows market performance
+                </span>
+              </div>
+              {card.details?.breakdown && (
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                  <span className="text-sm text-gray-700 dark:text-white/70">
+                    Detailed breakdown available with {card.details.breakdown.length} key metrics
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

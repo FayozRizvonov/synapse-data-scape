@@ -2,10 +2,12 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { motion } from "framer-motion";
 import { 
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts';
+import { TrendingUp, TrendingDown, DollarSign, Target, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
 
 const salesForecastData = [
   { name: 'Jan', actual: 120, baseline: 125, optimistic: 125, pessimistic: 125 },
@@ -53,7 +55,7 @@ const scenarioComparisonData = [
 
 const comparisonTableData = {
     metrics: [
-        { metric: 'Total Sales', baseline: '$1.2M', optimistic: '$1.4M', pessimistic: '$1.05M' },
+        { metric: 'Total Sales', baseline: '21.3', optimistic: '24.5M', pessimistic: '24.5M' },
         { metric: 'Total Spend', baseline: '$265K', optimistic: '$305K', pessimistic: '$239K' },
         { metric: 'Overall ROI', baseline: '2.7x', optimistic: '2.9x', pessimistic: '2.4x' },
         { metric: 'Profit Margin', baseline: '18%', optimistic: '21%', pessimistic: '15%' },
@@ -65,11 +67,16 @@ const comparisonTableData = {
     ]
 };
 
-const COLORS = ['#3b82f6', '#82ca9d', '#a855f7', '#6b7280'];
+const COLORS = [
+  'var(--chart-senary)',    // #3b82f6 -> blue-500
+  'var(--chart-quinary)',   // #82ca9d -> green-400  
+  'var(--chart-secondary)', // #a855f7 -> purple-500
+  'var(--text-muted)'       // #6b7280 -> gray-500
+];
 
 const AllocationChart = ({ title, data }: { title: string; data: typeof currentSpendData }) => (
-    <div className="flex flex-col items-center">
-      <h3 className="text-xl font-semibold text-white mb-4">{title}</h3>
+    <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-xl p-4">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{title}</h3>
       <div style={{ width: '100%', height: 300 }}>
         <ResponsiveContainer>
           <PieChart>
@@ -79,7 +86,7 @@ const AllocationChart = ({ title, data }: { title: string; data: typeof currentS
               cy="50%"
               innerRadius={60}
               outerRadius={80}
-              fill="#8884d8"
+              fill="var(--chart-secondary)"
               paddingAngle={5}
               dataKey="value"
               label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
@@ -88,7 +95,15 @@ const AllocationChart = ({ title, data }: { title: string; data: typeof currentS
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
-            <Tooltip />
+            <Tooltip 
+              contentStyle={{
+                background: 'var(--chart-tooltip-bg)',
+                borderColor: 'var(--chart-tooltip-border)',
+                color: 'var(--chart-tooltip-text)',
+                borderRadius: '8px',
+                backdropFilter: 'blur(10px)'
+              }}
+            />
           </PieChart>
         </ResponsiveContainer>
       </div>
@@ -96,7 +111,7 @@ const AllocationChart = ({ title, data }: { title: string; data: typeof currentS
         {data.map((entry, index) => (
             <div key={entry.name} className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                <span className="text-white/80">{entry.name}</span>
+                <span className="text-gray-700 dark:text-white/80">{entry.name}</span>
             </div>
         ))}
       </div>
@@ -116,173 +131,242 @@ const ScenarioComparison = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Baseline Card */}
-        <Card className="bg-primary/10 border-2 border-primary shadow-2xl shadow-primary/20">
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-white">Baseline</CardTitle>
-              <Badge variant="outline" className="border-primary text-primary">Current Plan</Badge>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 hover:border-white/20 transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
+                  <DollarSign className="w-5 h-5 text-cyan-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Current</h3>
+              </div>
+              <Badge variant="outline" className="border-cyan-500/30 text-cyan-400 bg-cyan-500/10">Current Plan</Badge>
             </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold text-white">$1.2M</p>
-            <p className="text-sm text-white/70">Projected Sales</p>
-            <div className="mt-4 flex justify-between text-white/90">
-              <span>SF Calls ROI:</span>
-              <span className="font-semibold">2.4x</span>
+            <div className="space-y-4">
+              <div className="flex items-end gap-2">
+                <span className="text-3xl font-bold text-gray-900 dark:text-white">21.3М</span>
+                <span className="text-sm text-gray-600 dark:text-white/60">Projected Sales</span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-gray-600 dark:text-white/80">
+                  <span>SF Calls ROI:</span>
+                  <span className="font-semibold text-cyan-400">2.4x</span>
+                </div>
+                <div className="flex justify-between text-gray-600 dark:text-white/80">
+                  <span>Digital ROI:</span>
+                  <span className="font-semibold text-cyan-400">3.1x</span>
+                </div>
+              </div>
             </div>
-            <div className="flex justify-between text-white/90">
-              <span>Digital ROI:</span>
-              <span className="font-semibold">3.1x</span>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </motion.div>
 
         {/* Optimistic Card */}
-        <Card className="bg-card/50 border-white/10">
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>Optimistic</CardTitle>
-              <Badge variant="secondary" className="bg-green-500/10 text-green-400 border-green-500/20">+15% Spend</Badge>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+        >
+          <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 hover:border-white/20 transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30">
+                  <TrendingUp className="w-5 h-5 text-green-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Optimistic</h3>
+              </div>
+              <Badge variant="outline" className="border-green-500/30 text-green-400 bg-green-500/10">+15% Spend</Badge>
             </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">$1.4M</p>
-            <p className="text-sm text-muted-foreground">Projected Sales</p>
-            <div className="mt-4 flex justify-between">
-              <span>SF Calls ROI:</span>
-              <span className="font-semibold">2.6x</span>
+            <div className="space-y-4">
+              <div className="flex items-end gap-2">
+                <span className="text-3xl font-bold text-gray-900 dark:text-white">24.5M</span>
+                <span className="text-sm text-gray-600 dark:text-white/60">Projected Sales</span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-gray-600 dark:text-white/80">
+                  <span>SF Calls ROI:</span>
+                  <span className="font-semibold text-green-400">2.6x</span>
+                </div>
+                <div className="flex justify-between text-gray-600 dark:text-white/80">
+                  <span>Digital ROI:</span>
+                  <span className="font-semibold text-green-400">3.4x</span>
+                </div>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span>Digital ROI:</span>
-              <span className="font-semibold">3.4x</span>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </motion.div>
 
         {/* Pessimistic Card */}
-        <Card className="bg-card/50 border-white/10">
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>Pessimistic</CardTitle>
-              <Badge variant="secondary" className="bg-red-500/10 text-red-400 border-red-500/20">-10% Spend</Badge>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+        >
+          <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 hover:border-white/20 transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-gradient-to-r from-red-500/20 to-pink-500/20 border border-red-500/30">
+                  <TrendingDown className="w-5 h-5 text-red-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Pessimistic</h3>
+              </div>
+              <Badge variant="outline" className="border-red-500/30 text-red-400 bg-red-500/10">-10% Spend</Badge>
             </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">$1.05M</p>
-            <p className="text-sm text-muted-foreground">Projected Sales</p>
-            <div className="mt-4 flex justify-between">
-              <span>SF Calls ROI:</span>
-              <span className="font-semibold">2.1x</span>
+            <div className="space-y-4">
+              <div className="flex items-end gap-2">
+                <span className="text-3xl font-bold text-gray-900 dark:text-white">24.5M</span>
+                <span className="text-sm text-gray-600 dark:text-white/60">Projected Sales</span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-gray-600 dark:text-white/80">
+                  <span>SF Calls ROI:</span>
+                  <span className="font-semibold text-red-400">2.1x</span>
+                </div>
+                <div className="flex justify-between text-gray-600 dark:text-white/80">
+                  <span>Digital ROI:</span>
+                  <span className="font-semibold text-red-400">2.8x</span>
+                </div>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span>Digital ROI:</span>
-              <span className="font-semibold">2.8x</span>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </motion.div>
       </div>
 
       <Tabs defaultValue="sales_forecast" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-card/50 border border-white/10">
-          <TabsTrigger value="sales_forecast">Sales Forecast</TabsTrigger>
-          <TabsTrigger value="roi_forecast">ROI Forecast</TabsTrigger>
-          <TabsTrigger value="spend_allocation">Spend Allocation</TabsTrigger>
-          <TabsTrigger value="scenario_comparison">Scenario Comparison</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4 backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-xl p-1">
+          <TabsTrigger value="sales_forecast" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-lg">Sales Forecast</TabsTrigger>
+          <TabsTrigger value="roi_forecast" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-lg">ROI Forecast</TabsTrigger>
+          <TabsTrigger value="spend_allocation" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-lg">Spend Allocation</TabsTrigger>
+          <TabsTrigger value="scenario_comparison" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-lg">Scenario Comparison</TabsTrigger>
         </TabsList>
         <TabsContent value="sales_forecast" className="mt-6">
-            <Card className="bg-card/50 border-white/10 p-6">
+            <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
+                    <BarChart3 className="w-5 h-5 text-cyan-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Sales Forecast</h3>
+                </div>
                 <ResponsiveContainer width="100%" height={350}>
                     <LineChart data={salesForecastData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-                        <XAxis dataKey="name" tick={{ fill: '#a1a1aa' }} />
-                        <YAxis tick={{ fill: '#a1a1aa' }} label={{ value: 'Sales (in thousands)', angle: -90, position: 'insideLeft', fill: '#a1a1aa' }} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
+                        <XAxis dataKey="name" tick={{ fill: 'var(--chart-axis)' }} />
+                        <YAxis tick={{ fill: 'var(--chart-axis)' }} label={{ value: 'Sales (in thousands)', angle: -90, position: 'insideLeft', fill: 'var(--chart-axis)' }} />
                         <Tooltip
                             contentStyle={{
-                                background: 'rgba(10, 10, 10, 0.8)',
-                                borderColor: '#333',
-                                color: '#fff'
+                                background: 'var(--chart-tooltip-bg)',
+                                borderColor: 'var(--chart-tooltip-border)',
+                                color: 'var(--chart-tooltip-text)',
+                                borderRadius: '8px',
+                                backdropFilter: 'blur(10px)'
                             }}
                         />
                         <Legend />
-                        <Line type="monotone" dataKey="actual" stroke="#8884d8" name="Actual Sales" strokeDasharray="5 5" />
-                        <Line type="monotone" dataKey="baseline" stroke="#82ca9d" name="Forecast (Baseline)" />
-                        <Line type="monotone" dataKey="optimistic" stroke="#3b82f6" name="Forecast (Optimistic)" />
-                        <Line type="monotone" dataKey="pessimistic" stroke="#ef4444" name="Forecast (Pessimistic)" />
+                        <Line type="monotone" dataKey="actual" stroke="var(--chart-secondary)" name="Actual Sales" strokeDasharray="5 5" />
+                        <Line type="monotone" dataKey="baseline" stroke="var(--chart-quinary)" name="Forecast (Baseline)" />
+                        <Line type="monotone" dataKey="optimistic" stroke="var(--chart-senary)" name="Forecast (Optimistic)" />
+                        <Line type="monotone" dataKey="pessimistic" stroke="var(--chart-quaternary)" name="Forecast (Pessimistic)" />
                     </LineChart>
                 </ResponsiveContainer>
-            </Card>
+            </div>
         </TabsContent>
         <TabsContent value="roi_forecast" className="mt-6">
-          <Card className="bg-card/50 border-white/10 p-6">
+          <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
+                <Target className="w-5 h-5 text-cyan-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">ROI Forecast</h3>
+            </div>
             <ResponsiveContainer width="100%" height={350}>
                 <LineChart data={roiForecastData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-                    <XAxis dataKey="name" tick={{ fill: '#a1a1aa' }} />
-                    <YAxis tickFormatter={(value) => `${value.toFixed(1)}x`} tick={{ fill: '#a1a1aa' }} label={{ value: 'ROI (x)', angle: -90, position: 'insideLeft', fill: '#a1a1aa' }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
+                    <XAxis dataKey="name" tick={{ fill: 'var(--chart-axis)' }} />
+                    <YAxis tickFormatter={(value) => `${value.toFixed(1)}x`} tick={{ fill: 'var(--chart-axis)' }} label={{ value: 'ROI (x)', angle: -90, position: 'insideLeft', fill: 'var(--chart-axis)' }} />
                     <Tooltip
                         contentStyle={{
-                            background: 'rgba(10, 10, 10, 0.8)',
-                            borderColor: '#333',
-                            color: '#fff'
+                            background: 'var(--chart-tooltip-bg)',
+                            borderColor: 'var(--chart-tooltip-border)',
+                            color: 'var(--chart-tooltip-text)',
+                            borderRadius: '8px',
+                            backdropFilter: 'blur(10px)'
                         }}
                         formatter={(value: number) => [`${value.toFixed(1)}x`, 'ROI']}
                     />
                     <Legend />
-                    <Line type="monotone" dataKey="sf_calls" stroke="#3b82f6" name="SF Calls ROI" />
-                    <Line type="monotone" dataKey="digital" stroke="#82ca9d" name="Digital ROI" />
-                    <Line type="monotone" dataKey="email" stroke="#a855f7" name="Email ROI" />
-                    <Line type="monotone" dataKey="overall" stroke="#f59e0b" name="Overall ROI" strokeDasharray="5 5"/>
+                    <Line type="monotone" dataKey="sf_calls" stroke="var(--chart-senary)" name="SF Calls ROI" />
+                    <Line type="monotone" dataKey="digital" stroke="var(--chart-quinary)" name="Digital ROI" />
+                    <Line type="monotone" dataKey="email" stroke="var(--chart-secondary)" name="Email ROI" />
+                    <Line type="monotone" dataKey="overall" stroke="var(--chart-tertiary)" name="Overall ROI" strokeDasharray="5 5"/>
                 </LineChart>
             </ResponsiveContainer>
-          </Card>
+          </div>
         </TabsContent>
         <TabsContent value="spend_allocation" className="mt-6">
-          <Card className="bg-card/50 border-white/10 p-6">
+          <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
+                <PieChartIcon className="w-5 h-5 text-cyan-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Spend Allocation</h3>
+            </div>
             <div className="grid md:grid-cols-2 gap-8">
                 <AllocationChart title="Current Spend Allocation" data={currentSpendData} />
                 <AllocationChart title="Optimized Spend Allocation" data={optimizedSpendData} />
             </div>
-          </Card>
+          </div>
         </TabsContent>
         <TabsContent value="scenario_comparison" className="mt-6">
-          <Card className="bg-card/50 border-white/10 p-6">
+          <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
+                <BarChart3 className="w-5 h-5 text-cyan-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Scenario Comparison</h3>
+            </div>
             <ResponsiveContainer width="100%" height={350}>
                 <BarChart data={scenarioComparisonData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-                    <XAxis dataKey="name" tick={{ fill: '#a1a1aa' }} />
-                    <YAxis yAxisId="left" orientation="left" stroke="#3b82f6" tick={{ fill: '#a1a1aa' }} label={{ value: 'Value (Sales & Spend in $K)', angle: -90, position: 'insideLeft', fill: '#a1a1aa' }} />
-                    <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" tick={{ fill: '#a1a1aa' }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
+                    <XAxis dataKey="name" tick={{ fill: 'var(--chart-axis)' }} />
+                    <YAxis yAxisId="left" orientation="left" stroke="var(--chart-senary)" tick={{ fill: 'var(--chart-axis)' }} label={{ value: 'Value (Sales & Spend in $K)', angle: -90, position: 'insideLeft', fill: 'var(--chart-axis)' }} />
+                    <YAxis yAxisId="right" orientation="right" stroke="var(--chart-quinary)" tick={{ fill: 'var(--chart-axis)' }} />
                     <Tooltip
                         contentStyle={{
-                            background: 'rgba(10, 10, 10, 0.8)',
-                            borderColor: '#333',
-                            color: '#fff'
+                            background: 'var(--chart-tooltip-bg)',
+                            borderColor: 'var(--chart-tooltip-border)',
+                            color: 'var(--chart-tooltip-text)',
+                            borderRadius: '8px',
+                            backdropFilter: 'blur(10px)'
                         }}
                     />
                     <Legend />
-                    <Bar yAxisId="left" dataKey="Sales" fill="#3b82f6" />
-                    <Bar yAxisId="left" dataKey="Spend" fill="#82ca9d" />
-                    <Line yAxisId="right" type="monotone" dataKey="ROI" stroke="#f59e0b" />
+                    <Bar yAxisId="left" dataKey="Sales" fill="var(--chart-senary)" />
+                    <Bar yAxisId="left" dataKey="Spend" fill="var(--chart-quinary)" />
+                    <Line yAxisId="right" type="monotone" dataKey="ROI" stroke="var(--chart-tertiary)" />
                 </BarChart>
             </ResponsiveContainer>
             <div className="grid md:grid-cols-2 gap-8 mt-8">
-                <div>
-                    <h3 className="text-xl font-semibold text-white mb-4">Key Metrics Comparison</h3>
+                <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-xl p-4">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Key Metrics Comparison</h3>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead>
                                 <tr className="border-b border-white/20">
-                                    <th className="p-2 text-white/80">Metric</th>
-                                    <th className="p-2 text-white/80">Baseline</th>
-                                    <th className="p-2 text-white/80">Optimistic</th>
-                                    <th className="p-2 text-white/80">Pessimistic</th>
+                                    <th className="p-2 text-gray-600 dark:text-white/80">Metric</th>
+                                    <th className="p-2 text-gray-600 dark:text-white/80">Baseline</th>
+                                    <th className="p-2 text-gray-600 dark:text-white/80">Optimistic</th>
+                                    <th className="p-2 text-gray-600 dark:text-white/80">Pessimistic</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {comparisonTableData.metrics.map(row => (
                                     <tr key={row.metric} className="border-b border-white/10">
-                                        <td className="p-2 font-semibold text-white">{row.metric}</td>
-                                        <td className="p-2 text-white/80">{row.baseline}</td>
+                                        <td className="p-2 font-semibold text-gray-900 dark:text-white">{row.metric}</td>
+                                        <td className="p-2 text-gray-600 dark:text-white/80">{row.baseline}</td>
                                         <td className="p-2 text-green-400">{row.optimistic}</td>
                                         <td className="p-2 text-red-400">{row.pessimistic}</td>
                                     </tr>
@@ -291,23 +375,23 @@ const ScenarioComparison = () => {
                         </table>
                     </div>
                 </div>
-                 <div>
-                    <h3 className="text-xl font-semibold text-white mb-4">Channel Performance by Scenario</h3>
+                 <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-xl p-4">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Channel Performance by Scenario</h3>
                      <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead>
                                 <tr className="border-b border-white/20">
-                                    <th className="p-2 text-white/80">Channel</th>
-                                    <th className="p-2 text-white/80">Baseline</th>
-                                    <th className="p-2 text-white/80">Optimistic</th>
-                                    <th className="p-2 text-white/80">Pessimistic</th>
+                                    <th className="p-2 text-gray-600 dark:text-white/80">Channel</th>
+                                    <th className="p-2 text-gray-600 dark:text-white/80">Baseline</th>
+                                    <th className="p-2 text-gray-600 dark:text-white/80">Optimistic</th>
+                                    <th className="p-2 text-gray-600 dark:text-white/80">Pessimistic</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {comparisonTableData.channels.map(row => (
                                     <tr key={row.channel} className="border-b border-white/10">
-                                        <td className="p-2 font-semibold text-white">{row.channel}</td>
-                                        <td className="p-2 text-white/80">{row.baseline}</td>
+                                        <td className="p-2 font-semibold text-gray-900 dark:text-white">{row.channel}</td>
+                                        <td className="p-2 text-gray-600 dark:text-white/80">{row.baseline}</td>
                                         <td className="p-2 text-green-400">{row.optimistic}</td>
                                         <td className="p-2 text-red-400">{row.pessimistic}</td>
                                     </tr>
@@ -317,7 +401,7 @@ const ScenarioComparison = () => {
                     </div>
                 </div>
             </div>
-          </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

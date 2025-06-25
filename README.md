@@ -71,3 +71,86 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+# Synapse Data Scape - GSIS AI Platform
+
+A modern business intelligence platform for pharmaceutical analytics with AI-powered insights.
+
+## Features
+
+- **AI Assistant**: Powered by OpenAI GPT-4 with comprehensive knowledge of pharmaceutical metrics
+- **Real-time Analytics**: Interactive dashboards with animated metrics
+- **Responsive Design**: Modern UI with dark/light theme support
+- **Pharma S&M Analytics**: Detailed pharmaceutical sales and marketing metrics
+
+## AI Assistant Setup
+
+The AI assistant is powered by a Supabase Edge Function that integrates with OpenAI GPT-4. To set it up:
+
+1. **Deploy the Edge Function**:
+   ```bash
+   supabase functions deploy ai-assistant
+   ```
+
+2. **Set Environment Variables**:
+   ```bash
+   supabase secrets set OPENAI_API_KEY=your_openai_api_key_here
+   ```
+
+3. **Test the Function**:
+   ```bash
+   supabase functions invoke ai-assistant --body '{"message": "Hello"}'
+   ```
+
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+## AI Assistant Capabilities
+
+The AI assistant can:
+- Answer questions about pharmaceutical metrics in Russian and English
+- Show specific metric cards and charts
+- Navigate to different sections
+- Provide detailed insights and recommendations
+- Analyze trends and relationships between metrics
+
+## Available Metrics
+
+### Key Metrics
+- QoQ Revenue Growth
+- Patient Share / Prescriptions  
+- Sample-to-Script Ratio
+- Rebate Spend vs ROI
+- Market Access Score
+
+### Situation Metrics
+- Base Sales
+- Seasonality
+- Trend
+- Digital Pharma Display
+- Digital Pharma Video
+- Page Visit ViV Exchange
+- Medscape HiV Brand Alert
+- OLA Attendees
+- OOH Pharma
+- Phone Calls ABC
+- Veeva Emails
+- Web Virtual Calls ABC
+
+## Tech Stack
+
+- **Frontend**: React + TypeScript + Vite
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Backend**: Supabase Edge Functions
+- **AI**: OpenAI GPT-4
+- **Deployment**: Vercel/Netlify ready
