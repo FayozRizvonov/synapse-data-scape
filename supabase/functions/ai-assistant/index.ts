@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -216,6 +217,10 @@ serve(async (req) => {
     
     console.log('Received message:', message);
 
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -239,6 +244,10 @@ serve(async (req) => {
       }),
     });
 
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+    }
+
     const data = await response.json();
     console.log('OpenAI response:', data);
     
@@ -254,7 +263,7 @@ serve(async (req) => {
     console.error('Error in ai-assistant function:', error);
     return new Response(JSON.stringify({ 
       error: error.message,
-      response: 'Sorry, an error occurred. Please try again.'
+      response: 'Sorry, I encountered an error. Please try again.'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

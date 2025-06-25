@@ -1,3 +1,4 @@
+
 import { useState, useCallback, createContext, useContext, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { metricsKnowledgeBase, findMetricByQuery, MetricCard, getTopPerformingChannels, getRegionalPerformance, getMarketingRecommendations, getScenarioComparisons } from '@/data/metricsKnowledgeBase';
@@ -69,13 +70,18 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
         };
       } else {
         // Call Supabase Edge Function
+        console.log('Calling ai-assistant function with message:', message);
+        
         const { data, error: supabaseError } = await supabase.functions.invoke('ai-assistant', {
           body: { message }
         });
 
         if (supabaseError) {
+          console.error('Supabase function error:', supabaseError);
           throw new Error(supabaseError.message);
         }
+        
+        console.log('Supabase function response:', data);
         
         const responseText = data.response || 'Sorry, unable to get a response.';
         
@@ -130,6 +136,7 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
       setMessages(prev => [...prev, aiMessage]);
 
     } catch (err) {
+      console.error('Error in sendMessage:', err);
       const errorMessage = err instanceof Error ? err.message : 'An error occurred while contacting AI';
       setError(errorMessage);
       
@@ -151,9 +158,10 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
   const clearChat = useCallback(() => {
     setMessages([]);
     setLastAIResponse(null);
+    setError(null);
   }, []);
 
-  // Новые функции для работы с расширенными данными
+  // Functions for working with extended data
   const getTopChannels = useCallback(() => {
     return getTopPerformingChannels();
   }, []);
