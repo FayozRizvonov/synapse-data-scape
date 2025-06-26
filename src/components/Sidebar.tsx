@@ -73,7 +73,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             }`}
             onClick={() => onSectionChange(item.id)}
           >
-            {item.icon && <item.icon className="w-5 h-5 mr-2" />}
+            {item.icon && <item.icon className="w-5 h-5" />}
             {!isCollapsed && item.label}
           </button>
         ))}
@@ -89,7 +89,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           }`}
           onClick={() => onSectionChange(historyItem.id)}
         >
-          {historyItem.icon && <historyItem.icon className="w-5 h-5 mr-2" />}
+          {historyItem.icon && <historyItem.icon className="w-5 h-5" />}
           {!isCollapsed && historyItem.label}
         </button>
       </nav>

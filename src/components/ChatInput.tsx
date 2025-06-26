@@ -12,11 +12,11 @@ interface ChatInputProps {
 }
 
 const PLACEHOLDERS = [
-  'Ask CLAIRE or specify a section...',
-  'How can I help you today?',
+  'Get sales insights for this quarter',
+  'Show me the top performing products',
+  'Compare regional analytics',
+  'Recommend actions to boost revenue',
   'Upload a file or start a voice query',
-  'What is the best way to learn React?',
-  'Summarize this article',
 ];
 
 const ChatInput: React.FC<ChatInputProps> = ({ 
