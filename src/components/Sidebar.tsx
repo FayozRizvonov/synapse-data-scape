@@ -33,8 +33,10 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Header */}
       <div className={`border-b border-gray-200/50 dark:border-white/10 p-4 ${isCollapsed ? 'py-6' : 'p-6'}`}>
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
-          <div className="rounded-lg overflow-hidden">
-            <img src="/images/claire_logo.png" alt="CLAIRE Logo" className="w-9 h-9 object-contain" />
+          <div className="flex justify-center">
+            <div className="rounded-lg overflow-hidden">
+              <img src="/images/claire_logo.png" alt="CLAIRE Logo" className="w-12 h-12 object-contain" />
+            </div>
           </div>
           {!isCollapsed && (
             <div className="min-w-0">
@@ -71,7 +73,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             }`}
             onClick={() => onSectionChange(item.id)}
           >
-            {item.icon && <item.icon className="w-5 h-5 mr-3" />}
+            {item.icon && <item.icon className="w-5 h-5 mr-2" />}
             {!isCollapsed && item.label}
           </button>
         ))}
@@ -87,7 +89,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           }`}
           onClick={() => onSectionChange(historyItem.id)}
         >
-          {historyItem.icon && <historyItem.icon className="w-5 h-5 mr-3" />}
+          {historyItem.icon && <historyItem.icon className="w-5 h-5 mr-2" />}
           {!isCollapsed && historyItem.label}
         </button>
       </nav>
@@ -106,7 +108,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           }`}
           title={isCollapsed ? 'Settings' : undefined}
         >
-          <Settings className="w-4 h-4 flex-shrink-0" />
+          <Settings className="w-5 h-5 flex-shrink-0" />
           {!isCollapsed && <span>Settings</span>}
           {isCollapsed && (
             <div className="absolute left-full ml-2 px-2 py-1 backdrop-blur-[2px] bg-white/90 dark:bg-white/5 border border-gray-200/50 dark:border-white/10 rounded-md text-xs text-gray-900 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-20 shadow-blue-md">
@@ -118,7 +120,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           className={`w-full flex items-center py-2 rounded-lg text-sm text-gray-700 dark:text-white/70 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/80 dark:hover:bg-white/10 transition-all duration-300 mt-1 group relative ${isCollapsed ? 'justify-center' : 'gap-3 px-3'} hover:shadow-blue-sm`}
           title={isCollapsed ? 'Help' : undefined}
         >
-          <LifeBuoy className="w-4 h-4 flex-shrink-0" />
+          <LifeBuoy className="w-5 h-5 flex-shrink-0" />
           {!isCollapsed && <span>Help</span>}
           {isCollapsed && (
             <div className="absolute left-full ml-2 px-2 py-1 backdrop-blur-[2px] bg-white/90 dark:bg-white/5 border border-gray-200/50 dark:border-white/10 rounded-md text-xs text-gray-900 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-20 shadow-blue-md">
