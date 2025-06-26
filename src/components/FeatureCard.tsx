@@ -2,6 +2,13 @@ import { cn } from '@/lib/utils';
 import React from 'react';
 import { BauhausBorder } from './ui/bauhaus-border';
 import { useTheme } from '@/hooks/useTheme';
+import { MoreVertical, Share2, Download, MessageSquare } from 'lucide-react';
+import {
+	DropdownMenu,
+	DropdownMenuTrigger,
+	DropdownMenuContent,
+	DropdownMenuItem
+} from './ui/dropdown-menu';
 
 type FeatureType = {
 	title: string;
@@ -73,6 +80,28 @@ export function FeatureCard({ feature, className, onClick, id, ...props }: Featu
 						<p className="text-xs text-gray-700 dark:text-slate-400 mt-1">{feature.comparison}</p>
 					)}
 					<p className="relative z-20 mt-2 text-xs font-light text-gray-700 dark:text-slate-400">{feature.description}</p>
+					{/* Three dots menu in the top right corner */}
+					<div className="absolute top-3 right-3 z-30">
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<button className="p-1 rounded-full hover:bg-gray-200/30 dark:hover:bg-white/10 transition-colors">
+									<MoreVertical className="w-5 h-5 text-gray-500 dark:text-white/70" />
+								</button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end" className="backdrop-blur-md border shadow-xl p-1 bg-white/90 dark:bg-black/30 dark:backdrop-blur-md dark:border-white/10 dark:shadow-none">
+								<DropdownMenuItem onClick={e => { e.stopPropagation(); alert('Share'); }}>
+									<Share2 className="w-4 h-4 mr-2" /> Share
+								</DropdownMenuItem>
+								<DropdownMenuItem onClick={e => { e.stopPropagation(); alert('Download'); }}>
+									<Download className="w-4 h-4 mr-2" /> Download
+								</DropdownMenuItem>
+								<DropdownMenuItem onClick={e => { e.stopPropagation(); alert('Ask Assistant'); }}>
+									<MessageSquare className="w-4 h-4 mr-2" /> Ask Assistant
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+					{/* End three dots menu */}
 				</div>
 			</BauhausBorder>
 		</div>
