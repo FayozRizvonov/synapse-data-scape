@@ -17,9 +17,10 @@ type FeatureType = {
 type FeatureCardProps = React.ComponentProps<'div'> & {
 	feature: FeatureType;
 	onClick?: () => void;
+	id?: string;
 };
 
-export function FeatureCard({ feature, className, onClick, ...props }: FeatureCardProps) {
+export function FeatureCard({ feature, className, onClick, id, ...props }: FeatureCardProps) {
 	const p = genRandomPattern();
 	const { theme } = useTheme();
 	const backgroundColor = theme === 'dark' ? '#151419' : '#fff';
@@ -39,6 +40,7 @@ export function FeatureCard({ feature, className, onClick, ...props }: FeatureCa
 				className={className}
 			>
 				<div 
+					id={id}
 					className={cn('relative overflow-hidden p-6 cursor-pointer transition-all duration-300 hover:scale-105', '')} 
 					onClick={onClick}
 					{...props}

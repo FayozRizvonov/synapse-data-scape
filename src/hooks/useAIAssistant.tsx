@@ -1,6 +1,6 @@
 import { useState, useCallback, createContext, useContext, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { metricsKnowledgeBase, findMetricByQuery, MetricCard } from '@/data/metricsKnowledgeBase';
+import { metricsKnowledgeBase, findMetricByQuery, MetricCard, getTopPerformingChannels, getRegionalPerformance, getMarketingRecommendations, getScenarioComparisons } from '@/data/metricsKnowledgeBase';
 
 export interface Message {
   id: string;
@@ -28,6 +28,10 @@ interface AIAssistantContextType {
   error: string | null;
   sendMessage: (message: string) => Promise<void>;
   clearChat: () => void;
+  getTopChannels: () => Array<{ channel: string; roi: string; spend: string; performance: string; }>;
+  getRegionalData: () => Array<{ region: string; performance: string; target: string; gap: string; }>;
+  getRecommendations: () => MetricCard[];
+  getScenarios: () => MetricCard[];
 }
 
 const AIAssistantContext = createContext<AIAssistantContextType | undefined>(undefined);
@@ -149,13 +153,34 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
     setLastAIResponse(null);
   }, []);
 
+  // Новые функции для работы с расширенными данными
+  const getTopChannels = useCallback(() => {
+    return getTopPerformingChannels();
+  }, []);
+
+  const getRegionalData = useCallback(() => {
+    return getRegionalPerformance();
+  }, []);
+
+  const getRecommendations = useCallback(() => {
+    return getMarketingRecommendations();
+  }, []);
+
+  const getScenarios = useCallback(() => {
+    return getScenarioComparisons();
+  }, []);
+
   const value = {
     sendMessage,
     messages,
     lastAIResponse,
     clearChat,
     isLoading,
-    error
+    error,
+    getTopChannels,
+    getRegionalData,
+    getRecommendations,
+    getScenarios
   };
 
   return (

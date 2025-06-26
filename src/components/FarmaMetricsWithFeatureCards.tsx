@@ -311,7 +311,7 @@ const FarmaMetricsWithFeatureCards = () => {
             <div className="p-3 rounded-xl bg-white/10 border border-white/30">
               <Stethoscope className="w-8 h-8 text-gray-900 dark:text-white" />
             </div>
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white text-glow">Pharma S&M Analytics</h1>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white text-glow">Pharma S&M Augmented Analytics</h1>
           </div>
           <p className="text-white/70 max-w-2xl mx-auto">
             Advanced pharmaceutical sales and marketing analytics dashboard with real-time metrics and insights

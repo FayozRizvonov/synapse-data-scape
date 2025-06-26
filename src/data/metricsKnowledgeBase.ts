@@ -6,17 +6,35 @@ export interface MetricCard {
   changeType: 'positive' | 'negative';
   comparison: string;
   icon: string;
-  category: 'key' | 'situation' | 'scenario';
+  category: 'key' | 'situation' | 'scenario' | 'recommendation';
   description?: string;
   details?: {
     description: string;
     breakdown: Array<{ label: string; value: string; }>;
   };
-  section: 'key-metrics' | 'situation' | 'scenario-comparison';
+  section: 'key-metrics' | 'situation' | 'scenario-comparison' | 'marketing-recommendations';
   chartData?: {
     type: string;
     data: Array<{ name: string; revenue: number; }>;
   };
+  insights?: {
+    performance: string;
+    trend: string;
+    recommendation: string;
+    impact: 'high' | 'medium' | 'low';
+  };
+  regionalData?: Array<{
+    region: string;
+    performance: string;
+    target: string;
+    gap: string;
+  }>;
+  channelData?: Array<{
+    channel: string;
+    roi: string;
+    spend: string;
+    performance: string;
+  }>;
 }
 
 export const metricsKnowledgeBase: MetricCard[] = [
@@ -38,6 +56,12 @@ export const metricsKnowledgeBase: MetricCard[] = [
         { label: 'Q2 Growth', value: '7.8%' },
         { label: 'Q3 Growth', value: '8.7%' }
       ]
+    },
+    insights: {
+      performance: 'Strong growth driven by new respiratory product line',
+      trend: 'Consistent upward trajectory across quarters',
+      recommendation: 'Maintain momentum with focused marketing on high-performing products',
+      impact: 'high'
     }
   },
   {
@@ -57,6 +81,12 @@ export const metricsKnowledgeBase: MetricCard[] = [
         { label: 'Recurring', value: '21.8%' },
         { label: 'Referrals', value: '8.2%' }
       ]
+    },
+    insights: {
+      performance: 'Strong patient acquisition and retention',
+      trend: 'Growing market share in competitive landscape',
+      recommendation: 'Focus on referral programs and patient education',
+      impact: 'high'
     }
   },
   {
@@ -76,6 +106,12 @@ export const metricsKnowledgeBase: MetricCard[] = [
         { label: 'Scripts Generated', value: '25.1K' },
         { label: 'Conversion Rate', value: '55.5%' }
       ]
+    },
+    insights: {
+      performance: 'Excellent conversion efficiency',
+      trend: 'Improving sample utilization',
+      recommendation: 'Optimize sample targeting and follow-up processes',
+      impact: 'medium'
     }
   },
   {
@@ -95,6 +131,12 @@ export const metricsKnowledgeBase: MetricCard[] = [
         { label: 'Revenue Generated', value: '$10.3M' },
         { label: 'Net ROI', value: '330%' }
       ]
+    },
+    insights: {
+      performance: 'Outstanding rebate program efficiency',
+      trend: 'Consistent ROI improvement',
+      recommendation: 'Consider expanding rebate programs to underperforming regions',
+      impact: 'high'
     }
   },
   {
@@ -114,6 +156,12 @@ export const metricsKnowledgeBase: MetricCard[] = [
         { label: 'Prior Auth Rate', value: '18%' },
         { label: 'Step Therapy', value: '12%' }
       ]
+    },
+    insights: {
+      performance: 'Strong market access positioning',
+      trend: 'Improving formulary coverage',
+      recommendation: 'Focus on reducing prior authorization barriers',
+      impact: 'medium'
     }
   },
   // Situation Metrics
@@ -151,6 +199,12 @@ export const metricsKnowledgeBase: MetricCard[] = [
         { name: 'N', revenue: 310000 },
         { name: 'D', revenue: 470000 },
       ]
+    },
+    insights: {
+      performance: 'Strong baseline revenue without marketing efforts',
+      trend: 'Consistent growth in base sales',
+      recommendation: 'Product has strong market positioning and demand',
+      impact: 'high'
     }
   },
   {
@@ -179,6 +233,12 @@ export const metricsKnowledgeBase: MetricCard[] = [
         { name: 'Q3', revenue: 500000 },
         { name: 'Q4', revenue: 450000 },
       ]
+    },
+    insights: {
+      performance: 'Clear seasonal patterns identified',
+      trend: 'Q3 shows peak seasonal demand',
+      recommendation: 'Increase Q4 marketing efforts by 25% to capitalize on peak demand',
+      impact: 'medium'
     }
   },
   {
@@ -215,7 +275,17 @@ export const metricsKnowledgeBase: MetricCard[] = [
         { name: 'Nov', revenue: 87000 },
         { name: 'Dec', revenue: 105000 },
       ]
-    }
+    },
+    insights: {
+      performance: 'Strong digital display performance',
+      trend: 'Consistent growth in digital advertising',
+      recommendation: 'Optimize keyword alignment and landing page experience',
+      impact: 'medium'
+    },
+    channelData: [
+      { channel: 'Display Ads', roi: '2.1x', spend: '$400K', performance: 'Above Average' },
+      { channel: 'Retargeting', roi: '1.8x', spend: '$200K', performance: 'Average' }
+    ]
   },
   {
     id: 'digital-video',
@@ -251,7 +321,17 @@ export const metricsKnowledgeBase: MetricCard[] = [
         { name: 'Nov', revenue: 125000 },
         { name: 'Dec', revenue: 140000 },
       ]
-    }
+    },
+    insights: {
+      performance: 'Best performing digital channel',
+      trend: 'Strong growth in video engagement',
+      recommendation: 'Expand video content in high-performing specialties',
+      impact: 'high'
+    },
+    channelData: [
+      { channel: 'Video Ads', roi: '2.4x', spend: '$500K', performance: 'Excellent' },
+      { channel: 'Educational Content', roi: '2.8x', spend: '$300K', performance: 'Outstanding' }
+    ]
   },
   {
     id: 'page-visit-exchange',
@@ -287,6 +367,12 @@ export const metricsKnowledgeBase: MetricCard[] = [
         { name: 'Nov', revenue: 54000 },
         { name: 'Dec', revenue: 62000 },
       ]
+    },
+    insights: {
+      performance: 'Moderate website engagement performance',
+      trend: 'Steady visitor growth',
+      recommendation: 'Improve landing page conversion rates',
+      impact: 'low'
     }
   },
   {
@@ -323,6 +409,12 @@ export const metricsKnowledgeBase: MetricCard[] = [
         { name: 'Nov', revenue: 98000 },
         { name: 'Dec', revenue: 102000 },
       ]
+    },
+    insights: {
+      performance: 'Strong upward market trend',
+      trend: 'Consistent growth pattern',
+      recommendation: 'Maintain current strategy momentum',
+      impact: 'high'
     }
   },
   {
@@ -359,6 +451,12 @@ export const metricsKnowledgeBase: MetricCard[] = [
         { name: 'Nov', revenue: 77000 },
         { name: 'Dec', revenue: 85000 },
       ]
+    },
+    insights: {
+      performance: 'Good brand awareness performance',
+      trend: 'Steady engagement growth',
+      recommendation: 'Increase frequency to 8/month for better reach',
+      impact: 'medium'
     }
   },
   {
@@ -387,6 +485,12 @@ export const metricsKnowledgeBase: MetricCard[] = [
         { name: 'Q3', revenue: 100000 },
         { name: 'Q4', revenue: 100000 },
       ]
+    },
+    insights: {
+      performance: 'Moderate conference ROI',
+      trend: 'Seasonal conference impact',
+      recommendation: 'Focus on post-conference follow-up',
+      impact: 'low'
     }
   },
   {
@@ -423,6 +527,12 @@ export const metricsKnowledgeBase: MetricCard[] = [
         { name: 'Nov', revenue: 67000 },
         { name: 'Dec', revenue: 75000 },
       ]
+    },
+    insights: {
+      performance: 'Moderate OOH advertising performance',
+      trend: 'Steady growth in outdoor advertising',
+      recommendation: 'Optimize location targeting',
+      impact: 'medium'
     }
   },
   {
@@ -459,7 +569,17 @@ export const metricsKnowledgeBase: MetricCard[] = [
         { name: 'Nov', revenue: 145000 },
         { name: 'Dec', revenue: 155000 },
       ]
-    }
+    },
+    insights: {
+      performance: 'Top performing channel with highest ROI',
+      trend: 'Consistent high performance',
+      recommendation: 'Increase spend allocation to phone calls',
+      impact: 'high'
+    },
+    channelData: [
+      { channel: 'Inbound Calls', roi: '2.8x', spend: '$300K', performance: 'Excellent' },
+      { channel: 'Outbound Calls', roi: '2.2x', spend: '$220K', performance: 'Good' }
+    ]
   },
   {
     id: 'veeva-emails',
@@ -495,7 +615,17 @@ export const metricsKnowledgeBase: MetricCard[] = [
         { name: 'Nov', revenue: 83000 },
         { name: 'Dec', revenue: 90000 },
       ]
-    }
+    },
+    insights: {
+      performance: 'Good email campaign performance',
+      trend: 'Steady email engagement',
+      recommendation: 'Optimize email automation for mid-funnel engagement',
+      impact: 'medium'
+    },
+    channelData: [
+      { channel: 'Targeted Emails', roi: '2.1x', spend: '$250K', performance: 'Good' },
+      { channel: 'Newsletter', roi: '1.7x', spend: '$171K', performance: 'Average' }
+    ]
   },
   {
     id: 'web-virtual-calls',
@@ -531,6 +661,411 @@ export const metricsKnowledgeBase: MetricCard[] = [
         { name: 'Nov', revenue: 115000 },
         { name: 'Dec', revenue: 125000 },
       ]
+    },
+    insights: {
+      performance: 'Strong virtual call performance',
+      trend: 'Growing digital engagement',
+      recommendation: 'Expand virtual call capacity',
+      impact: 'high'
+    },
+    channelData: [
+      { channel: 'Virtual Consultations', roi: '2.4x', spend: '$300K', performance: 'Excellent' },
+      { channel: 'Web Support', roi: '2.0x', spend: '$200K', performance: 'Good' }
+    ]
+  },
+  // Additional metrics from components
+  {
+    id: 'total-sales',
+    title: 'Total Sales',
+    value: '$21.3M',
+    change: '+85.2%',
+    changeType: 'positive',
+    comparison: 'Total Revenue',
+    icon: 'DollarSign',
+    category: 'situation',
+    section: 'situation',
+    details: {
+      description: 'Total sales revenue including all attributions for the current period.',
+      breakdown: [
+        { label: 'All Channels', value: '$21.3M' },
+        { label: 'Growth YoY', value: '+85.2%' },
+        { label: 'Net Sales', value: '$18.7M' }
+      ]
+    },
+    chartData: {
+      type: 'bar',
+      data: [
+        { name: 'Q1', revenue: 4500000 },
+        { name: 'Q2', revenue: 5200000 },
+        { name: 'Q3', revenue: 5800000 },
+        { name: 'Q4', revenue: 5800000 },
+      ]
+    },
+    insights: {
+      performance: 'Outstanding total sales performance',
+      trend: 'Strong growth across all channels',
+      recommendation: 'Maintain current strategy execution',
+      impact: 'high'
+    }
+  },
+  {
+    id: 'incremental',
+    title: 'Incremental',
+    value: '$2.5M',
+    change: '+18.2%',
+    changeType: 'positive',
+    comparison: 'Incremental Revenue',
+    icon: 'BarChart3',
+    category: 'situation',
+    section: 'situation',
+    details: {
+      description: 'Revenue generated above the baseline due to marketing activities.',
+      breakdown: [
+        { label: 'Marketing Impact', value: '$2.0M' },
+        { label: 'Other Factors', value: '$0.5M' }
+      ]
+    },
+    chartData: {
+      type: 'bar',
+      data: [
+        { name: 'Q1', revenue: 550000 },
+        { name: 'Q2', revenue: 620000 },
+        { name: 'Q3', revenue: 680000 },
+        { name: 'Q4', revenue: 650000 },
+      ]
+    },
+    insights: {
+      performance: 'Strong marketing-driven revenue growth',
+      trend: 'Consistent incremental gains',
+      recommendation: 'Focus on high-ROI marketing channels',
+      impact: 'high'
+    }
+  },
+  {
+    id: 'promotional-spend',
+    title: 'Promotional Spend',
+    value: '$3.7M',
+    change: '+12.5%',
+    changeType: 'positive',
+    comparison: 'Total Promotional Budget',
+    icon: 'BarChart3',
+    category: 'situation',
+    section: 'situation',
+    details: {
+      description: 'Total spend on promotional activities for the current period.',
+      breakdown: [
+        { label: 'Digital', value: '$1.5M' },
+        { label: 'Field Force', value: '$1.7M' },
+        { label: 'Events', value: '$0.5M' }
+      ]
+    },
+    chartData: {
+      type: 'bar',
+      data: [
+        { name: 'Q1', revenue: 850000 },
+        { name: 'Q2', revenue: 920000 },
+        { name: 'Q3', revenue: 980000 },
+        { name: 'Q4', revenue: 950000 },
+      ]
+    },
+    insights: {
+      performance: 'Well-balanced promotional spend allocation',
+      trend: 'Strategic spend increases',
+      recommendation: 'Reallocate 15% of digital spend to re-engage physicians',
+      impact: 'medium'
+    }
+  },
+  {
+    id: 'f2f-calls',
+    title: 'F2F Calls',
+    value: '$1.1M',
+    change: '+7.5%',
+    changeType: 'positive',
+    comparison: 'Revenue Attribution',
+    icon: 'Users',
+    category: 'situation',
+    section: 'situation',
+    details: {
+      description: 'Revenue attributed to face-to-face sales calls.',
+      breakdown: [
+        { label: 'Number of Calls', value: '3,200' },
+        { label: 'Conversion Rate', value: '12.5%' }
+      ]
+    },
+    chartData: {
+      type: 'bar',
+      data: [
+        { name: 'Q1', revenue: 250000 },
+        { name: 'Q2', revenue: 280000 },
+        { name: 'Q3', revenue: 300000 },
+        { name: 'Q4', revenue: 270000 },
+      ]
+    },
+    insights: {
+      performance: 'F2F rep engagement saw 12% decline',
+      trend: 'Declining rep productivity in some regions',
+      recommendation: 'Introduce hybrid rep-digital programs to improve HCP access',
+      impact: 'high'
+    },
+    regionalData: [
+      { region: 'South', performance: '85%', target: '80%', gap: '+5%' },
+      { region: 'Central', performance: '62%', target: '75%', gap: '-13%' },
+      { region: 'North', performance: '58%', target: '70%', gap: '-12%' }
+    ]
+  },
+  {
+    id: 'symposium',
+    title: 'Symposium',
+    value: '$0.7M',
+    change: '+3.9%',
+    changeType: 'positive',
+    comparison: 'Revenue Attribution',
+    icon: 'Calendar',
+    category: 'situation',
+    section: 'situation',
+    details: {
+      description: 'Revenue generated from symposium events and conferences.',
+      breakdown: [
+        { label: 'Events Held', value: '8' },
+        { label: 'Attendees', value: '1,200' }
+      ]
+    },
+    chartData: {
+      type: 'bar',
+      data: [
+        { name: 'Q1', revenue: 150000 },
+        { name: 'Q2', revenue: 180000 },
+        { name: 'Q3', revenue: 200000 },
+        { name: 'Q4', revenue: 170000 },
+      ]
+    },
+    insights: {
+      performance: 'Good symposium performance',
+      trend: 'Steady event engagement',
+      recommendation: 'Focus on post-event follow-up',
+      impact: 'medium'
+    }
+  },
+  {
+    id: 'sfmc-emails',
+    title: 'SFMC Emails',
+    value: '$0.5M',
+    change: '+2.7%',
+    changeType: 'positive',
+    comparison: 'Revenue Attribution',
+    icon: 'Mail',
+    category: 'situation',
+    section: 'situation',
+    details: {
+      description: 'Revenue attributed to Salesforce Marketing Cloud email campaigns.',
+      breakdown: [
+        { label: 'Emails Sent', value: '45,000' },
+        { label: 'Open Rate', value: '22.1%' }
+      ]
+    },
+    chartData: {
+      type: 'bar',
+      data: [
+        { name: 'Q1', revenue: 110000 },
+        { name: 'Q2', revenue: 125000 },
+        { name: 'Q3', revenue: 135000 },
+        { name: 'Q4', revenue: 130000 },
+      ]
+    },
+    insights: {
+      performance: 'Email ROI = 3.4x (↑ driven by targeted disease awareness campaign)',
+      trend: 'Improving email effectiveness',
+      recommendation: 'Invest in optimizing email automation for mid-funnel engagement',
+      impact: 'medium'
+    }
+  },
+  {
+    id: 'promotion',
+    title: 'Promotion',
+    value: '$2.1M',
+    change: '+15.3%',
+    changeType: 'positive',
+    comparison: 'Revenue Attribution',
+    icon: 'BarChart3',
+    category: 'situation',
+    section: 'situation',
+    details: {
+      description: 'Marketing promotion impact on revenue generation',
+      breakdown: [
+        { label: 'Digital Marketing', value: '$0.8M' },
+        { label: 'Field Force', value: '$1.1M' },
+        { label: 'Events & Samples', value: '$0.2M' }
+      ]
+    },
+    chartData: {
+      type: 'bar',
+      data: [
+        { name: 'Q1', revenue: 480000 },
+        { name: 'Q2', revenue: 520000 },
+        { name: 'Q3', revenue: 560000 },
+        { name: 'Q4', revenue: 540000 },
+      ]
+    },
+    insights: {
+      performance: 'Strong promotional impact',
+      trend: 'Consistent promotion effectiveness',
+      recommendation: 'Maintain balanced promotional mix',
+      impact: 'high'
+    }
+  },
+  // Marketing Optimization Recommendations
+  {
+    id: 'f2f-east-region',
+    title: 'Increase F2F Calls in East Region',
+    value: 'High Impact',
+    change: 'β=2.34',
+    changeType: 'positive',
+    comparison: 'ROI Coefficient',
+    icon: 'TrendingUp',
+    category: 'recommendation',
+    section: 'marketing-recommendations',
+    details: {
+      description: 'F2F calls in East region have highest ROI. Increasing by 15% could drive ~35 additional sales per period.',
+      breakdown: [
+        { label: 'Current ROI', value: '2.34x' },
+        { label: 'Potential Increase', value: '15%' },
+        { label: 'Additional Sales', value: '35/period' }
+      ]
+    },
+    insights: {
+      performance: 'Highest ROI region for F2F calls',
+      trend: 'Underutilized opportunity',
+      recommendation: 'Increase F2F calls by 15% in East region',
+      impact: 'high'
+    }
+  },
+  {
+    id: 'digital-optimization',
+    title: 'Optimize Digital Campaign Performance',
+    value: 'Medium Impact',
+    change: 'ROI = 2.8x',
+    changeType: 'positive',
+    comparison: 'Current Performance',
+    icon: 'BarChart3',
+    category: 'recommendation',
+    section: 'marketing-recommendations',
+    details: {
+      description: 'Digital campaigns show strong performance but have room for optimization in keyword alignment and landing page experience.',
+      breakdown: [
+        { label: 'Current Digital ROI', value: '2.8x' },
+        { label: 'Target ROI', value: '3.2x' },
+        { label: 'Optimization Potential', value: '14%' }
+      ]
+    },
+    insights: {
+      performance: 'Good digital performance with optimization potential',
+      trend: 'Steady digital growth',
+      recommendation: 'Pause low-performing search campaigns and optimize landing pages',
+      impact: 'medium'
+    }
+  },
+  {
+    id: 'seasonal-campaign',
+    title: 'Seasonal Campaign Boost',
+    value: 'Low Impact',
+    change: 'Q4 Peak',
+    changeType: 'positive',
+    comparison: 'Seasonal Pattern',
+    icon: 'Calendar',
+    category: 'recommendation',
+    section: 'marketing-recommendations',
+    details: {
+      description: 'Strong seasonal patterns detected. Increase Q4 marketing efforts by 25% to capitalize on peak demand.',
+      breakdown: [
+        { label: 'Q4 Seasonal Impact', value: '+25%' },
+        { label: 'Peak Demand Period', value: 'Oct-Dec' },
+        { label: 'Marketing Increase', value: '25%' }
+      ]
+    },
+    insights: {
+      performance: 'Clear seasonal demand patterns',
+      trend: 'Q4 peak season identified',
+      recommendation: 'Increase Q4 marketing efforts by 25%',
+      impact: 'low'
+    }
+  },
+  // Scenario Comparison Data
+  {
+    id: 'scenario-baseline',
+    title: 'Baseline Scenario',
+    value: '$21.3M',
+    change: '2.7x',
+    changeType: 'positive',
+    comparison: 'Projected Sales & ROI',
+    icon: 'Target',
+    category: 'scenario',
+    section: 'scenario-comparison',
+    details: {
+      description: 'Current plan projection with existing spend allocation and strategy.',
+      breakdown: [
+        { label: 'Total Sales', value: '$21.3M' },
+        { label: 'Total Spend', value: '$265K' },
+        { label: 'Overall ROI', value: '2.7x' },
+        { label: 'Profit Margin', value: '18%' }
+      ]
+    },
+    insights: {
+      performance: 'Current baseline performance',
+      trend: 'Stable projection',
+      recommendation: 'Maintain current strategy',
+      impact: 'medium'
+    }
+  },
+  {
+    id: 'scenario-optimistic',
+    title: 'Optimistic Scenario',
+    value: '$24.5M',
+    change: '2.9x',
+    changeType: 'positive',
+    comparison: 'Projected Sales & ROI',
+    icon: 'TrendingUp',
+    category: 'scenario',
+    section: 'scenario-comparison',
+    details: {
+      description: 'Optimistic projection with 15% spend increase and improved channel performance.',
+      breakdown: [
+        { label: 'Total Sales', value: '$24.5M' },
+        { label: 'Total Spend', value: '$305K' },
+        { label: 'Overall ROI', value: '2.9x' },
+        { label: 'Profit Margin', value: '21%' }
+      ]
+    },
+    insights: {
+      performance: 'Optimistic growth projection',
+      trend: 'Strong upward potential',
+      recommendation: 'Consider 15% spend increase',
+      impact: 'high'
+    }
+  },
+  {
+    id: 'scenario-pessimistic',
+    title: 'Pessimistic Scenario',
+    value: '$19.17M',
+    change: '2.4x',
+    changeType: 'negative',
+    comparison: 'Projected Sales & ROI',
+    icon: 'TrendingDown',
+    category: 'scenario',
+    section: 'scenario-comparison',
+    details: {
+      description: 'Pessimistic projection with 10% spend reduction and market challenges.',
+      breakdown: [
+        { label: 'Total Sales', value: '$19.17M' },
+        { label: 'Total Spend', value: '$239K' },
+        { label: 'Overall ROI', value: '2.4x' },
+        { label: 'Profit Margin', value: '15%' }
+      ]
+    },
+    insights: {
+      performance: 'Conservative projection',
+      trend: 'Risk mitigation scenario',
+      recommendation: 'Avoid spend reductions',
+      impact: 'high'
     }
   }
 ];
@@ -551,13 +1086,62 @@ export const findMetricByQuery = (query: string): MetricCard | null => {
   const keywordMatch = metricsKnowledgeBase.find(metric => 
     keywords.some(keyword => 
       metric.title.toLowerCase().includes(keyword) ||
-      metric.description?.toLowerCase().includes(keyword)
+      metric.description?.toLowerCase().includes(keyword) ||
+      metric.insights?.performance.toLowerCase().includes(keyword) ||
+      metric.insights?.recommendation.toLowerCase().includes(keyword)
     )
   );
   
   return keywordMatch || null;
 };
 
-export const getAllMetricsByCategory = (category: 'key' | 'situation' | 'scenario') => {
+export const getAllMetricsByCategory = (category: 'key' | 'situation' | 'scenario' | 'recommendation') => {
   return metricsKnowledgeBase.filter(metric => metric.category === category);
+};
+
+// Новые функции для расширенного поиска
+export const findMetricsByInsight = (insightType: 'performance' | 'trend' | 'recommendation') => {
+  return metricsKnowledgeBase.filter(metric => metric.insights && metric.insights[insightType]);
+};
+
+export const findMetricsByImpact = (impact: 'high' | 'medium' | 'low') => {
+  return metricsKnowledgeBase.filter(metric => metric.insights?.impact === impact);
+};
+
+export const findMetricsByRegion = (region: string) => {
+  return metricsKnowledgeBase.filter(metric => 
+    metric.regionalData?.some(regional => 
+      regional.region.toLowerCase().includes(region.toLowerCase())
+    )
+  );
+};
+
+export const findMetricsByChannel = (channel: string) => {
+  return metricsKnowledgeBase.filter(metric => 
+    metric.channelData?.some(channelData => 
+      channelData.channel.toLowerCase().includes(channel.toLowerCase())
+    )
+  );
+};
+
+export const getTopPerformingChannels = () => {
+  return metricsKnowledgeBase
+    .filter(metric => metric.channelData)
+    .flatMap(metric => metric.channelData || [])
+    .sort((a, b) => parseFloat(b.roi) - parseFloat(a.roi))
+    .slice(0, 5);
+};
+
+export const getRegionalPerformance = () => {
+  return metricsKnowledgeBase
+    .filter(metric => metric.regionalData)
+    .flatMap(metric => metric.regionalData || []);
+};
+
+export const getMarketingRecommendations = () => {
+  return metricsKnowledgeBase.filter(metric => metric.category === 'recommendation');
+};
+
+export const getScenarioComparisons = () => {
+  return metricsKnowledgeBase.filter(metric => metric.category === 'scenario');
 };

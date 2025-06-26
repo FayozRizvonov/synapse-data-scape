@@ -497,6 +497,7 @@ const FarmaMetricsWithAssistant = () => {
             {metrics.slice(0, visibleCards).map((card, index) => (
               <FeatureCard
                 key={card.id}
+                id={card.id}
                 feature={{
                   title: card.title,
                   icon: card.icon,
@@ -504,7 +505,8 @@ const FarmaMetricsWithAssistant = () => {
                   value: card.value,
                   change: card.change,
                   changeType: card.changeType,
-                  comparison: card.comparison
+                  comparison: card.comparison,
+                  category: card.category
                 }}
                 className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl hover:bg-white/20 hover:border-white/30 dark:shadow-none shadow-lg shadow-gray-200/50"
                 onClick={() => handleCardClick(card)}
@@ -542,7 +544,7 @@ const FarmaMetricsWithAssistant = () => {
             <div className="p-3 rounded-xl bg-white/10 border border-white/30">
               <Stethoscope className="w-8 h-8 text-gray-900 dark:text-white" />
             </div>
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white text-glow">Pharma S&M Analytics</h1>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white text-glow">Pharma S&M Augmented Analytics</h1>
           </div>
           <p className="text-gray-600 dark:text-white/70 max-w-2xl mx-auto">
             Advanced pharmaceutical sales and marketing analytics dashboard with real-time metrics and insights

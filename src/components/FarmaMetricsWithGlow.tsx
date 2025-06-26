@@ -502,7 +502,7 @@ const FarmaMetricsWithGlow = () => {
               <Stethoscope className="w-8 h-8 text-blue-600 dark:text-cyan-500" />
             </div>
             <h1 className="text-4xl font-bold text-gray-900 dark:text-white text-glow">
-              Pharma S&M Analytics
+              Pharma S&M Augmented Analytics
             </h1>
           </div>
           <p className="text-gray-600 dark:text-white/70 max-w-2xl mx-auto">
