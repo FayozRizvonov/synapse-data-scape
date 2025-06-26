@@ -80,13 +80,13 @@ const Index = () => {
       {/* Header */}
       <div className="relative z-10 text-center space-y-4 pt-16">
         <div className="flex items-center justify-center gap-3 mb-6">
-          <div className="p-3 rounded-xl bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 backdrop-blur-xl">
-            <img src="/images/gsisai_logo.png" alt="GSIS AI Logo" className="w-8 h-8 object-contain" />
+          <div className="rounded-xl overflow-hidden">
+            <img src="/images/claire_logo.png" alt="CLAIRE Logo" className="w-12 h-12 object-contain" />
           </div>
-          <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-gray-900 dark:text-white">GSIS AI Platform</h1>
+          <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-gray-900 dark:text-white">CLAIRE Platform</h1>
         </div>
         <p className="text-xl text-gray-600 dark:text-white/70 font-light max-w-2xl mx-auto">
-          Welcome to the future of business intelligence. GSIS AI will help you analyze data, 
+          Welcome to the future of business intelligence. CLAIRE will help you analyze data, 
           make informed decisions, and optimize business processes with advanced AI capabilities.
         </p>
       </div>

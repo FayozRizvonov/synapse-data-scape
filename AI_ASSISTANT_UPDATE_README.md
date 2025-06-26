@@ -1,4 +1,4 @@
-# GSIS AI Assistant - Полное Обновление
+# CLAIRE AI Assistant - Полное Обновление
 
 ## 🎯 Что было обновлено
 

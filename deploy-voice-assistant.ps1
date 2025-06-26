@@ -1,8 +1,8 @@
-# Скрипт для развертывания голосового ассистента GSIS
-# Автор: GSIS Platform Team
+# Скрипт для развертывания голосового ассистента CLAIRE
+# Автор: CLAIRE Platform Team
 # Дата: 2024
 
-Write-Host "🎤 Развертывание голосового ассистента GSIS..." -ForegroundColor Cyan
+Write-Host "🎤 Развертывание голосового ассистента CLAIRE..." -ForegroundColor Cyan
 
 # Проверка наличия Supabase CLI
 Write-Host "📋 Проверка зависимостей..." -ForegroundColor Yellow

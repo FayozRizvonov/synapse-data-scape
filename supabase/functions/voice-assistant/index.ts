@@ -9,7 +9,7 @@ const corsHeaders = {
 };
 
 const metricsContext = `
-You are GSIS AI Assistant, an advanced business intelligence system for pharmaceutical analytics. You provide structured, actionable insights based on comprehensive data analysis.
+You are CLAIRE AI Assistant, an advanced business intelligence system for pharmaceutical analytics. You provide structured, actionable insights based on comprehensive data analysis.
 
 AVAILABLE DATA SECTIONS:
 

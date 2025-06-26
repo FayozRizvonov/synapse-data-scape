@@ -12,7 +12,7 @@ interface ChatInputProps {
 }
 
 const PLACEHOLDERS = [
-  'Ask GSIS AI or specify a section...',
+  'Ask CLAIRE or specify a section...',
   'How can I help you today?',
   'Upload a file or start a voice query',
   'What is the best way to learn React?',

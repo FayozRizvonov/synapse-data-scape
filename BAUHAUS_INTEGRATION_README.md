@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the successful integration of Bauhaus-style interactive cards into the GSIS Pharmaceutical Platform. The Bauhaus cards provide a modern, animated interface for displaying pharmaceutical sales and marketing metrics with dynamic borders and smooth interactions.
+This document describes the successful integration of Bauhaus-style interactive cards into the CLAIRE Pharmaceutical Platform. The Bauhaus cards provide a modern, animated interface for displaying pharmaceutical sales and marketing metrics with dynamic borders and smooth interactions.
 
 ## 🎯 Features Implemented
 

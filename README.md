@@ -72,7 +72,7 @@ To connect a domain, navigate to Project > Settings > Domains and click Connect 
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
 
-# Synapse Data Scape - GSIS AI Platform
+# Synapse Data Scape - CLAIRE Platform
 
 A modern business intelligence platform for pharmaceutical analytics with AI-powered insights.
 

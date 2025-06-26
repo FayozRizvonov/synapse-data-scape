@@ -14,7 +14,7 @@ const testQueries = [
   "What are the top recommendations for optimization?"
 ];
 
-console.log("🧪 Тестирование GSIS AI Assistant");
+console.log("🧪 Тестирование CLAIRE AI Assistant");
 console.log("=====================================\n");
 
 testQueries.forEach((query, index) => {

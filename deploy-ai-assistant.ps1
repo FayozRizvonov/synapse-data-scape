@@ -1,6 +1,6 @@
-# Deploy GSIS AI Assistant PowerShell Script
+# Deploy CLAIRE AI Assistant PowerShell Script
 
-Write-Host "🚀 Deploying GSIS AI Assistant..." -ForegroundColor Green
+Write-Host "🚀 Deploying CLAIRE AI Assistant..." -ForegroundColor Green
 
 # Check if Supabase CLI is installed
 try {

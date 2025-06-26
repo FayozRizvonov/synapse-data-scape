@@ -33,13 +33,13 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Header */}
       <div className={`border-b border-gray-200/50 dark:border-white/10 p-4 ${isCollapsed ? 'py-6' : 'p-6'}`}>
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
-          <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500/20 to-cyan-500/20 dark:from-cyan-900/30 dark:to-blue-900/30 border border-blue-500/30 dark:border-cyan-900/30 shadow-blue-sm">
-            <img src="/images/gsisai_logo.png" alt="GSIS AI Logo" className="w-6 h-6 object-contain" />
+          <div className="rounded-lg overflow-hidden">
+            <img src="/images/claire_logo.png" alt="CLAIRE Logo" className="w-9 h-9 object-contain" />
           </div>
           {!isCollapsed && (
             <div className="min-w-0">
               <div className="text-xs text-gray-500 dark:text-white/40">v1.0.0</div>
-              <div className="text-sm font-medium text-gray-900 dark:text-white">GSIS Platform</div>
+              <div className="text-sm font-medium text-gray-900 dark:text-white">CLAIRE Platform</div>
             </div>
           )}
         </div>

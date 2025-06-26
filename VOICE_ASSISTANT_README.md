@@ -1,6 +1,6 @@
-# GSIS Voice Assistant
+# CLAIRE Voice Assistant
 
-A sophisticated voice assistant integrated into the GSIS Platform that provides natural voice interaction with AI for pharmaceutical analytics and business intelligence.
+A sophisticated voice assistant integrated into the CLAIRE Platform that provides natural voice interaction with AI for pharmaceutical analytics and business intelligence.
 
 ## Features
 
@@ -183,4 +183,4 @@ For technical support or feature requests, please contact the development team o
 
 ---
 
-**GSIS Platform** - The future of business intelligence for pharmaceutical analytics.
+**CLAIRE Platform** - The future of business intelligence for pharmaceutical analytics.

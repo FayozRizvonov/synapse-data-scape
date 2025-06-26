@@ -40,7 +40,7 @@ const Settings: React.FC = () => {
             <h1 className="text-4xl font-bold text-gray-900 dark:text-white text-glow">Settings</h1>
           </div>
           <p className="text-gray-600 dark:text-white/70 max-w-2xl mx-auto">
-            Manage GSIS platform settings and preferences
+            Manage CLAIRE platform settings and preferences
           </p>
         </div>
 
