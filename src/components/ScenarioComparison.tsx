@@ -10,18 +10,18 @@ import {
 import { TrendingUp, TrendingDown, DollarSign, Target, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
 
 const salesForecastData = [
-  { name: 'Jan', actual: 120, baseline: 125, optimistic: 125, pessimistic: 125 },
-  { name: 'Feb', actual: 135, baseline: 140, optimistic: 140, pessimistic: 140 },
-  { name: 'Mar', actual: 145, baseline: 155, optimistic: 155, pessimistic: 155 },
-  { name: 'Apr', actual: 160, baseline: 165, optimistic: 165, pessimistic: 165 },
-  { name: 'May', actual: 150, baseline: 170, optimistic: 170, pessimistic: 170 },
-  { name: 'Jun', actual: 145, baseline: 175, optimistic: 175, pessimistic: 175 },
-  { name: 'Jul', baseline: 180, optimistic: 200, pessimistic: 150 },
-  { name: 'Aug', baseline: 185, optimistic: 210, pessimistic: 155 },
-  { name: 'Sep', baseline: 190, optimistic: 220, pessimistic: 160 },
-  { name: 'Oct', baseline: 195, optimistic: 230, pessimistic: 165 },
-  { name: 'Nov', baseline: 200, optimistic: 240, pessimistic: 170 },
-  { name: 'Dec', baseline: 205, optimistic: 250, pessimistic: 175 },
+  { name: 'Jan', actual: 0.12, baseline: 0.125, optimistic: 0.125, pessimistic: 0.125 },
+  { name: 'Feb', actual: 0.135, baseline: 0.14, optimistic: 0.14, pessimistic: 0.14 },
+  { name: 'Mar', actual: 0.145, baseline: 0.155, optimistic: 0.155, pessimistic: 0.155 },
+  { name: 'Apr', actual: 0.16, baseline: 0.165, optimistic: 0.165, pessimistic: 0.165 },
+  { name: 'May', actual: 0.15, baseline: 0.17, optimistic: 0.17, pessimistic: 0.17 },
+  { name: 'Jun', actual: 0.145, baseline: 0.175, optimistic: 0.175, pessimistic: 0.175 },
+  { name: 'Jul', baseline: 0.18, optimistic: 0.2, pessimistic: 0.15 },
+  { name: 'Aug', baseline: 0.185, optimistic: 0.21, pessimistic: 0.155 },
+  { name: 'Sep', baseline: 0.19, optimistic: 0.22, pessimistic: 0.16 },
+  { name: 'Oct', baseline: 0.195, optimistic: 0.23, pessimistic: 0.165 },
+  { name: 'Nov', baseline: 0.2, optimistic: 0.24, pessimistic: 0.17 },
+  { name: 'Dec', baseline: 0.205, optimistic: 0.25, pessimistic: 0.175 },
 ];
 
 const roiForecastData = [
@@ -255,7 +255,11 @@ const ScenarioComparison = () => {
                     <LineChart data={salesForecastData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
                         <XAxis dataKey="name" tick={{ fill: 'var(--chart-axis)' }} />
-                        <YAxis tick={{ fill: 'var(--chart-axis)' }} label={{ value: 'Sales (in thousands)', angle: -90, position: 'insideLeft', fill: 'var(--chart-axis)' }} />
+                        <YAxis 
+                          tick={{ fill: 'var(--chart-axis)' }} 
+                          label={{ value: 'Sales (in millions)', angle: -90, position: 'insideLeft', fill: 'var(--chart-axis)' }}
+                          tickFormatter={(value) => `${value.toFixed(2)}M`}
+                        />
                         <Tooltip
                             contentStyle={{
                                 background: 'var(--chart-tooltip-bg)',
@@ -264,6 +268,7 @@ const ScenarioComparison = () => {
                                 borderRadius: '8px',
                                 backdropFilter: 'blur(10px)'
                             }}
+                            formatter={(value, name) => [`${Number(value).toFixed(2)}M`, name]}
                         />
                         <Legend />
                         <Line type="monotone" dataKey="actual" stroke="var(--chart-secondary)" name="Actual Sales" strokeDasharray="5 5" />

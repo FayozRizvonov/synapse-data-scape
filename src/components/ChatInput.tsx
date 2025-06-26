@@ -3,6 +3,7 @@ import { Paperclip, ArrowUp, Mic } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { VoiceAssistantCompact } from './VoiceAssistant';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
+import { useTheme } from '@/hooks/useTheme';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -29,6 +30,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const [isActive, setIsActive] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const { voiceState } = useVoiceAssistant();
+  const { theme } = useTheme();
 
   // Cycle placeholder text when input is inactive
   useEffect(() => {
@@ -184,10 +186,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
               </div>
             </div>
             <div className="flex items-center">
-              <VoiceAssistantCompact size="sm" />
+              <VoiceAssistantCompact size="sm" theme={theme} />
             </div>
             <button
-              className="flex items-center gap-1 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white p-3 rounded-full font-medium justify-center ml-2 shadow-lg transition-all duration-200"
+              className={`flex items-center gap-1 p-3 rounded-full font-medium justify-center ml-2 shadow-lg transition-all duration-200
+                ${theme === 'dark' ? 'bg-transparent text-white hover:bg-white/10' : 'bg-transparent text-black hover:bg-black/10'}`}
               title="Send"
               type="button"
               tabIndex={-1}
@@ -196,9 +199,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
               style={{ minWidth: 44, minHeight: 44 }}
             >
               {isLoading ? (
-                <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+                <div className={`w-4 h-4 border-2 border-t-transparent rounded-full animate-spin ${theme === 'dark' ? 'border-white' : 'border-black'}`}></div>
               ) : (
-                <ArrowUp size={18} />
+                <ArrowUp size={18} color={theme === 'dark' ? '#fff' : '#000'} />
               )}
             </button>
           </div>

@@ -50,6 +50,8 @@
   /* Campaign Management - цвета кампаний */
   --campaign-q1: #4A90E2; /* синий для Q1 */
   --campaign-q2: #50C878; /* зелёный для Q2 */
+  --campaign-q3: #F5A623; /* оранжевый для Q3 */
+  --campaign-q4: #0EA5E9; /* голубой для Q4 */
   --campaign-digital-display: #FF6B6B; /* красный для Digital Display */
   --campaign-social: #9B59B6; /* фиолетовый для Social */
   --campaign-f2f: #F39C12; /* оранжевый для F2F */
@@ -309,6 +311,8 @@
   /* Campaign Management - цвета кампаний для тёмной темы */
   --campaign-q1: #4A90E2; /* синий для Q1 */
   --campaign-q2: #50C878; /* зелёный для Q2 */
+  --campaign-q3: #F5A623; /* оранжевый для Q3 */
+  --campaign-q4: #0EA5E9; /* голубой для Q4 */
   --campaign-digital-display: #FF6B6B; /* красный для Digital Display */
   --campaign-social: #9B59B6; /* фиолетовый для Social */
   --campaign-f2f: #F39C12; /* оранжевый для F2F */

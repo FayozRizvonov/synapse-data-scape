@@ -166,7 +166,8 @@ export const VoiceAssistant: React.FC<VoiceAssistantProps> = ({
 export const VoiceAssistantCompact: React.FC<{
   className?: string;
   size?: 'sm' | 'md' | 'lg';
-}> = ({ className, size = 'md' }) => {
+  theme?: 'light' | 'dark';
+}> = ({ className, size = 'md', theme }) => {
   const {
     voiceState,
     startListening,
@@ -208,6 +209,7 @@ export const VoiceAssistantCompact: React.FC<{
         onToggle={handleToggle}
         disabled={!isSupported}
         className={sizeClasses[size]}
+        theme={theme}
       />
     </div>
   );

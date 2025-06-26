@@ -82,6 +82,7 @@ interface VoiceButtonProps {
   onToggle: () => void;
   disabled?: boolean;
   className?: string;
+  theme?: 'light' | 'dark';
 }
 
 export const VoiceButton: React.FC<VoiceButtonProps> = ({
@@ -90,7 +91,8 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
   isProcessing,
   onToggle,
   disabled = false,
-  className
+  className,
+  theme = 'dark',
 }) => {
   const isActive = isListening || isSpeaking || isProcessing;
 
@@ -101,12 +103,8 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
       className={cn(
         "relative flex items-center justify-center rounded-full transition-all duration-300 ease-in-out w-12 h-12",
         "focus:outline-none focus:ring-2 focus:ring-offset-2",
+        theme === 'dark' ? 'bg-transparent' : 'bg-transparent',
         {
-          // Состояния кнопки
-          "bg-gray-800 hover:bg-gray-700": !isActive,
-          "bg-red-900/20 hover:bg-red-900/30": isListening,
-          "bg-green-900/20 hover:bg-green-900/30": isSpeaking,
-          "bg-blue-900/20": isProcessing,
           "opacity-50 cursor-not-allowed": disabled || isProcessing,
           "cursor-pointer": !disabled && !isProcessing,
         },
@@ -117,15 +115,9 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
       <svg
         className={cn(
           "w-6 h-6 transition-colors duration-300",
-          {
-            "text-gray-300": !isActive,
-            "text-red-400": isListening,
-            "text-green-400": isSpeaking,
-            "text-blue-400": isProcessing,
-          }
         )}
         fill="none"
-        stroke="currentColor"
+        stroke={theme === 'dark' ? '#fff' : '#000'}
         viewBox="0 0 24 24"
       >
         {isListening ? (

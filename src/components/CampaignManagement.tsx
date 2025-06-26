@@ -35,62 +35,49 @@ const CampaignManagement: React.FC = () => {
       id: 'q1',
       name: 'Q1 Campaign',
       category: 'Campaigns',
-      startDate: '2024-03-01',
-      endDate: '2024-05-31',
+      startDate: '2024-01-01',
+      endDate: '2024-03-31',
       color: 'var(--campaign-q1)',
       initiatives: 25,
-      channels: 5
+      channels: 4
     },
     {
       id: 'q2',
       name: 'Q2 Campaign',
       category: 'Campaigns',
-      startDate: '2024-06-01',
-      endDate: '2024-08-31',
+      startDate: '2024-04-01',
+      endDate: '2024-06-30',
       color: 'var(--campaign-q2)',
       initiatives: 30,
-      channels: 6
-    },
-    {
-      id: 'digital-display',
-      name: 'Digital Display',
-      category: 'Digital',
-      startDate: '2024-04-01',
-      endDate: '2024-07-31',
-      color: 'var(--campaign-digital-display)',
-      initiatives: 15,
-      channels: 3
-    },
-    {
-      id: 'social',
-      name: 'Digital HiiV Social',
-      category: 'Digital',
-      startDate: '2024-05-01',
-      endDate: '2024-08-31',
-      color: 'var(--campaign-social)',
-      initiatives: 12,
       channels: 4
     },
     {
-      id: 'f2f',
-      name: 'F2F Calls',
-      category: 'Sales Force',
-      startDate: '2024-06-01',
+      id: 'q3',
+      name: 'Q3 Campaign',
+      category: 'Campaigns',
+      startDate: '2024-07-01',
       endDate: '2024-09-30',
-      color: 'var(--campaign-f2f)',
-      initiatives: 8,
-      channels: 2
+      color: 'var(--campaign-q3)',
+      initiatives: 28,
+      channels: 4
+    },
+    {
+      id: 'q4',
+      name: 'Q4 Campaign',
+      category: 'Campaigns',
+      startDate: '2024-10-01',
+      endDate: '2024-12-31',
+      color: 'var(--campaign-q4)',
+      initiatives: 32,
+      channels: 4
     }
   ];
 
   const breakdownData: BreakdownItem[] = [
-    { name: 'Email', blocks: 20, percentage: 70, color: 'var(--channel-email)', icon: <Mail className="w-4 h-4" /> },
-    { name: 'Social', blocks: 7, percentage: 20, color: 'var(--channel-social)', icon: <Share2 className="w-4 h-4" /> },
-    { name: 'Mobile', blocks: 7, percentage: 10, color: 'var(--channel-mobile)', icon: <Smartphone className="w-4 h-4" /> },
-    { name: 'Media', blocks: 7, percentage: 10, color: 'var(--channel-media)', icon: <Monitor className="w-4 h-4" /> },
-    { name: 'Display', blocks: 5, percentage: 8, color: 'var(--channel-display)', icon: <BarChart3 className="w-4 h-4" /> },
-    { name: 'Video', blocks: 4, percentage: 6, color: 'var(--channel-video)', icon: <Calendar className="w-4 h-4" /> },
-    { name: 'Search', blocks: 3, percentage: 4, color: 'var(--channel-search)', icon: <Search className="w-4 h-4" /> }
+    { name: 'HCP Email 1to1', blocks: 25, percentage: 35, color: 'var(--channel-email)', icon: <Mail className="w-4 h-4" /> },
+    { name: 'F2F Calls', blocks: 20, percentage: 28, color: 'var(--channel-social)', icon: <Users className="w-4 h-4" /> },
+    { name: 'Web Virtual Calls', blocks: 15, percentage: 22, color: 'var(--channel-mobile)', icon: <Monitor className="w-4 h-4" /> },
+    { name: 'Phone Calls', blocks: 10, percentage: 15, color: 'var(--channel-media)', icon: <Smartphone className="w-4 h-4" /> }
   ];
 
   const toggleSection = (section: string) => {
@@ -262,16 +249,158 @@ const CampaignManagement: React.FC = () => {
                                   transition={{ duration: 0.2 }}
                                   className="ml-4 space-y-1"
                                 >
-                                  {['Q1 Campaign', 'Q2 Campaign', 'Q3 Campaign', 'Q4 Campaign'].map((campaign) => (
-                                    <div key={campaign} className="ml-4 p-1 text-sm text-gray-600 dark:text-gray-400 hover:bg-white/10 rounded cursor-pointer transition-colors">
-                                      {campaign}
-                                    </div>
-                                  ))}
+                                  {/* Q1 Campaign */}
+                                  <div>
+                                    <button
+                                      onClick={() => toggleSection('Q1')}
+                                      className="flex items-center w-full text-left p-1 hover:bg-white/10 rounded text-sm transition-colors"
+                                    >
+                                      {expandedSections.has('Q1') ? (
+                                        <ChevronDown className="w-3 h-3 mr-2 text-cyan-400" />
+                                      ) : (
+                                        <ChevronRight className="w-3 h-3 mr-2 text-cyan-400" />
+                                      )}
+                                      <span className="text-gray-600 dark:text-gray-400">Q1 Campaign</span>
+                                    </button>
+                                    {expandedSections.has('Q1') && (
+                                      <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="ml-4 space-y-1"
+                                      >
+                                        <div className="p-1 text-xs text-gray-500 dark:text-gray-500 hover:bg-white/10 rounded cursor-pointer transition-colors">
+                                          • HCP Email 1to1
+                                        </div>
+                                        <div className="p-1 text-xs text-gray-500 dark:text-gray-500 hover:bg-white/10 rounded cursor-pointer transition-colors">
+                                          • F2F Calls
+                                        </div>
+                                        <div className="p-1 text-xs text-gray-500 dark:text-gray-500 hover:bg-white/10 rounded cursor-pointer transition-colors">
+                                          • Web Virtual Calls
+                                        </div>
+                                        <div className="p-1 text-xs text-gray-500 dark:text-gray-500 hover:bg-white/10 rounded cursor-pointer transition-colors">
+                                          • Phone Calls
+                                        </div>
+                                      </motion.div>
+                                    )}
+                                  </div>
+
+                                  {/* Q2 Campaign */}
+                                  <div>
+                                    <button
+                                      onClick={() => toggleSection('Q2')}
+                                      className="flex items-center w-full text-left p-1 hover:bg-white/10 rounded text-sm transition-colors"
+                                    >
+                                      {expandedSections.has('Q2') ? (
+                                        <ChevronDown className="w-3 h-3 mr-2 text-cyan-400" />
+                                      ) : (
+                                        <ChevronRight className="w-3 h-3 mr-2 text-cyan-400" />
+                                      )}
+                                      <span className="text-gray-600 dark:text-gray-400">Q2 Campaign</span>
+                                    </button>
+                                    {expandedSections.has('Q2') && (
+                                      <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="ml-4 space-y-1"
+                                      >
+                                        <div className="p-1 text-xs text-gray-500 dark:text-gray-500 hover:bg-white/10 rounded cursor-pointer transition-colors">
+                                          • HCP Email 1to1
+                                        </div>
+                                        <div className="p-1 text-xs text-gray-500 dark:text-gray-500 hover:bg-white/10 rounded cursor-pointer transition-colors">
+                                          • F2F Calls
+                                        </div>
+                                        <div className="p-1 text-xs text-gray-500 dark:text-gray-500 hover:bg-white/10 rounded cursor-pointer transition-colors">
+                                          • Web Virtual Calls
+                                        </div>
+                                        <div className="p-1 text-xs text-gray-500 dark:text-gray-500 hover:bg-white/10 rounded cursor-pointer transition-colors">
+                                          • Phone Calls
+                                        </div>
+                                      </motion.div>
+                                    )}
+                                  </div>
+
+                                  {/* Q3 Campaign */}
+                                  <div>
+                                    <button
+                                      onClick={() => toggleSection('Q3')}
+                                      className="flex items-center w-full text-left p-1 hover:bg-white/10 rounded text-sm transition-colors"
+                                    >
+                                      {expandedSections.has('Q3') ? (
+                                        <ChevronDown className="w-3 h-3 mr-2 text-cyan-400" />
+                                      ) : (
+                                        <ChevronRight className="w-3 h-3 mr-2 text-cyan-400" />
+                                      )}
+                                      <span className="text-gray-600 dark:text-gray-400">Q3 Campaign</span>
+                                    </button>
+                                    {expandedSections.has('Q3') && (
+                                      <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="ml-4 space-y-1"
+                                      >
+                                        <div className="p-1 text-xs text-gray-500 dark:text-gray-500 hover:bg-white/10 rounded cursor-pointer transition-colors">
+                                          • HCP Email 1to1
+                                        </div>
+                                        <div className="p-1 text-xs text-gray-500 dark:text-gray-500 hover:bg-white/10 rounded cursor-pointer transition-colors">
+                                          • F2F Calls
+                                        </div>
+                                        <div className="p-1 text-xs text-gray-500 dark:text-gray-500 hover:bg-white/10 rounded cursor-pointer transition-colors">
+                                          • Web Virtual Calls
+                                        </div>
+                                        <div className="p-1 text-xs text-gray-500 dark:text-gray-500 hover:bg-white/10 rounded cursor-pointer transition-colors">
+                                          • Phone Calls
+                                        </div>
+                                      </motion.div>
+                                    )}
+                                  </div>
+
+                                  {/* Q4 Campaign */}
+                                  <div>
+                                    <button
+                                      onClick={() => toggleSection('Q4')}
+                                      className="flex items-center w-full text-left p-1 hover:bg-white/10 rounded text-sm transition-colors"
+                                    >
+                                      {expandedSections.has('Q4') ? (
+                                        <ChevronDown className="w-3 h-3 mr-2 text-cyan-400" />
+                                      ) : (
+                                        <ChevronRight className="w-3 h-3 mr-2 text-cyan-400" />
+                                      )}
+                                      <span className="text-gray-600 dark:text-gray-400">Q4 Campaign</span>
+                                    </button>
+                                    {expandedSections.has('Q4') && (
+                                      <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="ml-4 space-y-1"
+                                      >
+                                        <div className="p-1 text-xs text-gray-500 dark:text-gray-500 hover:bg-white/10 rounded cursor-pointer transition-colors">
+                                          • HCP Email 1to1
+                                        </div>
+                                        <div className="p-1 text-xs text-gray-500 dark:text-gray-500 hover:bg-white/10 rounded cursor-pointer transition-colors">
+                                          • F2F Calls
+                                        </div>
+                                        <div className="p-1 text-xs text-gray-500 dark:text-gray-500 hover:bg-white/10 rounded cursor-pointer transition-colors">
+                                          • Web Virtual Calls
+                                        </div>
+                                        <div className="p-1 text-xs text-gray-500 dark:text-gray-500 hover:bg-white/10 rounded cursor-pointer transition-colors">
+                                          • Phone Calls
+                                        </div>
+                                      </motion.div>
+                                    )}
+                                  </div>
                                 </motion.div>
                               )}
                             </div>
                             
-                            {/* Digital */}
+                            {/* Digital - теперь интегрировано в кварталы */}
                             <div>
                               <button
                                 onClick={() => toggleSection('Digital')}
@@ -282,7 +411,7 @@ const CampaignManagement: React.FC = () => {
                                 ) : (
                                   <ChevronRight className="w-3 h-3 mr-2 text-cyan-400" />
                                 )}
-                                <span className="text-gray-700 dark:text-gray-300">Digital</span>
+                                <span className="text-gray-700 dark:text-gray-300">Digital (Integrated)</span>
                               </button>
                               {expandedSections.has('Digital') && (
                                 <motion.div
@@ -292,20 +421,23 @@ const CampaignManagement: React.FC = () => {
                                   transition={{ duration: 0.2 }}
                                   className="ml-4 space-y-1"
                                 >
-                                  {[
-                                    'Digital Display', 'Digital HiiV Native Content', 'Digital HiiV Search',
-                                    'Digital HiiV Social', 'Digital HiiV Video', 'Medscape Banners',
-                                    'HCP Email 1to1', 'Medscape Email'
-                                  ].map((item) => (
-                                    <div key={item} className="ml-4 p-1 text-sm text-gray-600 dark:text-gray-400 hover:bg-white/10 rounded cursor-pointer transition-colors">
-                                      {item}
-                                    </div>
-                                  ))}
+                                  <div className="ml-4 p-1 text-sm text-gray-600 dark:text-gray-400">
+                                    Integrated into quarterly campaigns
+                                  </div>
+                                  <div className="ml-4 p-1 text-sm text-gray-600 dark:text-gray-400">
+                                    • HCP Email 1to1 (All Quarters)
+                                  </div>
+                                  <div className="ml-4 p-1 text-sm text-gray-600 dark:text-gray-400">
+                                    • Digital Display (Q1-Q4)
+                                  </div>
+                                  <div className="ml-4 p-1 text-sm text-gray-600 dark:text-gray-400">
+                                    • Digital HiiV Social (Q1-Q4)
+                                  </div>
                                 </motion.div>
                               )}
                             </div>
                             
-                            {/* Sales Force */}
+                            {/* Sales Force - теперь интегрировано в кварталы */}
                             <div>
                               <button
                                 onClick={() => toggleSection('Sales Force')}
@@ -316,7 +448,7 @@ const CampaignManagement: React.FC = () => {
                                 ) : (
                                   <ChevronRight className="w-3 h-3 mr-2 text-cyan-400" />
                                 )}
-                                <span className="text-gray-700 dark:text-gray-300">Sales Force</span>
+                                <span className="text-gray-700 dark:text-gray-300">Sales Force (Integrated)</span>
                               </button>
                               {expandedSections.has('Sales Force') && (
                                 <motion.div
@@ -326,11 +458,18 @@ const CampaignManagement: React.FC = () => {
                                   transition={{ duration: 0.2 }}
                                   className="ml-4 space-y-1"
                                 >
-                                  {['F2F Calls', 'Phone Calls', 'Web Virtual Calls', 'Simposium Attendees'].map((item) => (
-                                    <div key={item} className="ml-4 p-1 text-sm text-gray-600 dark:text-gray-400 hover:bg-white/10 rounded cursor-pointer transition-colors">
-                                      {item}
-                                    </div>
-                                  ))}
+                                  <div className="ml-4 p-1 text-sm text-gray-600 dark:text-gray-400">
+                                    Integrated into quarterly campaigns
+                                  </div>
+                                  <div className="ml-4 p-1 text-sm text-gray-600 dark:text-gray-400">
+                                    • F2F Calls (All Quarters)
+                                  </div>
+                                  <div className="ml-4 p-1 text-sm text-gray-600 dark:text-gray-400">
+                                    • Web Virtual Calls (All Quarters)
+                                  </div>
+                                  <div className="ml-4 p-1 text-sm text-gray-600 dark:text-gray-400">
+                                    • Phone Calls (All Quarters)
+                                  </div>
                                 </motion.div>
                               )}
                             </div>

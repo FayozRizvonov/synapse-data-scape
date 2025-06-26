@@ -550,7 +550,7 @@ const FarmaMetrics = () => {
         <div className={`overflow-hidden transition-all duration-500 ease-in-out ${
           isExpanded ? 'max-h-none' : ''
         }`}>
-                     <div className="grid gap-6 transition-all duration-500 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+                     <div className="grid gap-6 transition-all duration-500 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-4">
             {metrics.slice(0, visibleCards).map((card, index) => 
               renderCard(card, index)
             )}
@@ -595,7 +595,7 @@ const FarmaMetrics = () => {
         {/* Marketing Optimization Recommendations */}
         <div className="space-y-4">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-glow">Marketing Optimization Recommendations</h2>
-          <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-4">
             {/* Card 1: High Impact */}
             <BauhausBorder
               accentColor="#f87171"

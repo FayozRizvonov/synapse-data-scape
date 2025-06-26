@@ -25,27 +25,10 @@ const Index = () => {
   const { sendMessage, isLoading, lastAIResponse, clearChat } = useAIAssistant();
 
   useEffect(() => {
-    if (!lastAIResponse) return;
-
-    if (lastAIResponse.action === 'navigate' && lastAIResponse.details?.section) {
-      handleNavigateToSection(lastAIResponse.details.section);
-      if (lastAIResponse.details.metricId) {
-        // Highlight card after navigation
-        setTimeout(() => {
-          const cardElement = document.getElementById(lastAIResponse.details!.metricId!);
-          if (cardElement) {
-            cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            cardElement.classList.add('highlight-card');
-            setTimeout(() => cardElement.classList.remove('highlight-card'), 3000);
-          }
-        }, 500);
-      }
-      // We need to clear chat history for navigation action
-      clearChat();
-    } else {
+    if (lastAIResponse) {
       setIsChatOpen(true);
     }
-  }, [lastAIResponse, clearChat]);
+  }, [lastAIResponse]);
 
   const handleSendMessage = async (message: string) => {
     await sendMessage(message);
@@ -293,13 +276,11 @@ const Index = () => {
         </main>
       </div>
 
-      {!isChatOpen && (
-        <ChatInput 
-          onSendMessage={handleSendMessage} 
-          isSidebarCollapsed={isSidebarCollapsed} 
-          isLoading={isLoading}
-        />
-      )}
+      <ChatInput 
+        onSendMessage={handleSendMessage} 
+        isSidebarCollapsed={isSidebarCollapsed} 
+        isLoading={isLoading}
+      />
 
       {isChatOpen && (
         <ChatView 
