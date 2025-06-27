@@ -18,6 +18,7 @@ import SituationDetailModal from './SituationDetailModal';
 import ScenarioComparison from './ScenarioComparison';
 import Simulation from './Simulation';
 import CampaignManagement from './CampaignManagement';
+import SOJMContainer from './SOJMContainer';
 
 // Local interface for our component that extends the base MetricCard
 interface LocalMetricCard {
@@ -330,17 +331,20 @@ const FarmaMetricsWithFeatureCards = () => {
 
         <CampaignManagement />
 
-        <SituationDetailModal
-          card={selectedCard ? convertToMetricCard(selectedCard) : null}
-          open={!!selectedCard}
-          onOpenChange={(open) => {
-            if (!open) {
-              setSelectedCard(null);
-            }
-          }}
-        >
-          <div/>
-        </SituationDetailModal>
+        <SOJMContainer />
+
+        {/* Situation Detail Modal */}
+        {selectedCard && (
+          <SituationDetailModal
+            card={selectedCard}
+            open={!!selectedCard}
+            onOpenChange={(open) => {
+              if (!open) {
+                setSelectedCard(null);
+              }
+            }}
+          />
+        )}
       </div>
     </div>
   );

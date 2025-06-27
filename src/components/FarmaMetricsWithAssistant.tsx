@@ -19,6 +19,7 @@ import SituationDetailModal from './SituationDetailModal';
 import ScenarioComparison from './ScenarioComparison';
 import Simulation from './Simulation';
 import CampaignManagement from './CampaignManagement';
+import SOJMContainer from './SOJMContainer';
 import { BauhausBorder } from '@/components/ui/bauhaus-border';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -686,6 +687,8 @@ const FarmaMetricsWithAssistant = () => {
         <Simulation />
 
         <CampaignManagement />
+
+        <SOJMContainer />
 
         <SituationDetailModal
           card={selectedCard ? convertToMetricCard(selectedCard) : null}

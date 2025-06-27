@@ -26,6 +26,7 @@ import ScenarioComparison from './ScenarioComparison';
 import AnimatedNumber from './AnimatedNumber';
 import Simulation from './Simulation';
 import CampaignManagement from './CampaignManagement';
+import SOJMContainer from './SOJMContainer';
 import { useTheme } from '@/hooks/useTheme';
 import { BauhausBorder } from './ui/bauhaus-border';
 
@@ -694,6 +695,8 @@ const FarmaMetrics = () => {
         <Simulation />
 
         <CampaignManagement />
+
+        <SOJMContainer />
 
         {/* Situation Detail Modal */}
         {selectedCard && (
