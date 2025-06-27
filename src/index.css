@@ -746,3 +746,15 @@ html {
   box-sizing: border-box;
 }
 
+/* Отключение hover для ROI Focus в темной теме */
+@media (prefers-color-scheme: dark) {
+  .no-hover-dark:hover {
+    background: inherit !important;
+    color: inherit !important;
+    border-color: inherit !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    cursor: default;
+  }
+}
+

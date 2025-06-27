@@ -589,7 +589,7 @@ const FarmaMetricsWithAssistant = () => {
                 <CardContent>
                   <div className="space-y-2">
                     <p className="text-sm text-gray-700 dark:text-white/80">F2F calls in East region have highest ROI 2.34x. Increasing by 15% could drive ~35 additional sales per period.</p>
-                    <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">ROI Focus</Badge>
+                    <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 no-hover-dark">ROI Focus</Badge>
                   </div>
                 </CardContent>
               </Card>
@@ -628,7 +628,7 @@ const FarmaMetricsWithAssistant = () => {
                 <CardContent>
                   <div className="space-y-2">
                     <p className="text-sm text-gray-700 dark:text-white/80">Display clicks have lowest impact 0.12x  Shift 20% of display budget to higher-impact phone calls.</p>
-                    <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">ROI Focus</Badge>
+                    <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 no-hover-dark">ROI Focus</Badge>
                   </div>
                 </CardContent>
               </Card>
@@ -667,7 +667,7 @@ const FarmaMetricsWithAssistant = () => {
                 <CardContent>
                   <div className="space-y-2">
                     <p className="text-sm text-gray-700 dark:text-white/80">Strong seasonal patterns detected. Increase Q4 marketing efforts by 25% to capitalize on peak demand.</p>
-                    <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">ROI Focus</Badge>
+                    <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 no-hover-dark">ROI Focus</Badge>
                   </div>
                 </CardContent>
               </Card>
