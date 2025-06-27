@@ -136,21 +136,25 @@ const ActiveCampaignsTable: React.FC<{
       <tbody>
         {quarterData.map((q) => {
           const isExpanded = expanded.has(q.name);
-          // Сумма по кампании
-          const campaignSums = q.activities.map((act, i) => act.monthly).reduce((acc, arr) => acc.map((v, i) => v + (arr[i] || 0)), Array(months.length).fill(0));
           return (
             <React.Fragment key={q.name}>
               {/* Родительская строка */}
               <tr style={{ background: q.color + '22', transition: 'background 0.3s' }}>
-                {campaignSums.map((sum, i) => (
-                  <td
-                    key={i}
-                    style={cellStyle(q.color)}
-                    className="transition-colors duration-300 font-semibold text-base"
-                  >
-                    {sum > 0 ? sum : ''}
-                  </td>
-                ))}
+                <td colSpan={months.length}
+                  style={{
+                    background: q.color,
+                    color: '#fff',
+                    textAlign: 'center',
+                    borderRadius: 8,
+                    fontWeight: 500,
+                    fontSize: 14,
+                    padding: '4px 0',
+                    letterSpacing: 1,
+                    transition: 'background 0.3s',
+                  }}
+                >
+                  {q.name} campaign
+                </td>
               </tr>
               {/* Дочерние строки */}
               {isExpanded && q.activities.map((act) => (
