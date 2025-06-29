@@ -23,12 +23,12 @@ import SOJMContainer from './SOJMContainer';
 import { BauhausBorder } from '@/components/ui/bauhaus-border';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AnimatedNumber } from './AnimatedNumber';
-import { ChevronDown, ChevronUp, Phone, MousePointer, HeartHandshake, MapPin, Smartphone, Send, MessageCircle, Zap, Star, Share2, Download, Expand, ChevronLeft, ChevronRight } from "lucide-react";
+import AnimatedNumber from './AnimatedNumber';
+import { ChevronDown, ChevronUp, Phone, MousePointer, HeartHandshake, MapPin, Smartphone, Send, MessageCircle, Zap, Star, Share2, Download, Expand, ChevronLeft, ChevronRight, Monitor, FileText } from "lucide-react";
 import { useTheme } from '@/hooks/useTheme';
 import { LineChart, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line, Area, ResponsiveContainer } from 'recharts';
 import { VoiceAssistant } from './VoiceAssistant';
-import { ChatView } from './ChatView';
+import ChatView from './ChatView';
 
 // Local interface for our component that extends the base MetricCard
 interface LocalMetricCard {
@@ -53,7 +53,8 @@ const convertToMetricCard = (localCard: LocalMetricCard) => {
   return {
     ...localCard,
     icon: localCard.icon.name || 'Activity', // Convert React component to string
-    description: localCard.description
+    description: localCard.description,
+    keywords: [] // Add empty keywords array to satisfy MetricCard interface
   };
 };
 
@@ -162,6 +163,111 @@ const FarmaMetricsWithAssistant = () => {
           { label: 'Formulary Coverage', value: '92%' },
           { label: 'Prior Auth Rate', value: '18%' },
           { label: 'Step Therapy', value: '12%' }
+        ]
+      }
+    },
+    {
+      id: 'phone-web-calls',
+      title: 'Phone Web Calls',
+      value: '1,355',
+      change: '+15.2%',
+      changeType: 'positive',
+      comparison: '$98.2K cost',
+      icon: Phone,
+      category: 'key',
+      section: 'key-metrics',
+      description: 'Phone and web-based customer outreach campaigns',
+      details: {
+        description: 'Phone and web-based customer outreach campaigns',
+        breakdown: [
+          { label: 'Total Calls', value: '1,355' },
+          { label: 'Campaign Cost', value: '$98.2K' },
+          { label: 'Cost per Call', value: '$72.47' },
+          { label: 'Success Rate', value: '68.3%' }
+        ]
+      }
+    },
+    {
+      id: 'digital-dtc-company',
+      title: 'Digital DTC Company',
+      value: '476,405',
+      change: '+22.8%',
+      changeType: 'positive',
+      comparison: '$674.6K cost',
+      icon: Monitor,
+      category: 'key',
+      section: 'key-metrics',
+      description: 'Digital direct-to-consumer campaign clicks',
+      details: {
+        description: 'Digital direct-to-consumer campaign clicks',
+        breakdown: [
+          { label: 'Total Clicks', value: '476,405' },
+          { label: 'Campaign Cost', value: '$674.6K' },
+          { label: 'Cost per Click', value: '$1.42' },
+          { label: 'Click-through Rate', value: '3.8%' }
+        ]
+      }
+    },
+    {
+      id: 'f2f-calls-new',
+      title: 'F2F Calls',
+      value: '508',
+      change: '-5.3%',
+      changeType: 'negative',
+      comparison: '$73.7K cost',
+      icon: HeartHandshake,
+      category: 'key',
+      section: 'key-metrics',
+      description: 'Face-to-face sales representative visits',
+      details: {
+        description: 'Face-to-face sales representative visits',
+        breakdown: [
+          { label: 'Total Visits', value: '508' },
+          { label: 'Campaign Cost', value: '$73.7K' },
+          { label: 'Cost per Visit', value: '$145.08' },
+          { label: 'Conversion Rate', value: '42.1%' }
+        ]
+      }
+    },
+    {
+      id: 'mass-email',
+      title: 'Mass Email',
+      value: '8,072',
+      change: '+31.4%',
+      changeType: 'positive',
+      comparison: '$8K cost',
+      icon: Mail,
+      category: 'key',
+      section: 'key-metrics',
+      description: 'Mass email campaign opens',
+      details: {
+        description: 'Mass email campaign opens',
+        breakdown: [
+          { label: 'Total Opens', value: '8,072' },
+          { label: 'Campaign Cost', value: '$8K' },
+          { label: 'Cost per Open', value: '$0.99' },
+          { label: 'Open Rate', value: '24.7%' }
+        ]
+      }
+    },
+    {
+      id: 'medscape-banner',
+      title: 'Medscape Banner',
+      value: '431,508',
+      change: '+18.9%',
+      changeType: 'positive',
+      comparison: '$163.9K cost',
+      icon: FileText,
+      category: 'key',
+      section: 'key-metrics',
+      description: 'Medscape banner advertisement clicks',
+      details: {
+        description: 'Medscape banner advertisement clicks',
+        breakdown: [
+          { label: 'Total Clicks', value: '431,508' },
+          { label: 'Campaign Cost', value: '$163.9K' },
+          { label: 'Cost per Click', value: '$0.38' },
+          { label: 'Impression Rate', value: '2.1%' }
         ]
       }
     }
