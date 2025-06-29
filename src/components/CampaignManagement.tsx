@@ -24,47 +24,47 @@ interface BreakdownItem {
   icon: React.ReactNode;
 }
 
-const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
+const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const quarterData = [
   {
     name: 'Q1',
     color: '#F25CA2',
     activities: [
-      { name: 'HCP Email 1to1', color: '#F2B950', monthly: [10, 20, 30, 40, 0, 0, 0, 0] },
-      { name: 'F2F Calls', color: '#5C6BF2', monthly: [5, 10, 15, 20, 0, 0, 0, 0] },
-      { name: 'Web Virtual Calls', color: '#50F2B9', monthly: [8, 12, 18, 24, 0, 0, 0, 0] },
-      { name: 'Phone Calls', color: '#F25C5C', monthly: [6, 9, 12, 15, 0, 0, 0, 0] },
+      { name: 'HCP Email 1to1', color: '#F2B950', monthly: [10, 20, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+      { name: 'F2F Calls', color: '#5C6BF2', monthly: [5, 10, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+      { name: 'Web Virtual Calls', color: '#50F2B9', monthly: [8, 12, 18, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+      { name: 'Phone Calls', color: '#F25C5C', monthly: [6, 9, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
     ],
   },
   {
     name: 'Q2',
     color: '#F2B950',
     activities: [
-      { name: 'HCP Email 1to1', color: '#F2B950', monthly: [0, 0, 0, 0, 15, 25, 35, 45] },
-      { name: 'F2F Calls', color: '#5C6BF2', monthly: [0, 0, 0, 0, 7, 14, 21, 28] },
-      { name: 'Web Virtual Calls', color: '#50F2B9', monthly: [0, 0, 0, 0, 10, 15, 20, 25] },
-      { name: 'Phone Calls', color: '#F25C5C', monthly: [0, 0, 0, 0, 8, 12, 16, 20] },
+      { name: 'HCP Email 1to1', color: '#F2B950', monthly: [0, 0, 0, 15, 25, 35, 0, 0, 0, 0, 0, 0] },
+      { name: 'F2F Calls', color: '#5C6BF2', monthly: [0, 0, 0, 7, 14, 21, 0, 0, 0, 0, 0, 0] },
+      { name: 'Web Virtual Calls', color: '#50F2B9', monthly: [0, 0, 0, 10, 15, 20, 0, 0, 0, 0, 0, 0] },
+      { name: 'Phone Calls', color: '#F25C5C', monthly: [0, 0, 0, 8, 12, 16, 0, 0, 0, 0, 0, 0] },
     ],
   },
   {
     name: 'Q3',
     color: '#5C6BF2',
     activities: [
-      { name: 'HCP Email 1to1', color: '#F2B950', monthly: [0, 0, 0, 0, 0, 0, 20, 30] },
-      { name: 'F2F Calls', color: '#5C6BF2', monthly: [0, 0, 0, 0, 0, 0, 10, 20] },
-      { name: 'Web Virtual Calls', color: '#50F2B9', monthly: [0, 0, 0, 0, 0, 0, 15, 22] },
-      { name: 'Phone Calls', color: '#F25C5C', monthly: [0, 0, 0, 0, 0, 0, 12, 18] },
+      { name: 'HCP Email 1to1', color: '#F2B950', monthly: [0, 0, 0, 0, 0, 0, 20, 30, 25, 0, 0, 0] },
+      { name: 'F2F Calls', color: '#5C6BF2', monthly: [0, 0, 0, 0, 0, 0, 10, 20, 15, 0, 0, 0] },
+      { name: 'Web Virtual Calls', color: '#50F2B9', monthly: [0, 0, 0, 0, 0, 0, 15, 22, 18, 0, 0, 0] },
+      { name: 'Phone Calls', color: '#F25C5C', monthly: [0, 0, 0, 0, 0, 0, 12, 18, 14, 0, 0, 0] },
     ],
   },
   {
     name: 'Q4',
     color: '#50F2B9',
     activities: [
-      { name: 'HCP Email 1to1', color: '#F2B950', monthly: [0, 0, 0, 0, 0, 0, 18, 28] },
-      { name: 'F2F Calls', color: '#5C6BF2', monthly: [0, 0, 0, 0, 0, 0, 8, 16] },
-      { name: 'Web Virtual Calls', color: '#50F2B9', monthly: [0, 0, 0, 0, 0, 0, 12, 20] },
-      { name: 'Phone Calls', color: '#F25C5C', monthly: [0, 0, 0, 0, 0, 0, 10, 15] },
+      { name: 'HCP Email 1to1', color: '#F2B950', monthly: [0, 0, 0, 0, 0, 0, 0, 0, 0, 18, 28, 35] },
+      { name: 'F2F Calls', color: '#5C6BF2', monthly: [0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 16, 22] },
+      { name: 'Web Virtual Calls', color: '#50F2B9', monthly: [0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 20, 26] },
+      { name: 'Phone Calls', color: '#F25C5C', monthly: [0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 15, 20] },
     ],
   },
 ];

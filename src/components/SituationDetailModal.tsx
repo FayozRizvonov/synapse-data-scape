@@ -170,7 +170,9 @@ const SituationDetailModal: React.FC<SituationDetailModalProps> = ({
                 <Users className="w-5 h-5 text-blue-600 dark:text-cyan-400" />
                 <span className="text-sm text-gray-600 dark:text-white/60">Category</span>
               </div>
-              <div className="text-lg font-semibold text-blue-600 dark:text-cyan-400 capitalize">{card.category}</div>
+              <div className="text-lg font-semibold text-blue-600 dark:text-cyan-400 capitalize">
+                {card.category === 'situation' ? 'Spend' : card.category}
+              </div>
             </div>
           </div>
 

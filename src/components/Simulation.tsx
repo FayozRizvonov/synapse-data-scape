@@ -249,9 +249,9 @@ const Simulation = () => {
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
-                    {/* Animated Radial Chart for Goal Progress */}
+                    {/* Animated Radial Chart for Number of Salesforce */}
                     <div className="flex flex-col items-center mt-8">
-                      <span className="text-md font-semibold text-gray-900 dark:text-white mb-2">Goal Progress</span>
+                      <span className="text-md font-semibold text-gray-900 dark:text-white mb-2">Number of Salesforce</span>
                       <AnimatedRadialChart 
                         value={Math.min(100, Math.round((revenue / 20000000) * 100))}
                         size={350}

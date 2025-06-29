@@ -18,6 +18,7 @@ import {
   ShoppingCart,
   Phone
 } from 'lucide-react';
+import ProcessFlowDiagram from './ProcessFlowDiagram';
 
 interface Persona {
   id: string;
@@ -207,48 +208,14 @@ const SOJMContainer: React.FC = () => {
               })}
             </div>
           </motion.div>
-          {/* Touchpoints and Journey Flow - Center */}
+          {/* Process Flow Diagram - Center */}
           <div className="col-span-12 lg:col-span-6">
-            {/* Touchpoints Grid */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
             >
-              <h3 className="text-xl font-semibold text-slate-800 dark:text-white mb-6 text-center">
-                Customer Touchpoints
-              </h3>
-              <div className="grid grid-cols-3 gap-4 mb-8">
-                {touchpoints.map((touchpoint, index) => {
-                  const isActive = getActivePath()?.touchpoints.includes(touchpoint.id);
-                  const style = isActive && showPaths && isDarkMode ? { backgroundColor: hexToRgba(touchpoint.color, 0.15), borderColor: touchpoint.color } : undefined;
-                  return (
-                    <motion.div
-                      key={touchpoint.id}
-                      className={`p-4 rounded-xl border-2 text-center transition-all duration-500 ${
-                        isActive && showPaths
-                          ? `border-blue-500 bg-blue-50 shadow-lg scale-105${isDarkMode ? '' : ''}`
-                          : 'border-slate-200 bg-white dark:border-white/10 dark:bg-white/5'
-                      }`}
-                      style={style}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.5, delay: 0.5 + index * 0.05 }}
-                    >
-                      <div 
-                        className="mx-auto mb-2 p-3 rounded-lg w-fit"
-                        style={{ 
-                          backgroundColor: `${touchpoint.color}20`,
-                          color: touchpoint.color 
-                        }}
-                      >
-                        {touchpoint.icon}
-                      </div>
-                      <h4 className="font-medium text-slate-800 dark:text-white text-sm">{touchpoint.name}</h4>
-                    </motion.div>
-                  );
-                })}
-              </div>
+              <ProcessFlowDiagram activePersona={activePersona} />
             </motion.div>
           </div>
           {/* Outcomes and Conversions - Right Side */}
