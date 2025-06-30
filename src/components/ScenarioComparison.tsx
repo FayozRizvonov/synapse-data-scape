@@ -144,7 +144,7 @@ const ScenarioComparison = () => {
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Current</h3>
               </div>
-              <Badge variant="outline" className="border-cyan-500/30 text-cyan-400 bg-cyan-500/10">Current Plan</Badge>
+              <Badge variant="outline" className="border-cyan-500/30 text-cyan-400 bg-cyan-500/10">0.7М$ Spend</Badge>
             </div>
             <div className="space-y-4">
               <div className="flex items-end gap-2">

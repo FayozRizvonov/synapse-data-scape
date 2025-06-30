@@ -21,7 +21,7 @@ import { GlowCard } from '@/components/ui/spotlight-card';
 const Index = () => {
   const [activeSection, setActiveSection] = useState('ai-insights');
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const { sendMessage, isLoading, lastAIResponse, clearChat } = useAIAssistant();
 
   useEffect(() => {

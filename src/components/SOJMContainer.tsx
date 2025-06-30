@@ -16,7 +16,9 @@ import {
   Star,
   Heart,
   ShoppingCart,
-  Phone
+  Phone,
+  Pill,
+  Megaphone
 } from 'lucide-react';
 import ProcessFlowDiagram from './ProcessFlowDiagram';
 
@@ -97,36 +99,31 @@ const SOJMContainer: React.FC = () => {
   ];
 
   const touchpoints: Touchpoint[] = [
-    { id: 'tv', name: 'TV Advertising', icon: <Tv className="w-8 h-8 text-red-500 dark:text-red-400" />, color: '#EF4444' },
-    { id: 'display', name: 'Display Ads', icon: <Monitor className="w-8 h-8 text-orange-500 dark:text-orange-400" />, color: '#F97316' },
-    { id: 'social', name: 'Social Media', icon: <Heart className="w-8 h-8 text-pink-500 dark:text-pink-400" />, color: '#EC4899' },
-    { id: 'website', name: 'Website', icon: <Monitor className="w-8 h-8 text-blue-500 dark:text-cyan-400" />, color: '#3B82F6' },
-    { id: 'search', name: 'Search', icon: <Search className="w-8 h-8 text-green-500 dark:text-green-400" />, color: '#10B981' },
-    { id: 'mobile', name: 'Mobile App', icon: <Smartphone className="w-8 h-8 text-indigo-500 dark:text-cyan-400" />, color: '#6366F1' },
-    { id: 'store', name: 'Physical Store', icon: <Store className="w-8 h-8 text-purple-500 dark:text-purple-400" />, color: '#8B5CF6' },
-    { id: 'support', name: 'Customer Service', icon: <Phone className="w-8 h-8 text-yellow-500 dark:text-yellow-400" />, color: '#F59E0B' },
-    { id: 'email', name: 'Email/SMS', icon: <Mail className="w-8 h-8 text-cyan-500 dark:text-cyan-400" />, color: '#06B6D4' }
+    { id: 'samples', name: 'Samples', icon: <Pill className="w-8 h-8 text-blue-500 dark:text-cyan-400" />, color: '#06B6D4' },
+    { id: 'speaker-program', name: 'Speaker Program', icon: <Megaphone className="w-8 h-8 text-blue-500 dark:text-cyan-400" />, color: '#06B6D4' },
+    { id: 'tablet', name: 'Tablet', icon: <Smartphone className="w-8 h-8 text-blue-500 dark:text-cyan-400" />, color: '#06B6D4' },
+    { id: 'search', name: 'Search', icon: <Search className="w-8 h-8 text-blue-500 dark:text-cyan-400" />, color: '#06B6D4' }
   ];
 
   const journeyPaths: JourneyPath[] = [
     {
       personaId: 'tech-savvy',
-      touchpoints: ['social', 'website', 'mobile', 'email'],
+      touchpoints: ['samples', 'speaker-program', 'tablet', 'search'],
       outcome: 'Mobile Purchase'
     },
     {
       personaId: 'traditional',
-      touchpoints: ['tv', 'store', 'support'],
+      touchpoints: ['samples', 'speaker-program', 'search'],
       outcome: 'In-Store Purchase'
     },
     {
       personaId: 'hybrid',
-      touchpoints: ['search', 'website', 'store', 'mobile'],
+      touchpoints: ['samples', 'tablet'],
       outcome: 'Omnichannel Purchase'
     },
     {
       personaId: 'premium',
-      touchpoints: ['display', 'website', 'support', 'store'],
+      touchpoints: ['tablet', 'search'],
       outcome: 'Premium Service'
     }
   ];

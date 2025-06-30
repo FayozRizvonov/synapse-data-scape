@@ -169,7 +169,7 @@ const FarmaMetricsWithGlow = () => {
       category: 'situation',
       section: 'situation',
       details: {
-        description: 'This base sales component represents the baseline revenue that would occur without any marketing efforts in the marketing mix model.',
+        description: 'This base sales component represents the baseline revenue that would occur without any promotional efforts',
         breakdown: [
           { label: 'Confidence Interval', value: '85%' },
           { label: 'P-value', value: '0.01' },

@@ -285,7 +285,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'tts-1-hd',
         input: `<speak><break time='200ms'/>${assistantMessage}<break time='500ms'/></speak>`,
-        voice: 'ash',
+        voice: 'echo',
         response_format: 'mp3',
         speed: 1.1
       }),
