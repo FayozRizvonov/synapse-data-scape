@@ -3,7 +3,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Input } from '@/components/ui/input';
 import { Message, useAIAssistant } from '@/hooks/useAIAssistant';
 
 import ChatMetricCardEnhanced from './ChatMetricCardEnhanced';
@@ -23,7 +22,6 @@ import {
   ArrowRight,
   ExternalLink,
   X,
-  Send,
   Mic
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -33,7 +31,6 @@ interface ChatViewProps {
   onClose?: () => void;
   isSidebarCollapsed?: boolean;
   onNavigateToSection?: (section: string) => void;
-  onSendMessage?: (message: string) => void;
 }
 
 
@@ -42,12 +39,10 @@ const ChatView: React.FC<ChatViewProps> = ({
   className, 
   onClose, 
   isSidebarCollapsed = false,
-  onNavigateToSection,
-  onSendMessage
+  onNavigateToSection
 }) => {
   const { messages, isLoading, lastAIResponse, sendMessage } = useAIAssistant();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [inputValue, setInputValue] = useState('');
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
 
@@ -282,33 +277,16 @@ const ChatView: React.FC<ChatViewProps> = ({
     );
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-  };
-
-  const handleSend = () => {
-    if (!inputValue.trim() || !onSendMessage) return;
-    onSendMessage(inputValue.trim());
-    setInputValue('');
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSend();
-    }
-  };
-
   return (
     <div className={cn(
-      "fixed top-0 left-0 right-0 z-50 flex flex-col backdrop-blur pb-28",
+      "fixed top-0 left-0 right-0 z-50 flex flex-col backdrop-blur-md",
       isSidebarCollapsed ? "ml-16" : "ml-64",
       "transition-colors duration-300",
-      "bg-white/60 dark:bg-black/60",
-      "dark:backdrop-blur-md",
-      "bg-[rgba(59,130,246,0.15)] dark:bg-[rgba(0,0,0,0.6)]"
+      "bg-transparent",
+      "dark:bg-transparent"
     )}>
       {/* Header with close button */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex items-center justify-between p-4 border-b border-white/10 backdrop-blur-sm bg-white/5">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center">
             <Bot className="w-4 h-4 text-white" />
@@ -329,7 +307,7 @@ const ChatView: React.FC<ChatViewProps> = ({
         )}
       </div>
       {/* Chat container with scroll */}
-      <div className={cn("flex-1 flex flex-col", className)} style={{ height: '70vh', maxHeight: '70vh', minHeight: '350px' }}>
+      <div className={cn("flex-1 flex flex-col", className)} style={{ height: '85vh', maxHeight: '85vh', minHeight: '450px' }}>
         <div className="flex-1 overflow-y-auto">
           <ScrollArea className="flex-1 p-4" ref={scrollRef} style={{ height: '100%' }}>
             <div className="space-y-4">
@@ -421,32 +399,6 @@ const ChatView: React.FC<ChatViewProps> = ({
               )}
             </div>
           </ScrollArea>
-        </div>
-      </div>
-
-      {/* Input area */}
-      <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-white/80 dark:bg-black/80 backdrop-blur-md">
-        <div className="max-w-4xl mx-auto">
-          {/* Input area */}
-          <div className="flex gap-2 max-w-2xl mx-auto">
-            <Input
-              value={inputValue}
-              onChange={handleInputChange}
-              onKeyPress={handleKeyPress}
-              placeholder="Ask about metrics, insights, or request specific data..."
-              className="flex-1 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
-              disabled={isLoading}
-            />
-            <Button
-              onClick={handleSend}
-              disabled={!inputValue.trim() || isLoading}
-              className="bg-blue-500 hover:bg-blue-600 text-white"
-            >
-              <Send className="w-4 h-4" />
-            </Button>
-          </div>
-
-
         </div>
       </div>
     </div>

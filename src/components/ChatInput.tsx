@@ -19,6 +19,14 @@ const PLACEHOLDERS = [
   'Upload a file or start a voice query',
 ];
 
+const QUICK_SUGGESTIONS = [
+  'Show key metrics',
+  'Regional analysis',
+  'Revenue forecast',
+  'Performance trends',
+  'Marketing insights'
+];
+
 const ChatInput: React.FC<ChatInputProps> = ({ 
   onSendMessage, 
   isSidebarCollapsed,
@@ -171,12 +179,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
                     {showPlaceholder && !isActive && !message && (
                       <motion.span
                         key={placeholderIndex}
-                        className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40 select-none pointer-events-none"
+                        className="absolute left-0 top-1/2 -translate-y-1/2 text-white/60 dark:text-white/70 select-none pointer-events-none font-medium"
                         style={{
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
-                          zIndex: 0,
+                          zIndex: 2,
                         }}
                         variants={placeholderContainerVariants}
                         initial="initial"
@@ -229,6 +237,38 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 )}
               </button>
             </div>
+
+            {/* Quick Suggestions Row - показывается только когда активен */}
+            <AnimatePresence>
+              {(isActive || message) && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: 'auto' }}
+                  exit={{ opacity: 0, y: -10, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="px-4 pb-3"
+                >
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {QUICK_SUGGESTIONS.map((suggestion, index) => (
+                      <motion.button
+                        key={suggestion}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: index * 0.05 }}
+                        onClick={() => {
+                          setMessage(suggestion);
+                          onSendMessage(suggestion);
+                          setMessage('');
+                        }}
+                        className="px-2 py-1 text-xs rounded-full backdrop-blur-sm bg-white/10 border border-white/20 text-white/80 hover:bg-white/20 hover:text-white transition-all duration-200"
+                      >
+                        {suggestion}
+                      </motion.button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </motion.div>
       </div>
