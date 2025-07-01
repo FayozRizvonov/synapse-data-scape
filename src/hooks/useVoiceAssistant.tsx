@@ -1,436 +1,613 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { useAIAssistant } from './useAIAssistant';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-// Types for Web Speech API
-interface SpeechRecognition extends EventTarget {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  start(): void;
-  stop(): void;
-  onstart: ((this: SpeechRecognition, ev: Event) => void) | null;
-  onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => void) | null;
-  onerror: ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => void) | null;
-  onend: ((this: SpeechRecognition, ev: Event) => void) | null;
+interface CardData {
+  action: string;
+  metric_id: string;
 }
 
-interface SpeechRecognitionEvent extends Event {
-  resultIndex: number;
-  results: SpeechRecognitionResultList;
-}
-
-interface SpeechRecognitionResultList {
-  length: number;
-  item(index: number): SpeechRecognitionResult;
-  [index: number]: SpeechRecognitionResult;
-}
-
-interface SpeechRecognitionResult {
-  isFinal: boolean;
-  length: number;
-  item(index: number): SpeechRecognitionAlternative;
-  [index: number]: SpeechRecognitionAlternative;
-}
-
-interface SpeechRecognitionAlternative {
-  transcript: string;
-  confidence: number;
-}
-
-interface SpeechRecognitionErrorEvent extends Event {
-  error: string;
-  message: string;
-}
-
-interface SpeechRecognitionConstructor {
-  new (): SpeechRecognition;
-}
-
-declare global {
-  interface Window {
-    SpeechRecognition?: SpeechRecognitionConstructor;
-    webkitSpeechRecognition?: SpeechRecognitionConstructor;
-    webkitAudioContext?: typeof AudioContext;
-  }
-}
-
-export interface VoiceState {
+interface VoiceAssistantState {
   isListening: boolean;
-  isSpeaking: boolean;
+  isTranscribing: boolean;
   isProcessing: boolean;
+  isPlaying: boolean;
+  status: string;
   transcript: string;
+  response: string;
+  cardData: CardData | null;
   error: string | null;
-  isVoiceMode: boolean;
+  isVoiceModalOpen: boolean;
+  isAutoMode: boolean;
 }
 
 export const useVoiceAssistant = () => {
-  const [voiceState, setVoiceState] = useState<VoiceState>({
+  const [state, setState] = useState<VoiceAssistantState>({
     isListening: false,
-    isSpeaking: false,
+    isTranscribing: false,
     isProcessing: false,
+    isPlaying: false,
+    status: 'ready',
     transcript: '',
+    response: '',
+    cardData: null,
     error: null,
-    isVoiceMode: false,
+    isVoiceModalOpen: false,
+    isAutoMode: true
   });
 
-  const { sendMessage, lastAIResponse } = useAIAssistant();
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const synthesisRef = useRef<SpeechSynthesis | null>(null);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
+  // Initialize auto mode as enabled by default
+  useEffect(() => {
+    console.log('🏁 useVoiceAssistant initialized, auto mode enabled');
+    isAutoModeRef.current = true;
+  }, []);
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  
-  // Track last spoken message
-  const lastSpokenMessageRef = useRef<string>('');
-  const lastAIResponseAtVoiceModeActivationRef = useRef<string | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const graceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const soundLevelIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+  const isAutoModeRef = useRef<boolean>(true);
+  const startListeningRef = useRef<() => Promise<void>>();
+  const isListeningRef = useRef<boolean>(false);
+  const hasDetectedSoundRef = useRef<boolean>(false);
+  const silenceStartRef = useRef<number>(Date.now());
 
-  // Web Speech API initialization
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      // Speech Recognition
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        recognitionRef.current = new SpeechRecognition();
-        recognitionRef.current.continuous = true;
-        recognitionRef.current.interimResults = true;
-        recognitionRef.current.lang = 'en-US'; // Set to English
-
-        recognitionRef.current.onstart = () => {
-          setVoiceState(prev => ({ ...prev, isListening: true, error: null }));
-        };
-
-        recognitionRef.current.onresult = (event) => {
-          let finalTranscript = '';
-          let interimTranscript = '';
-
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript;
-            if (event.results[i].isFinal) {
-              finalTranscript += transcript;
-            } else {
-              interimTranscript += transcript;
-            }
-          }
-
-          setVoiceState(prev => ({
-            ...prev,
-            transcript: finalTranscript + interimTranscript
-          }));
-
-          // If there is a final result, send it
-          if (finalTranscript.trim()) {
-            handleVoiceMessage(finalTranscript.trim());
-          }
-        };
-
-        recognitionRef.current.onerror = (event) => {
-          console.error('Speech recognition error:', event.error);
-          setVoiceState(prev => ({
-            ...prev,
-            isListening: false,
-            error: `Speech recognition error: ${event.error}`
-          }));
-        };
-
-        recognitionRef.current.onend = () => {
-          setVoiceState(prev => ({ ...prev, isListening: false }));
-        };
-      }
-
-      // Speech Synthesis
-      synthesisRef.current = window.speechSynthesis;
-    }
-
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-      if (synthesisRef.current && utteranceRef.current) {
-        synthesisRef.current.cancel();
-      }
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-        mediaRecorderRef.current.stop();
-      }
-    };
+  // Enable/disable auto mode
+  const enableAutoMode = useCallback(() => {
+    console.log('🔓 Enabling auto mode');
+    isAutoModeRef.current = true;
   }, []);
 
-  // Reset voice mode on initialization
-  useEffect(() => {
-    setVoiceState(prev => ({ 
+  const disableAutoMode = useCallback(() => {
+    console.log('🔒 Disabling auto mode');
+    isAutoModeRef.current = false;
+  }, []);
+
+  // Open/close voice modal
+  const openVoiceModal = useCallback(() => {
+    // Включаем автоматический режим при открытии
+    console.log('🔓 Opening voice modal, enabling auto mode');
+    isAutoModeRef.current = true;
+    setState(prev => ({ ...prev, isVoiceModalOpen: true }));
+  }, []);
+
+  const closeVoiceModal = useCallback(() => {
+    // Отключаем автоматический режим при закрытии
+    console.log('🔒 Closing voice modal, disabling auto mode');
+    isAutoModeRef.current = false;
+    
+    setState(prev => ({ 
       ...prev, 
-      isVoiceMode: false,
-      isListening: false,
-      isSpeaking: false,
-      isProcessing: false,
+      isVoiceModalOpen: false,
+      status: 'ready',
       transcript: '',
+      response: '',
+      cardData: null,
       error: null
     }));
+    // stopListening будет вызван позже
   }, []);
 
-  const handleVoiceMessage = useCallback(async (message: string) => {
-    if (!message.trim()) return;
-
-    setVoiceState(prev => ({ ...prev, isProcessing: true, transcript: '' }));
+  // Start voice recording
+  const startListening = useCallback(async () => {
+    console.log('🎤 Starting voice assistant...');
 
     try {
-      // Use existing sendMessage for text requests
-      await sendMessage(message);
-    } catch (error) {
-      setVoiceState(prev => ({
-        ...prev,
-        error: 'Error processing message'
+      setState(prev => ({ 
+        ...prev, 
+        isListening: true, 
+        status: 'listening', 
+        error: null,
+        transcript: '',
+        response: '',
+        cardData: null
       }));
-    } finally {
-      setVoiceState(prev => ({ ...prev, isProcessing: false }));
+
+      // Get microphone access
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 44100
+        } 
+      });
+      
+      streamRef.current = stream;
+      console.log('✅ Microphone access granted');
+
+      // Setup audio analysis for silence detection
+      const AudioContextConstructor = window.AudioContext || (window as typeof window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      audioContextRef.current = new AudioContextConstructor();
+      console.log('🎙️ AudioContext state:', audioContextRef.current.state);
+      
+      // Если браузер создал AudioContext в suspended состоянии, резюмируем его
+      if (audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
+        console.log('🔊 AudioContext resumed, new state:', audioContextRef.current.state);
+      }
+      
+      const source = audioContextRef.current.createMediaStreamSource(stream);
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      analyserRef.current.fftSize = 256;
+      analyserRef.current.smoothingTimeConstant = 0.8;
+      source.connect(analyserRef.current);
+      
+      console.log('🔗 Audio pipeline connected');
+      
+      // Тестируем получение аудио данных
+      setTimeout(() => {
+        if (analyserRef.current) {
+          const testData = new Uint8Array(analyserRef.current.frequencyBinCount);
+          analyserRef.current.getByteFrequencyData(testData);
+          const testAverage = testData.reduce((a, b) => a + b) / testData.length;
+          console.log('🧪 Test audio level:', testAverage.toFixed(2));
+        }
+      }, 500);
+
+      // Setup MediaRecorder with optimal settings
+      const preferredFormats = ['audio/webm;codecs=opus', 'audio/webm', 'audio/wav'];
+      let selectedFormat = 'audio/webm';
+      
+      for (const format of preferredFormats) {
+        if (MediaRecorder.isTypeSupported(format)) {
+          selectedFormat = format;
+          break;
+        }
+      }
+
+
+
+      mediaRecorderRef.current = new MediaRecorder(stream, {
+        mimeType: selectedFormat,
+        audioBitsPerSecond: 256000
+      });
+
+      audioChunksRef.current = [];
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorderRef.current.onstop = async () => {
+        console.log('🛑 Recording stopped');
+        await processRecording();
+      };
+
+      mediaRecorderRef.current.start(250); // Collect data every 250ms
+
+      // Start silence detection after small grace period
+      graceTimeoutRef.current = setTimeout(() => {
+        // Убеждаемся что состояние обновилось
+        if (mediaRecorderRef.current?.state === 'recording') {
+          startSilenceDetection();
+        }
+      }, 1000); // 1 second grace period для быстрого старта
+
+    } catch (error) {
+      console.error('❌ Failed to start listening:', error);
+      setState(prev => ({ 
+        ...prev, 
+        isListening: false, 
+        status: 'error',
+        error: 'Failed to access microphone' 
+      }));
     }
-  }, [sendMessage]);
+  }, []);
 
-  // New function for handling audio through Edge Function
-  const handleAudioMessage = useCallback(async (audioBlob: Blob) => {
-    setVoiceState(prev => ({ ...prev, isProcessing: true }));
+  // Сохраняем ссылки на функции и состояние для использования в callback
+  useEffect(() => {
+    startListeningRef.current = startListening;
+  }, [startListening]);
 
+  useEffect(() => {
+    isListeningRef.current = state.isListening;
+  }, [state.isListening]);
+
+  // Stop voice recording
+  const stopListening = useCallback(() => {
+    console.log('🛑 Stopping voice assistant...');
+
+    if (silenceTimeoutRef.current) {
+      clearTimeout(silenceTimeoutRef.current);
+      silenceTimeoutRef.current = null;
+    }
+
+    if (graceTimeoutRef.current) {
+      clearTimeout(graceTimeoutRef.current);
+      graceTimeoutRef.current = null;
+    }
+
+    if (soundLevelIntervalRef.current) {
+      clearInterval(soundLevelIntervalRef.current);
+      soundLevelIntervalRef.current = null;
+    }
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+    }
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+
+    setState(prev => ({ ...prev, isListening: false }));
+  }, []);
+
+  // Silence detection
+  const startSilenceDetection = useCallback(() => {
+    if (!analyserRef.current) return;
+    
+    console.log('🎙️ Starting silence detection...');
+
+    const bufferLength = analyserRef.current.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    
+    // Сбрасываем состояние обнаружения звука
+    hasDetectedSoundRef.current = false;
+    silenceStartRef.current = Date.now();
+
+    const checkSilence = () => {
+      // Проверяем MediaRecorder напрямую
+      if (!analyserRef.current || !mediaRecorderRef.current || mediaRecorderRef.current.state !== 'recording') {
+        console.log('🛑 Stopping silence detection - recording stopped');
+        if (soundLevelIntervalRef.current) {
+          clearInterval(soundLevelIntervalRef.current);
+          soundLevelIntervalRef.current = null;
+        }
+        return;
+      }
+
+      analyserRef.current.getByteFrequencyData(dataArray);
+      const average = dataArray.reduce((a, b) => a + b) / bufferLength;
+      
+      // Повышаем порог обнаружения звука для лучшего распознавания
+      const soundThreshold = 15; // Увеличиваем порог с 3 до 15
+      const isSound = average > soundThreshold;
+      
+      console.log('🎚️ Audio level:', average.toFixed(2), 'threshold:', soundThreshold, 'hasDetectedSound:', hasDetectedSoundRef.current, 'isSound:', isSound);
+      
+      if (isSound) {
+        if (!hasDetectedSoundRef.current) {
+          console.log('🗣️ Speech detected! Starting silence timer...');
+          hasDetectedSoundRef.current = true;
+        }
+        silenceStartRef.current = Date.now(); // Сбрасываем таймер тишины
+        setState(prev => ({ ...prev, status: 'speaking' }));
+      } else if (hasDetectedSoundRef.current) {
+        // Считаем тишину только после того как обнаружили звук
+        const silenceDuration = Date.now() - silenceStartRef.current;
+        console.log('🔇 Silence duration:', silenceDuration, 'ms');
+        
+        setState(prev => ({ ...prev, status: 'silence_detected' }));
+        
+        // Останавливаем запись после 2 секунд тишины
+        if (silenceDuration > 2000) {
+          console.log('🔇 Silence threshold reached, stopping recording');
+          if (soundLevelIntervalRef.current) {
+            clearInterval(soundLevelIntervalRef.current);
+            soundLevelIntervalRef.current = null;
+          }
+          stopListening();
+          return;
+        }
+      } else {
+        // Если еще не обнаружили речь, обновляем статус
+        setState(prev => ({ ...prev, status: 'listening' }));
+      }
+    };
+
+    // Используем setInterval вместо requestAnimationFrame для более стабильной работы
+    soundLevelIntervalRef.current = setInterval(checkSilence, 100); // Проверяем каждые 100ms
+    
+    // Очищаем интервал при размонтировании
+    return () => {
+      if (soundLevelIntervalRef.current) {
+        clearInterval(soundLevelIntervalRef.current);
+        soundLevelIntervalRef.current = null;
+      }
+    };
+  }, [stopListening]);
+
+  // Process recorded audio
+  const processRecording = useCallback(async () => {
+    console.log('🔄 Processing recording...');
+    
     try {
-      // Convert Blob to base64
-      const arrayBuffer = await audioBlob.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
-      const base64Audio = btoa(String.fromCharCode(...uint8Array));
+      if (audioChunksRef.current.length === 0) {
+        throw new Error('No recorded audio');
+      }
 
-      // Send to voice-assistant Edge Function
+      // Create audio blob
+      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+
+      // Validate audio size
+      if (audioBlob.size < 2048) { // Minimum 2KB
+        throw new Error('Audio too short. Please speak longer.');
+      }
+
+      // Skip local transcription - will get transcript from server
+      setState(prev => ({ 
+        ...prev, 
+        isTranscribing: true, 
+        status: 'transcribing'
+      }));
+
+      // Send audio to voice assistant for full processing
+      console.log('🚀 Sending to voice-assistant function...');
+      
+      // Convert audio blob to base64 for the voice assistant
+      const reader = new FileReader();
+      const audioBase64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string;
+          const base64 = result.split(',')[1]; // Remove data:audio/webm;base64, prefix
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(audioBlob);
+      });
+      
       const { data, error } = await supabase.functions.invoke('voice-assistant', {
         body: {
-          audioData: base64Audio,
-          audioFormat: audioBlob.type.split('/')[1] || 'webm'
+          audioData: audioBase64,
+          audioFormat: 'webm'
         }
       });
 
       if (error) {
-        throw new Error(error.message);
+        throw new Error(error.message || 'Server error');
       }
 
-      if (data.transcript) {
-        setVoiceState(prev => ({ ...prev, transcript: data.transcript }));
+      console.log('✅ Server response received');
+      
+      if (!data) {
+        throw new Error('No data received from voice assistant');
       }
 
-      if (data.response) {
-        // Send response to chat
-        await sendMessage(data.response);
+      if (!data.audio || data.audio === '') {
+        throw new Error('No audio data in server response');
       }
 
-      if (data.audio) {
-        // Play audio response
-        playAudioFromBase64(data.audio);
+      if (data.error) {
+        throw new Error(`Server error: ${data.error}`);
       }
+      
+      setState(prev => ({ 
+        ...prev, 
+        isTranscribing: false,
+        isProcessing: false,
+        transcript: data.transcript || 'Speech not recognized',
+        response: data.answer || 'No response text',
+        cardData: data.card || null,
+        status: 'playing'
+      }));
+
+      // Play audio response
+      await playAudioResponse(data.audio);
 
     } catch (error) {
-      console.error('Voice processing error:', error);
-      setVoiceState(prev => ({
-        ...prev,
-        error: 'Error processing voice request'
+      console.error('❌ Error processing recording:', error);
+      setState(prev => ({ 
+        ...prev, 
+        isTranscribing: false,
+        isProcessing: false,
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Processing error' 
       }));
-    } finally {
-      setVoiceState(prev => ({ ...prev, isProcessing: false }));
     }
-  }, [sendMessage]);
+  }, []);
 
-  const playAudioFromBase64 = useCallback((base64Audio: string) => {
+  // Play audio response
+  const playAudioResponse = useCallback(async (audioBase64: string) => {
     try {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const audioData = atob(base64Audio);
-      const audioArray = new Uint8Array(audioData.length);
+      console.log('🔊 Playing audio response...');
       
+      setState(prev => ({ ...prev, isPlaying: true }));
+
+      // Validate audio base64
+      if (!audioBase64 || typeof audioBase64 !== 'string') {
+        throw new Error('No audio data received from server');
+      }
+
+      // Clean the base64 string (remove any whitespace/newlines)
+      const cleanAudioBase64 = audioBase64.replace(/[^A-Za-z0-9+/=]/g, '');
+      
+      if (cleanAudioBase64.length === 0) {
+        throw new Error('Empty audio data');
+      }
+
+      // Validate base64 format
+      if (!/^[A-Za-z0-9+/]*={0,2}$/.test(cleanAudioBase64)) {
+        throw new Error('Invalid base64 audio format');
+      }
+
+      // Convert base64 to blob
+      let audioData: string;
+      try {
+        audioData = atob(cleanAudioBase64);
+      } catch (error) {
+        console.error('❌ Base64 decode error:', error);
+        throw new Error('Failed to decode audio data');
+      }
+      
+      const audioArray = new Uint8Array(audioData.length);
       for (let i = 0; i < audioData.length; i++) {
         audioArray[i] = audioData.charCodeAt(i);
       }
-
-      audioContext.decodeAudioData(audioArray.buffer, (buffer) => {
-        const source = audioContext.createBufferSource();
-        source.buffer = buffer;
-        source.connect(audioContext.destination);
-        
-        setVoiceState(prev => ({ ...prev, isSpeaking: true }));
-        
-        source.onended = () => {
-          setVoiceState(prev => ({ ...prev, isSpeaking: false }));
-        };
-        
-        source.start(0);
-      });
-    } catch (error) {
-      console.error('Audio playback error:', error);
-      setVoiceState(prev => ({ ...prev, isSpeaking: false }));
-    }
-  }, []);
-
-  const startListening = useCallback(async () => {
-    if (recognitionRef.current && !voiceState.isListening) {
-      try {
-        // Request access to microphone
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        
-        // Set up MediaRecorder for recording audio
-        mediaRecorderRef.current = new MediaRecorder(stream);
-        audioChunksRef.current = [];
-
-        mediaRecorderRef.current.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            audioChunksRef.current.push(event.data);
-          }
-        };
-
-        mediaRecorderRef.current.onstop = async () => {
-          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-          await handleAudioMessage(audioBlob);
-        };
-
-        // Start recording
-        mediaRecorderRef.current.start();
-        
-        // Start speech recognition
-        recognitionRef.current.start();
-      } catch (error) {
-        setVoiceState(prev => ({
-          ...prev,
-          error: 'Failed to access microphone'
-        }));
+      
+      if (audioArray.length === 0) {
+        throw new Error('Empty audio buffer');
       }
-    }
-  }, [voiceState.isListening, handleAudioMessage]);
-
-  const stopListening = useCallback(() => {
-    if (recognitionRef.current && voiceState.isListening) {
-      recognitionRef.current.stop();
-    }
-    
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      mediaRecorderRef.current.stop();
-    }
-  }, [voiceState.isListening]);
-
-  const speak = useCallback((text: string) => {
-    if (!synthesisRef.current) return;
-
-    // Additional check: speak only in voice mode
-    if (!voiceState.isVoiceMode) {
-      console.log('Voice mode not active, skipping speech');
-      return;
-    }
-
-    // Check if we've already spoken this message
-    if (lastSpokenMessageRef.current === text) {
-      console.log('Message already spoken, skipping...');
-      return;
-    }
-
-    // Stop previous playback
-    synthesisRef.current.cancel();
-
-    utteranceRef.current = new SpeechSynthesisUtterance(text);
-    utteranceRef.current.lang = 'en-US'; // Set to English
-    utteranceRef.current.rate = 0.9; // Slightly slower for better understanding
-    utteranceRef.current.pitch = 0.8; // Lower voice (male)
-    utteranceRef.current.volume = 1.0; // Full volume
-
-    // Try to find a male voice
-    const voices = synthesisRef.current.getVoices();
-    const preferredVoice = voices.find(voice => 
-      voice.lang.includes('en') && 
-      (voice.name.includes('Google') || voice.name.includes('Natural') || voice.name.includes('Premium')) &&
-      voice.name.toLowerCase().includes('male')
-    ) || voices.find(voice => 
-      voice.lang.includes('en') && 
-      (voice.name.includes('Google') || voice.name.includes('Natural') || voice.name.includes('Premium'))
-    );
-    
-    if (preferredVoice) {
-      utteranceRef.current.voice = preferredVoice;
-    }
-
-    utteranceRef.current.onstart = () => {
-      setVoiceState(prev => ({ ...prev, isSpeaking: true }));
-      lastSpokenMessageRef.current = text; // Remember spoken message
-    };
-
-    utteranceRef.current.onend = () => {
-      setVoiceState(prev => ({ ...prev, isSpeaking: false }));
-    };
-
-    utteranceRef.current.onerror = (event) => {
-      console.error('Speech synthesis error:', event);
-      setVoiceState(prev => ({
-        ...prev,
-        isSpeaking: false,
-        error: 'Error during speech synthesis'
+      
+      const audioBlob = new Blob([audioArray], { type: 'audio/mpeg' });
+      
+      if (audioBlob.size === 0) {
+        throw new Error('Empty audio blob');
+      }
+      
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      currentAudioRef.current = audio;
+      
+      audio.onended = () => {
+        console.log('✅ Audio playback completed');
+        setState(prev => ({ ...prev, isPlaying: false, status: 'completed' }));
+        URL.revokeObjectURL(audioUrl);
+        currentAudioRef.current = null;
+        
+        // Автоматически начинаем новое прослушивание после завершения ответа
+        console.log('🔍 Checking auto mode:', isAutoModeRef.current);
+        console.log('🔍 Start listening ref available:', !!startListeningRef.current);
+        
+        if (isAutoModeRef.current) {
+          setTimeout(() => {
+            console.log('🔄 Auto-restarting listening...');
+            console.log('🔍 Final check - auto mode:', isAutoModeRef.current);
+            console.log('🔍 Final check - start function:', !!startListeningRef.current);
+            // Используем сохраненную функцию для рестарта
+            if (startListeningRef.current) {
+              startListeningRef.current();
+            } else {
+              console.error('❌ startListeningRef.current is null!');
+            }
+          }, 1000); // Небольшая пауза перед новым прослушиванием
+        } else {
+          console.log('❌ Auto mode is disabled, not restarting');
+        }
+      };
+      
+      audio.onerror = (error) => {
+        console.error('❌ Audio playback error:', error);
+        setState(prev => ({ 
+          ...prev, 
+          isPlaying: false, 
+          status: 'error',
+          error: 'Audio playback error' 
+        }));
+        URL.revokeObjectURL(audioUrl);
+        currentAudioRef.current = null;
+      };
+      
+      await audio.play();
+      
+    } catch (error) {
+      console.error('❌ Error playing audio:', error);
+      setState(prev => ({ 
+        ...prev, 
+        isPlaying: false, 
+        status: 'error',
+        error: 'Failed to play audio' 
       }));
-    };
-
-    synthesisRef.current.speak(utteranceRef.current);
-  }, [voiceState.isVoiceMode]);
-
-  const stopSpeaking = useCallback(() => {
-    if (synthesisRef.current) {
-      synthesisRef.current.cancel();
-      setVoiceState(prev => ({ ...prev, isSpeaking: false }));
     }
   }, []);
 
-  const clearError = useCallback(() => {
-    setVoiceState(prev => ({ ...prev, error: null }));
+  // Stop audio playback
+  const stopAudio = useCallback(() => {
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current.currentTime = 0;
+      currentAudioRef.current = null;
+    }
+    setState(prev => ({ ...prev, isPlaying: false }));
   }, []);
 
-  // Function to activate voice mode
-  const activateVoiceMode = useCallback(() => {
-    setVoiceState(prev => ({ ...prev, isVoiceMode: true }));
-    // Remember last message at activation
-    lastAIResponseAtVoiceModeActivationRef.current = lastAIResponse?.text || null;
-  }, [lastAIResponse]);
+  // Complete shutdown - stops everything
+  const shutdown = useCallback(() => {
+    console.log('🛑 Complete voice assistant shutdown...');
+    
+    // Disable auto mode first
+    isAutoModeRef.current = false;
+    
+    // Clear all timeouts and intervals
+    if (silenceTimeoutRef.current) {
+      clearTimeout(silenceTimeoutRef.current);
+      silenceTimeoutRef.current = null;
+    }
 
-  // Function to deactivate voice mode
-  const deactivateVoiceMode = useCallback(() => {
-    setVoiceState(prev => ({ 
-      ...prev, 
-      isVoiceMode: false,
-      isListening: false,
-      isSpeaking: false,
-      isProcessing: false,
-      transcript: ''
-    }));
-    // Stop all processes
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
+    if (graceTimeoutRef.current) {
+      clearTimeout(graceTimeoutRef.current);
+      graceTimeoutRef.current = null;
     }
-    if (synthesisRef.current) {
-      synthesisRef.current.cancel();
+
+    if (soundLevelIntervalRef.current) {
+      clearInterval(soundLevelIntervalRef.current);
+      soundLevelIntervalRef.current = null;
     }
+
+    // Stop audio playback
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current.currentTime = 0;
+      currentAudioRef.current = null;
+    }
+
+    // Stop recording
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop();
+      mediaRecorderRef.current = null;
     }
+
+    // Stop media stream
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => {
+        track.stop();
+        console.log('🛑 Stopped track:', track.label);
+      });
+      streamRef.current = null;
+    }
+
+    // Close audio context
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+
+    // Reset all state
+    setState(prev => ({ 
+      ...prev, 
+      isListening: false,
+      isTranscribing: false,
+      isProcessing: false,
+      isPlaying: false,
+      status: 'ready',
+      transcript: '',
+      response: '',
+      cardData: null,
+      error: null
+    }));
+
+    console.log('✅ Voice assistant completely shut down');
   }, []);
 
-  // Automatic playback only in voice mode
+  // Update closeVoiceModal to properly stop listening
   useEffect(() => {
-    if (
-      voiceState.isVoiceMode &&
-      lastAIResponse?.text &&
-      !voiceState.isSpeaking &&
-      lastAIResponse.text !== lastAIResponseAtVoiceModeActivationRef.current // Only if new message
-    ) {
-      const timer = setTimeout(() => {
-        speak(lastAIResponse.text);
-      }, 500);
-      return () => clearTimeout(timer);
+    if (!state.isVoiceModalOpen && state.isListening) {
+      stopListening();
     }
-  }, [lastAIResponse, voiceState.isVoiceMode, voiceState.isSpeaking, speak]);
+  }, [state.isVoiceModalOpen, state.isListening, stopListening]);
 
   return {
-    voiceState,
+    ...state,
     startListening,
     stopListening,
-    speak,
-    stopSpeaking,
-    clearError,
-    activateVoiceMode,
-    deactivateVoiceMode,
+    stopAudio,
+    shutdown,
+    openVoiceModal,
+    closeVoiceModal,
+    enableAutoMode,
+    disableAutoMode
   };
 }; 

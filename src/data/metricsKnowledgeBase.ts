@@ -38,11 +38,11 @@ export const metricsKnowledgeBase: MetricCard[] = [
   {
     id: 'revenue',
     title: 'QoQ Revenue Growth',
-    value: '8.7%',
-    change: '+40.3%',
+    value: '6.4%',
+    change: '+30.1%',
     changeType: 'positive',
     comparison: 'vs last quarter',
-    description: 'Strong growth driven by new respiratory product line',
+    description: 'Driven by stroke clinic uptake and AFib adherence',
     icon: 'TrendingUp',
     category: 'key',
     section: 'pharma-sm',
@@ -69,11 +69,11 @@ export const metricsKnowledgeBase: MetricCard[] = [
   {
     id: 'prescriptions',
     title: 'Patient Share / Prescriptions',
-    value: '34.2%',
-    change: '+8.6%',
+    value: '32.8%',
+    change: '+7.4%',
     changeType: 'positive',
     comparison: 'vs last quarter',
-    description: 'Strong patient acquisition and retention',
+    description: 'Strong acquisition in South region',
     icon: 'Users',
     category: 'key',
     section: 'pharma-sm',
@@ -99,11 +99,11 @@ export const metricsKnowledgeBase: MetricCard[] = [
   {
     id: 'sample-ratio',
     title: 'Sample-to-Script Ratio',
-    value: '1.8x',
-    change: '+20.0%',
+    value: '1.7x',
+    change: '+18.2%',
     changeType: 'positive',
     comparison: 'vs last quarter',
-    description: 'Excellent conversion efficiency',
+    description: 'Improved sampling in stroke clinics',
     icon: 'Pill',
     category: 'key',
     section: 'pharma-sm',
@@ -128,12 +128,12 @@ export const metricsKnowledgeBase: MetricCard[] = [
   },
   {
     id: 'roi',
-    title: 'Rebate Spend vs ROI',
-    value: '4.3x',
-    change: '+16.2%',
+    title: 'Promotion ROI',
+    value: '2.6x',
+    change: '+20.5%',
     changeType: 'positive',
     comparison: 'vs last quarter',
-    description: 'Outstanding rebate program efficiency',
+    description: 'Excellent digital and phone channel efficiency',
     icon: 'DollarSign',
     category: 'key',
     section: 'pharma-sm',
@@ -157,13 +157,13 @@ export const metricsKnowledgeBase: MetricCard[] = [
     }
   },
   {
-    id: 'market-access',
-    title: 'Market Access Score',
-    value: '87.3',
-    change: '+12.1%',
+    id: 'payer-access',
+    title: 'Payer Access Score',
+    value: '85.6',
+    change: '+10.2%',
     changeType: 'positive',
     comparison: 'vs last quarter',
-    description: 'Strong market access positioning',
+    description: 'Strong formulary positioning',
     icon: 'Target',
     category: 'key',
     section: 'pharma-sm',
@@ -191,11 +191,11 @@ export const metricsKnowledgeBase: MetricCard[] = [
   {
     id: 'total-sales',
     title: 'Total Sales',
-    value: '$21.3M',
-    change: '+85.2%',
+    value: '$20.8M',
+    change: '+82.4%',
     changeType: 'positive',
     comparison: 'Total Revenue',
-    description: 'Outstanding total sales performance',
+    description: 'Strong baseline and marketing-driven growth',
     icon: 'TrendingUp',
     category: 'situation',
     section: 'pharma-sm',
@@ -221,11 +221,11 @@ export const metricsKnowledgeBase: MetricCard[] = [
   {
     id: 'base-sales',
     title: 'Base Sales',
-    value: '$12.0M',
-    change: '+93.14%',
+    value: '$11.5M',
+    change: '+91.2%',
     changeType: 'positive',
     comparison: 'Revenue Attribution',
-    description: 'Strong baseline revenue without marketing efforts',
+    description: 'Solid baseline without marketing',
     icon: 'BarChart3',
     category: 'situation',
     section: 'pharma-sm',
@@ -250,12 +250,12 @@ export const metricsKnowledgeBase: MetricCard[] = [
   },
   {
     id: 'incremental',
-    title: 'Incremental',
-    value: '$2.5M',
-    change: '+18.2%',
+    title: 'Incremental Revenue',
+    value: '$2.3M',
+    change: '+17.5%',
     changeType: 'positive',
     comparison: 'Incremental Revenue',
-    description: 'Strong marketing-driven revenue growth',
+    description: 'Marketing-driven growth',
     icon: 'TrendingUp',
     category: 'situation',
     section: 'pharma-sm',
@@ -532,6 +532,10 @@ export const findMetricByQuery = (query: string): MetricCard | undefined => {
     metric.keywords.some(keyword => lowerQuery.includes(keyword.toLowerCase())) ||
     lowerQuery.includes(metric.title.toLowerCase())
   );
+};
+
+export const getMetricById = (id: string): MetricCard | undefined => {
+  return metricsKnowledgeBase.find(metric => metric.id === id);
 };
 
 export const getMetricsByCategory = (category: 'key' | 'situation' | 'scenario'): MetricCard[] => {

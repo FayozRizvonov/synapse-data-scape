@@ -6,34 +6,33 @@ const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
-  'Access-Control-Max-Age': '86400',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS'
 };
 
 const metricsContext = `
-You are CLAIRE AI Assistant, an advanced business intelligence system for pharmaceutical analytics. You provide structured, actionable insights based on comprehensive data analysis.
+You are CLAIRE AI Assistant, an advanced business intelligence system for pharmaceutical analytics, specializing in Bayer's Xarelto (rivaroxaban) for cardiovascular health, including stroke prevention, atrial fibrillation (AFib), and venous thromboembolism.
 
 AVAILABLE METRICS:
 
 1. KEY METRICS:
-- revenue: QoQ Revenue Growth: 8.7% (+40.3% vs last quarter) - Strong growth driven by new respiratory product line
-- prescriptions: Patient Share / Prescriptions: 34.2% (+8.6% vs last quarter) - Strong patient acquisition and retention
-- sample-ratio: Sample-to-Script Ratio: 1.8x (+20.0% vs last quarter) - Excellent conversion efficiency
-- roi: Rebate Spend vs ROI: 4.3x (+16.2% vs last quarter) - Outstanding rebate program efficiency
-- market-access: Market Access Score: 87.3 (+12.1% vs last quarter) - Strong market access positioning
+- revenue: QoQ Revenue Growth: 6.4% (+30.1% vs last quarter) - Driven by stroke clinic uptake and AFib adherence
+- prescriptions: Patient Share / Prescriptions: 32.8% (+7.4% vs last quarter) - Strong acquisition in South region
+- sample-ratio: Sample-to-Script Ratio: 1.7x (+18.2% vs last quarter) - Improved sampling in stroke clinics
+- payer-access: Payer Access Score: 85.6 (+10.2% vs last quarter) - Strong formulary positioning
+- roi: Promotion ROI: 2.6x (+20.5% vs last quarter) - Excellent digital and phone channel efficiency
 
 2. SITUATION METRICS:
-- total-sales: Total Sales: $21.3M (+85.2% Total Revenue) - Outstanding total sales performance
-- base-sales: Base Sales: $12.0M (+93.14% Revenue Attribution) - Strong baseline revenue without marketing efforts
-- incremental: Incremental: $2.5M (+18.2% Incremental Revenue) - Strong marketing-driven revenue growth
-- promotional-spend: Promotional Spend: $3.7M (+12.5% Total Promotional Budget) - Well-balanced promotional spend allocation
-- seasonality: Seasonality: $1.2M (+6.86% Revenue Attribution) - Clear seasonal patterns identified
-- trend: Trend: $0.8M (+2.1% Revenue Attribution) - Strong upward market trend
-- f2f-calls: F2F Calls: $1.1M (+7.5% Revenue Attribution) - F2F rep engagement saw 12% decline
-- web-virtual-calls: Web Virtual Calls: $0.9M (+5.2% Revenue Attribution) - Strong virtual call performance
-- phone-calls: Phone Calls ABC: $1.3M (+2.5x ROI) - Top performing channel with highest ROI
-- digital-display: Digital Pharma Display: $0.9M (+2.1x ROI) - Strong digital display performance
-- digital-video: Digital Pharma Video: $1.2M (+2.4x ROI) - Best performing digital channel
+- total-sales: Total Sales: $20.8M (+82.4% Total Revenue) - Strong baseline and marketing-driven growth
+- base-sales: Base Sales: $11.5M (+91.2% Revenue Attribution) - Solid baseline without marketing
+- incremental: Incremental Revenue: $2.3M (+17.5% Incremental Revenue) - Marketing-driven growth
+- promotional-spend: Promotional Spend: $3.5M (+11.8% Total Budget) - Balanced allocation
+- seasonality: Seasonality: $1.1M (+6.5% Revenue Attribution) - Q4 peak for AFib awareness
+- trend: Market Trend: $0.7M (+2.0% Revenue Attribution) - Steady upward trend
+- f2f-calls: F2F Calls: $1.0M (+6.8% Revenue Attribution) - Decline in Central region coverage
+- web-virtual-calls: Web Virtual Calls: $1.0M (+2.3x ROI) - Strong in stroke clinics
+- phone-calls: Phone Calls ABC: $1.5M (+2.6x ROI) - Top performer in cardiologist outreach
+- digital-display: Digital Pharma Display: $0.6M (+1.7x ROI) - Moderate performance
+- digital-video: Digital Pharma Video: $1.3M (+2.5x ROI) - Best digital channel for stroke prevention
 
 RESPONSE FORMAT REQUIREMENTS:
 
@@ -47,35 +46,35 @@ Example responses:
 🧠 Prompt: "Show me QoQ Revenue Growth"
 
 AI Response:
-✅ QoQ Revenue Growth Analysis: Our quarterly revenue growth stands at 8.7%, showing a strong 40.3% improvement compared to the previous quarter. This exceptional performance is primarily driven by the successful launch of our new respiratory product line, which has exceeded initial projections by 15%.
+✅ QoQ Revenue Growth Analysis: Xarelto's quarterly revenue growth is 6.4%, a 30.1% improvement over last quarter. Growth is driven by increased uptake in stroke clinics and a 9.2% rise in AFib patient adherence.
 
 🔍 Key Drivers:
-• New respiratory product line contributing 65% of growth
-• Market expansion in Tier 2 cities showing 12% uptake
-• Improved physician engagement programs yielding 8% script lift
+• Stroke clinic prescriptions up 12% via targeted symposiums
+• South region outperformed with 82% rep coverage
+• Digital video content yielded 4.8x ROI
 
 💡 Strategic Insights:
-• The growth trajectory suggests we're on track to exceed annual targets
-• Consider expanding the respiratory product line to adjacent therapeutic areas
-• Regional performance indicates opportunity for further market penetration
+• Expand webinar series for stroke prevention awareness
+• Address payer rejections in Central region
+• Leverage South region's hybrid rep-digital model
 
 {"action": "show_card", "metric_id": "revenue"}
 
 🧠 Prompt: "Tell me about Total Sales performance"
 
 AI Response:
-📊 Total Sales Performance Overview: Our total sales have reached $21.3M, representing an outstanding 85.2% of total revenue. This performance demonstrates exceptional market execution and strong demand across all product lines.
+📊 Total Sales Performance Overview: Xarelto's total sales reached $20.8M, representing 82.4% of total revenue. Strong performance reflects high demand in stroke prevention and AFib indications.
 
 🔍 Performance Breakdown:
-• Base sales contributing $12.0M (56% of total)
-• Incremental revenue from marketing activities: $2.5M
-• Seasonal factors adding $1.2M to performance
-• Market trend contributing $0.8M
+• Base sales: $11.5M (55% of total)
+• Incremental revenue from marketing: $2.3M
+• Seasonal factors: $1.1M
+• Market trend: $0.7M
 
 💡 Business Impact:
-• We're exceeding quarterly targets by 6.5%
-• Strong foundation for sustainable growth
-• Marketing ROI at 5.3x, well above industry average
+• Exceeding quarterly targets by 5.8%
+• Marketing ROI at 2.6x, above industry average
+• Opportunity to optimize Central region coverage
 
 {"action": "show_card", "metric_id": "total-sales"}
 
@@ -95,12 +94,12 @@ serve(async (req) => {
   console.log('Method:', req.method);
   console.log('URL:', req.url);
   console.log('Headers:', Object.fromEntries(req.headers.entries()));
-  
+
   if (req.method === 'OPTIONS') {
     console.log('Handling CORS preflight request');
-    return new Response(null, { 
+    return new Response(null, {
       headers: corsHeaders,
-      status: 200 
+      status: 200
     });
   }
 
@@ -114,14 +113,7 @@ serve(async (req) => {
     console.log('✅ OpenAI API key found');
 
     const requestBody = await req.json();
-    console.log('📨 Request body:', requestBody);
     const { message } = requestBody;
-    
-    if (!message) {
-      console.error('❌ No message provided in request');
-      throw new Error('No message provided');
-    }
-    
     console.log('📨 Received message:', message);
 
     console.log('🤖 Calling OpenAI API...');
@@ -129,27 +121,24 @@ serve(async (req) => {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         model: 'gpt-4o',
         messages: [
-          { 
-            role: 'system', 
+          {
+            role: 'system',
             content: metricsContext
           },
-          { 
-            role: 'user', 
-            content: message 
+          {
+            role: 'user',
+            content: message
           }
         ],
         temperature: 0.7,
         max_tokens: 1200
-      }),
+      })
     });
-
-    console.log('📡 OpenAI response status:', response.status);
-    console.log('📡 OpenAI response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -159,42 +148,36 @@ serve(async (req) => {
 
     const data = await response.json();
     console.log('✅ OpenAI response received');
-    console.log('📄 OpenAI response data:', data);
     
     const assistantMessage = data.choices[0].message.content;
-    console.log('💬 Assistant message:', assistantMessage);
-
-    const result = { 
+    const result = {
       response: assistantMessage,
       timestamp: new Date().toISOString()
     };
 
-    console.log('📤 Sending response back to client:', result);
-    
+    console.log('📤 Sending response back to client');
     return new Response(JSON.stringify(result), {
-      headers: { 
-        ...corsHeaders, 
-        'Content-Type': 'application/json' 
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
       },
       status: 200
     });
-    
+
   } catch (error) {
     console.error('❌ Error in ai-assistant function:', error);
-    console.error('❌ Error stack:', error.stack);
-    
-    const errorResponse = { 
+    const errorResponse = {
       error: error.message || 'Unknown error occurred',
-      response: 'Извините, произошла ошибка. Пожалуйста, попробуйте еще раз.',
+      response: 'Sorry, an error occurred. Please try again.',
       timestamp: new Date().toISOString()
     };
-    
+
     return new Response(JSON.stringify(errorResponse), {
       status: 500,
-      headers: { 
-        ...corsHeaders, 
-        'Content-Type': 'application/json' 
-      },
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      }
     });
   }
-});
+}); 

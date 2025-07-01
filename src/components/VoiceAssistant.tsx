@@ -19,44 +19,62 @@ export const VoiceAssistant: React.FC<VoiceAssistantProps> = ({
   autoSpeak = true
 }) => {
   const {
-    voiceState,
+    isListening,
+    isTranscribing,
+    isProcessing,
+    isPlaying,
+    status,
+    transcript,
+    response,
+    error,
+    isVoiceModalOpen,
     startListening,
     stopListening,
-    speak,
-    stopSpeaking,
-    clearError,
-    activateVoiceMode,
-    deactivateVoiceMode
+    stopAudio,
+    shutdown,
+    openVoiceModal,
+    closeVoiceModal
   } = useVoiceAssistant();
 
   const { lastAIResponse } = useAIAssistant();
 
+  // Cleanup при размонтировании компонента
+  useEffect(() => {
+    return () => {
+      // При размонтировании компонента полностью отключаем голосовой ассистент
+      shutdown();
+    };
+  }, [shutdown]);
+
   const handleToggleListening = useCallback(() => {
-    if (voiceState.isListening) {
+    if (isListening) {
       stopListening();
-      deactivateVoiceMode(); // Deactivate voice mode when stopping
     } else {
-      // Stop speaking before starting recording
-      if (voiceState.isSpeaking) {
-        stopSpeaking();
+      // Stop audio playback before starting recording
+      if (isPlaying) {
+        stopAudio();
       }
-      activateVoiceMode(); // Activate voice mode when starting recording
       startListening();
     }
-  }, [voiceState.isListening, voiceState.isSpeaking, startListening, stopListening, stopSpeaking, activateVoiceMode, deactivateVoiceMode]);
+  }, [isListening, isPlaying, startListening, stopListening, stopAudio]);
 
-  const handleStopSpeaking = useCallback(() => {
-    stopSpeaking();
-  }, [stopSpeaking]);
+  const handleStopAudio = useCallback(() => {
+    stopAudio();
+  }, [stopAudio]);
+
+  const clearError = useCallback(() => {
+    // Can be implemented in the hook if needed
+  }, []);
 
   const isSupported = typeof window !== 'undefined' && 
-    (window.SpeechRecognition || window.webkitSpeechRecognition);
+    navigator.mediaDevices && 
+    navigator.mediaDevices.getUserMedia;
 
   if (!isSupported) {
     return (
-      <Alert className="mb-4">
-        <AlertDescription>
-          Your browser doesn't support speech recognition. 
+      <Alert className="mb-4 backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-xl">
+        <AlertDescription className="text-slate-800 dark:text-white/70">
+          Your browser doesn't support voice recording. 
           Please use a modern browser (Chrome, Edge, Safari).
         </AlertDescription>
       </Alert>
@@ -65,41 +83,59 @@ export const VoiceAssistant: React.FC<VoiceAssistantProps> = ({
 
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Main voice assistant button */}
-      <div className="flex items-center justify-center">
-        <VoiceButton
-          isListening={voiceState.isListening}
-          isSpeaking={voiceState.isSpeaking}
-          isProcessing={voiceState.isProcessing}
-          onToggle={handleToggleListening}
-          disabled={!isSupported}
-          className="w-16 h-16"
+      {/* Main voice assistant container with glass effect */}
+      <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 hover:border-white/20 transition-all duration-300">
+        {/* Main voice assistant button */}
+        <div className="flex items-center justify-center mb-4">
+          <VoiceButton
+            isListening={isListening}
+            isSpeaking={isPlaying}
+            isProcessing={isProcessing || isTranscribing}
+            onToggle={handleToggleListening}
+            disabled={!isSupported}
+            className="w-16 h-16"
+          />
+        </div>
+
+        {/* State visualization */}
+        <VoiceVisualizer
+          isListening={isListening}
+          isSpeaking={isPlaying}
+          isProcessing={isProcessing || isTranscribing}
+          className="justify-center mb-4"
         />
+
+        {/* Voice mode indicator */}
+        {isListening && (
+          <div className="text-center mb-4">
+            <div className="inline-flex items-center px-4 py-2 rounded-full backdrop-blur-[2px] bg-white/5 border border-cyan-500/30 dark:border-cyan-400/30 text-cyan-600 dark:text-cyan-400 text-sm shadow-md hover:bg-white/10 transition-all duration-300">
+              <Mic className="w-4 h-4 mr-2" />
+              Voice mode active
+            </div>
+          </div>
+        )}
+
+        {/* Stop speaking button */}
+        {isPlaying && (
+          <div className="flex justify-center mb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleStopAudio}
+              className="flex items-center space-x-2 backdrop-blur-[2px] bg-white/5 border border-white/10 text-slate-800 dark:text-white/70 hover:bg-white/10 hover:border-white/20 transition-all duration-300 shadow-md"
+            >
+              <MicOff className="w-4 h-4" />
+              <span>Stop speaking</span>
+            </Button>
+          </div>
+        )}
       </div>
 
-      {/* State visualization */}
-      <VoiceVisualizer
-        isListening={voiceState.isListening}
-        isSpeaking={voiceState.isSpeaking}
-        isProcessing={voiceState.isProcessing}
-        className="justify-center"
-      />
-
-      {/* Voice mode indicator */}
-      {voiceState.isVoiceMode && (
-        <div className="text-center">
-          <div className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-blue/20 border border-blue-500/30 text-blue-200 text-sm backdrop-blur-xl">
-            <Mic className="w-4 h-4 mr-2" />
-            Voice mode active
-          </div>
-        </div>
-      )}
-
       {/* Transcript (if enabled) */}
-      {showTranscript && voiceState.transcript && (
-        <div className="p-4 bg-gradient-card rounded-lg border border-slate-700/50">
+      {showTranscript && transcript && (
+        <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 hover:border-white/20 transition-all duration-300 shadow-md">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-slate-300">
+            <span className="text-sm font-medium text-slate-800 dark:text-white/70">
               Recognized text:
             </span>
             <Button
@@ -109,41 +145,27 @@ export const VoiceAssistant: React.FC<VoiceAssistantProps> = ({
                 // Clear transcript
                 // This can be added to the hook, but for now leave it as is
               }}
+              className="text-slate-600 dark:text-white/40 hover:text-slate-800 dark:hover:text-white/70 transition-colors duration-200"
             >
               <X className="w-4 h-4" />
             </Button>
           </div>
-          <p className="text-slate-200">
-            {voiceState.transcript}
+          <p className="text-slate-900 dark:text-white">
+            {transcript}
           </p>
         </div>
       )}
 
-      {/* Stop speaking button */}
-      {voiceState.isSpeaking && (
-        <div className="flex justify-center">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleStopSpeaking}
-            className="flex items-center space-x-2 border-slate-600 text-slate-300 hover:bg-slate-800"
-          >
-            <MicOff className="w-4 h-4" />
-            <span>Stop speaking</span>
-          </Button>
-        </div>
-      )}
-
       {/* Errors */}
-      {voiceState.error && (
-        <Alert variant="destructive">
+      {error && (
+        <Alert variant="destructive" className="backdrop-blur-[2px] bg-white/5 border border-red-500/30 dark:border-red-400/30 rounded-xl shadow-md">
           <AlertDescription className="flex items-center justify-between">
-            <span>{voiceState.error}</span>
+            <span className="text-red-600 dark:text-red-400">{error}</span>
             <Button
               variant="ghost"
               size="sm"
               onClick={clearError}
-              className="h-auto p-1"
+              className="h-auto p-1 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors duration-200"
             >
               <X className="w-4 h-4" />
             </Button>
@@ -151,13 +173,7 @@ export const VoiceAssistant: React.FC<VoiceAssistantProps> = ({
         </Alert>
       )}
 
-      {/* Instructions */}
-      {!voiceState.isListening && !voiceState.isSpeaking && !voiceState.isProcessing && (
-        <div className="text-center text-sm text-slate-400">
-          <p>Click the microphone to start voice conversation</p>
-          <p className="mt-1">Speak clearly and naturally</p>
-        </div>
-      )}
+
     </div>
   );
 };
@@ -169,30 +185,35 @@ export const VoiceAssistantCompact: React.FC<{
   theme?: 'light' | 'dark';
 }> = ({ className, size = 'md', theme }) => {
   const {
-    voiceState,
+    isListening,
+    isTranscribing,
+    isProcessing,
+    isPlaying,
+    status,
+    transcript,
+    response,
+    error,
+    isVoiceModalOpen,
     startListening,
     stopListening,
-    speak,
-    stopSpeaking,
-    clearError,
-    activateVoiceMode,
-    deactivateVoiceMode
+    stopAudio,
+    shutdown,
+    openVoiceModal,
+    closeVoiceModal
   } = useVoiceAssistant();
 
   const { lastAIResponse } = useAIAssistant();
 
   const handleToggle = useCallback(() => {
-    if (voiceState.isListening) {
+    if (isListening) {
       stopListening();
-      deactivateVoiceMode(); // Deactivate voice mode when stopping
     } else {
-      if (voiceState.isSpeaking) {
-        stopSpeaking();
+      if (isPlaying) {
+        stopAudio();
       }
-      activateVoiceMode(); // Activate voice mode when starting recording
       startListening();
     }
-  }, [voiceState.isListening, voiceState.isSpeaking, startListening, stopListening, stopSpeaking, activateVoiceMode, deactivateVoiceMode]);
+  }, [isListening, isPlaying, startListening, stopListening, stopAudio]);
 
   const sizeClasses = {
     sm: 'w-10 h-10',
@@ -200,12 +221,16 @@ export const VoiceAssistantCompact: React.FC<{
     lg: 'w-16 h-16'
   };
 
+  const isSupported = typeof window !== 'undefined' && 
+    navigator.mediaDevices && 
+    navigator.mediaDevices.getUserMedia;
+
   return (
-    <div className={cn("flex items-center justify-center", className)}>
+    <div className={cn("flex items-center justify-center backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 hover:border-white/20 transition-all duration-300 shadow-md", className)}>
       <VoiceButton
-        isListening={voiceState.isListening}
-        isSpeaking={voiceState.isSpeaking}
-        isProcessing={voiceState.isProcessing}
+        isListening={isListening}
+        isSpeaking={isPlaying}
+        isProcessing={isProcessing || isTranscribing}
         onToggle={handleToggle}
         disabled={!isSupported}
         className={sizeClasses[size]}
@@ -215,6 +240,7 @@ export const VoiceAssistantCompact: React.FC<{
   );
 };
 
-// Check if speech recognition is supported
+// Check if voice recording is supported
 const isSupported = typeof window !== 'undefined' && 
-  (window.SpeechRecognition || window.webkitSpeechRecognition); 
+  navigator.mediaDevices && 
+  navigator.mediaDevices.getUserMedia; 

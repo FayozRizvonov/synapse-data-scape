@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Paperclip, ArrowUp, Mic } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { VoiceAssistantCompact } from './VoiceAssistant';
-import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
+import VoiceAssistantView from './VoiceAssistantView';
 import { useTheme } from '@/hooks/useTheme';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
   isSidebarCollapsed?: boolean;
   isLoading?: boolean;
+  onNavigateToSection?: (section: string) => void;
 }
 
 const PLACEHOLDERS = [
@@ -22,14 +22,15 @@ const PLACEHOLDERS = [
 const ChatInput: React.FC<ChatInputProps> = ({ 
   onSendMessage, 
   isSidebarCollapsed,
-  isLoading
+  isLoading,
+  onNavigateToSection
 }) => {
   const [message, setMessage] = useState('');
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [showPlaceholder, setShowPlaceholder] = useState(true);
   const [isActive, setIsActive] = useState(false);
+  const [showVoiceAssistant, setShowVoiceAssistant] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const { voiceState } = useVoiceAssistant();
   const { theme } = useTheme();
 
   // Cycle placeholder text when input is inactive
@@ -69,6 +70,14 @@ const ChatInput: React.FC<ChatInputProps> = ({
     if (e.key === 'Enter') {
       handleSend();
     }
+  };
+
+  const handleOpenVoiceAssistant = () => {
+    setShowVoiceAssistant(true);
+  };
+
+  const handleCloseVoiceAssistant = () => {
+    setShowVoiceAssistant(false);
   };
 
   const containerVariants = {
@@ -119,30 +128,34 @@ const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   return (
-    <div className={`fixed bottom-5 right-0 px-4 z-50 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'left-16' : 'left-64'}`}>
-      <motion.div
-        ref={wrapperRef}
-        className="w-full max-w-2xl mx-auto"
-        variants={containerVariants}
-        animate={isActive || message ? 'expanded' : 'collapsed'}
-        initial="collapsed"
-        style={{ overflow: 'hidden', borderRadius: 32 }}
-        onClick={() => setIsActive(true)}
-      >
-        <div className="flex flex-col items-stretch w-full h-full">
-          {/* Input Row */}
-          <div className="flex items-center gap-2 p-3 rounded-full backdrop-blur-[2px] bg-white/5 border border-white/10 max-w-2xl w-full">
-            <button
-              className="p-3 rounded-full hover:bg-white/10 transition text-white/70 hover:text-white"
-              title="Attach file"
-              type="button"
-              tabIndex={-1}
-            >
-              <Paperclip size={20} />
-            </button>
-            {/* Text Input & Placeholder */}
-            <div className="relative flex-1">
-              <input
+    <>
+      <div className={`fixed bottom-5 right-0 px-4 z-50 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'left-16' : 'left-64'}`}>
+        <motion.div
+          ref={wrapperRef}
+          className="w-full max-w-2xl mx-auto"
+          variants={containerVariants}
+          animate={isActive || message ? 'expanded' : 'collapsed'}
+          initial="collapsed"
+          style={{ overflow: 'hidden', borderRadius: 32 }}
+          onClick={() => setIsActive(true)}
+        >
+          <div className="flex flex-col items-stretch w-full h-full">
+            {/* Input Row */}
+            <div className="flex items-center gap-2 p-3 rounded-full backdrop-blur-[2px] bg-white/5 border border-white/10 max-w-2xl w-full">
+              <button
+                className="p-3 rounded-full hover:bg-white/10 transition text-white/70 hover:text-white"
+                title="Attach file"
+                type="button"
+                tabIndex={-1}
+              >
+                <Paperclip size={20} />
+              </button>
+              
+              {/* Text Input & Placeholder */}
+              <div className="relative flex-1">
+                              <input
+                id="chat-message-input"
+                name="message"
                 type="text"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -151,88 +164,84 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 onFocus={() => setIsActive(true)}
                 onKeyPress={handleKeyPress}
                 disabled={isLoading}
+                autoComplete="off"
               />
-              <div className="absolute left-0 top-0 w-full h-full pointer-events-none flex items-center px-3 py-2">
-                <AnimatePresence mode="wait">
-                  {showPlaceholder && !isActive && !message && (
-                    <motion.span
-                      key={placeholderIndex}
-                      className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40 select-none pointer-events-none"
-                      style={{
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        zIndex: 0,
-                      }}
-                      variants={placeholderContainerVariants}
-                      initial="initial"
-                      animate="animate"
-                      exit="exit"
-                    >
-                      {PLACEHOLDERS[placeholderIndex]
-                        .split('')
-                        .map((char, i) => (
-                          <motion.span
-                            key={i}
-                            variants={letterVariants}
-                            style={{ display: 'inline-block' }}
-                          >
-                            {char === ' ' ? '\u00A0' : char}
-                          </motion.span>
-                        ))}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
+                <div className="absolute left-0 top-0 w-full h-full pointer-events-none flex items-center px-3 py-2">
+                  <AnimatePresence mode="wait">
+                    {showPlaceholder && !isActive && !message && (
+                      <motion.span
+                        key={placeholderIndex}
+                        className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40 select-none pointer-events-none"
+                        style={{
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          zIndex: 0,
+                        }}
+                        variants={placeholderContainerVariants}
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                      >
+                        {PLACEHOLDERS[placeholderIndex]
+                          .split('')
+                          .map((char, i) => (
+                            <motion.span
+                              key={i}
+                              variants={letterVariants}
+                              style={{ display: 'inline-block' }}
+                            >
+                              {char === ' ' ? '\u00A0' : char}
+                            </motion.span>
+                          ))}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
+
+              {/* Voice Assistant Button */}
+              <button
+                className="p-3 rounded-full hover:bg-white/10 transition text-white/70 hover:text-white"
+                title="Voice Assistant"
+                type="button"
+                tabIndex={-1}
+                onClick={handleOpenVoiceAssistant}
+              >
+                <Mic size={20} />
+              </button>
+
+              {/* Send Button */}
+              <button
+                className={`flex items-center gap-1 p-3 rounded-full font-medium justify-center ml-2 shadow-lg transition-all duration-200
+                  ${theme === 'dark' ? 'bg-transparent text-white hover:bg-white/10' : 'bg-transparent text-black hover:bg-black/10'}`}
+                title="Send"
+                type="button"
+                tabIndex={-1}
+                onClick={handleSend}
+                disabled={!message.trim() || isLoading}
+                style={{ minWidth: 44, minHeight: 44 }}
+              >
+                {isLoading ? (
+                  <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <ArrowUp size={20} />
+                )}
+              </button>
             </div>
-            <div className="flex items-center">
-              <VoiceAssistantCompact size="sm" theme={theme} />
-            </div>
-            <button
-              className={`flex items-center gap-1 p-3 rounded-full font-medium justify-center ml-2 shadow-lg transition-all duration-200
-                ${theme === 'dark' ? 'bg-transparent text-white hover:bg-white/10' : 'bg-transparent text-black hover:bg-black/10'}`}
-              title="Send"
-              type="button"
-              tabIndex={-1}
-              onClick={handleSend}
-              disabled={!message.trim() || isLoading}
-              style={{ minWidth: 44, minHeight: 44 }}
-            >
-              {isLoading ? (
-                <div className={`w-4 h-4 border-2 border-t-transparent rounded-full animate-spin ${theme === 'dark' ? 'border-white' : 'border-black'}`}></div>
-              ) : (
-                <ArrowUp size={18} color={theme === 'dark' ? '#fff' : '#000'} />
-              )}
-            </button>
           </div>
-          {/* Voice mode indicator */}
-          {voiceState.isVoiceMode && (
-            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2">
-              <div className="inline-flex items-center px-3 py-1 rounded-full backdrop-blur-[2px] bg-white/5 border border-white/10 text-white text-sm shadow-lg">
-                <Mic className="w-4 h-4 mr-2" />
-                Voice mode active
-              </div>
-            </div>
-          )}
-          {/* SUGGESTIONS BLOCK */}
-          {(isActive || message) && (
-            <div className="w-full max-w-2xl mx-auto bg-transparent border-0 backdrop-blur-0 shadow-none rounded-b-2xl px-3 py-2 flex flex-wrap gap-3 animate-fade-in mt-2">
-              {["Show sales", "Show channels", "Show F2F", "Show YoY", "Export data", "Help"].map((s, i) => (
-                <button
-                  key={i}
-                  className="text-sm text-white/90 hover:bg-white/10 rounded-full px-4 py-2 transition border border-white/10 font-medium"
-                  onClick={() => setMessage(s)}
-                  type="button"
-                  style={{lineHeight: 1.2}}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </motion.div>
-    </div>
+        </motion.div>
+      </div>
+
+      {/* Voice Assistant Modal */}
+      {showVoiceAssistant && (
+        <VoiceAssistantView
+          onClose={handleCloseVoiceAssistant}
+          isSidebarCollapsed={isSidebarCollapsed}
+          onNavigateToSection={onNavigateToSection}
+        />
+      )}
+    </>
   );
 };
 

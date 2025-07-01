@@ -62,7 +62,7 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
 
       if (supabaseError) {
         console.error('Supabase function error:', supabaseError);
-        throw new Error(`Ошибка вызова функции: ${supabaseError.message}`);
+        throw new Error(`Function call error: ${supabaseError.message}`);
       }
       
       console.log('Response from AI assistant:', data);
@@ -71,19 +71,29 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('Получен пустой ответ от AI ассистента');
       }
 
-      const responseText = data.response || 'Извините, не удалось получить ответ.';
+      const responseText = data.response || 'Sorry, could not get a response.';
       
-      // Parse JSON action from response
+      // Parse JSON action from response - improved parsing
       let action: AIResponse['action'];
       let metric: MetricCard | undefined;
       let metricId: string | undefined;
       
       try {
-        const actionMatch = responseText.match(/\{"action":\s*"(show_card|show_chart)",\s*"metric_id":\s*"([^"]+)"\}/);
-        if (actionMatch) {
-          action = actionMatch[1] as 'show_card' | 'show_chart';
-          metricId = actionMatch[2];
-          metric = metricsKnowledgeBase.find(m => m.id === metricId);
+        // Try multiple patterns for robust parsing
+        const patterns = [
+          /\{"action":\s*"(show_card|show_chart)",\s*"metric_id":\s*"([^"]+)"\}/,
+          /\{"action":\s*"(show_card|show_chart)",\s*"metricId":\s*"([^"]+)"\}/,
+          /\{.*"action".*:\s*"(show_card|show_chart)".*"metric_id".*:\s*"([^"]+)".*\}/
+        ];
+        
+        for (const pattern of patterns) {
+          const actionMatch = responseText.match(pattern);
+          if (actionMatch) {
+            action = actionMatch[1] as 'show_card' | 'show_chart';
+            metricId = actionMatch[2];
+            metric = metricsKnowledgeBase.find(m => m.id === metricId);
+            break;
+          }
         }
       } catch (parseError) {
         console.warn('Failed to parse action from response:', parseError);
@@ -124,10 +134,10 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
 
     } catch (err) {
       console.error('Error in sendMessage:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Произошла неизвестная ошибка';
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
       setError(errorMessage);
       
-      const errorMessageContent = `Извините, произошла ошибка: ${errorMessage}. Пожалуйста, попробуйте еще раз.`;
+      const errorMessageContent = `Sorry, an error occurred: ${errorMessage}. Please try again.`;
       const errorAIMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: errorMessageContent,

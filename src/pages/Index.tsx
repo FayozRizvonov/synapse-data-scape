@@ -280,6 +280,7 @@ const Index = () => {
         onSendMessage={handleSendMessage} 
         isSidebarCollapsed={isSidebarCollapsed} 
         isLoading={isLoading}
+        onNavigateToSection={handleNavigateToSection}
       />
 
       {isChatOpen && (

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Message, useAIAssistant } from '@/hooks/useAIAssistant';
+
 import ChatMetricCardEnhanced from './ChatMetricCardEnhanced';
 import { 
   User, 
@@ -22,7 +23,8 @@ import {
   ArrowRight,
   ExternalLink,
   X,
-  Send
+  Send,
+  Mic
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -34,6 +36,8 @@ interface ChatViewProps {
   onSendMessage?: (message: string) => void;
 }
 
+
+
 const ChatView: React.FC<ChatViewProps> = ({ 
   className, 
   onClose, 
@@ -41,10 +45,11 @@ const ChatView: React.FC<ChatViewProps> = ({
   onNavigateToSection,
   onSendMessage
 }) => {
-  const { messages, isLoading, lastAIResponse } = useAIAssistant();
+  const { messages, isLoading, lastAIResponse, sendMessage } = useAIAssistant();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [inputValue, setInputValue] = useState('');
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+
 
   // Debug logging for messages
   useEffect(() => {
@@ -416,6 +421,32 @@ const ChatView: React.FC<ChatViewProps> = ({
               )}
             </div>
           </ScrollArea>
+        </div>
+      </div>
+
+      {/* Input area */}
+      <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-white/80 dark:bg-black/80 backdrop-blur-md">
+        <div className="max-w-4xl mx-auto">
+          {/* Input area */}
+          <div className="flex gap-2 max-w-2xl mx-auto">
+            <Input
+              value={inputValue}
+              onChange={handleInputChange}
+              onKeyPress={handleKeyPress}
+              placeholder="Ask about metrics, insights, or request specific data..."
+              className="flex-1 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
+              disabled={isLoading}
+            />
+            <Button
+              onClick={handleSend}
+              disabled={!inputValue.trim() || isLoading}
+              className="bg-blue-500 hover:bg-blue-600 text-white"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
+
+
         </div>
       </div>
     </div>
