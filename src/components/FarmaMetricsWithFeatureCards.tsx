@@ -409,10 +409,10 @@ const FarmaMetricsWithFeatureCards = () => {
         {/* Situation Metrics */}
         {renderMetricSection(situationMetrics, situationMetricsExpanded, setSituationMetricsExpanded, "Channel Impact", true)}
 
-        {/* Sales Volume Analysis */}
+        {/* Model Performance Stats */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-glow">Sales Volume Analysis</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-glow">Model Performance Stats</h2>
             <Button
               variant="ghost"
               size="sm"
@@ -562,15 +562,15 @@ const FarmaMetricsWithFeatureCards = () => {
             </div>
             <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
               <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">Base Contribution</div>
-              <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">~85%</div>
+              <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">78%</div>
             </div>
             <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
               <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">Top Channel</div>
-              <div className="text-lg font-semibold text-green-600 dark:text-green-400">Phone/Web ABC</div>
+              <div className="text-lg font-semibold text-green-600 dark:text-green-400">F2F calls</div>
             </div>
             <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
               <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">Growth Trend</div>
-              <div className="text-lg font-semibold text-orange-600 dark:text-orange-400">+847%</div>
+              <div className="text-lg font-semibold text-orange-600 dark:text-orange-400">+47%</div>
             </div>
           </div>
           

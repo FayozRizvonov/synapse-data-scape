@@ -257,7 +257,6 @@ const ScenarioComparison = () => {
                         <XAxis dataKey="name" tick={{ fill: 'var(--chart-axis)' }} />
                         <YAxis 
                           tick={{ fill: 'var(--chart-axis)' }} 
-                          label={{ value: 'Sales (in millions)', angle: -90, position: 'insideLeft', fill: 'var(--chart-axis)' }}
                           tickFormatter={(value) => `${value.toFixed(2)}M`}
                         />
                         <Tooltip

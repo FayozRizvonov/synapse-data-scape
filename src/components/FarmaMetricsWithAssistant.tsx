@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ParticleBackground from '@/components/ParticleBackground';
 import { FeatureCard } from '@/components/FeatureCard';
 import { 
@@ -510,7 +511,7 @@ const FarmaMetricsWithAssistant = () => {
     {
       id: 'incremental',
       title: 'Incremental',
-      value: '$1.0M',
+      value: '$7.3M',
       change: '+18.2%',
       changeType: 'positive',
       comparison: 'Incremental Revenue',
@@ -521,15 +522,15 @@ const FarmaMetricsWithAssistant = () => {
       details: {
         description: 'Revenue generated above the baseline due to marketing activities.',
         breakdown: [
-          { label: 'Marketing Impact', value: '$0.8M' },
-          { label: 'Other Factors', value: '$0.2M' }
+          { label: 'Marketing Impact', value: '$6.8M' },
+          { label: 'Other Factors', value: '$0.5M' }
         ]
       }
     },
     {
       id: 'promotional-spend',
       title: 'Promotional Spend',
-      value: '$0.7M',
+      value: '$1.2M',
       change: '+12.5%',
       changeType: 'positive',
       comparison: 'Total Promotional Budget',
@@ -540,8 +541,8 @@ const FarmaMetricsWithAssistant = () => {
       details: {
         description: 'Total spend on promotional activities for the current period.',
         breakdown: [
-          { label: 'Digital', value: '$0.3M' },
-          { label: 'Field Force', value: '$0.3M' },
+          { label: 'Digital', value: '$0.6M' },
+          { label: 'Field Force', value: '$0.5M' },
           { label: 'Events', value: '$0.1M' }
         ]
       }
@@ -703,82 +704,22 @@ const FarmaMetricsWithAssistant = () => {
       }
     },
     {
-      id: 'promotion',
-      title: 'Promotion Impact',
+      id: 'mass-email',
+      title: 'Mass Email',
       value: '$0.4M',
       change: '+15.3%',
       changeType: 'positive',
       comparison: 'Revenue Attribution',
-      icon: BarChart3,
+      icon: Mail,
       category: 'situation',
       section: 'situation',
-      description: 'Direct impact of promotional activities on revenue generation',
+      description: 'Direct impact of mass email campaigns on revenue generation',
       details: {
-        description: 'Direct impact of promotional activities on revenue generation',
+        description: 'Direct impact of mass email campaigns on revenue generation',
         breakdown: [
-          { label: 'Digital Marketing', value: '$0.2M' },
-          { label: 'Field Force', value: '$0.15M' },
-          { label: 'Events & Conferences', value: '$0.05M' }
-        ]
-      }
-    },
-    {
-      id: 'page-visit-exchange',
-      title: 'Page Visit Exchange',
-      value: '$0.5M',
-      change: '+15.2%',
-      changeType: 'positive',
-      comparison: 'Revenue Attribution',
-      icon: BarChart3,
-      category: 'situation',
-      section: 'situation',
-      description: 'Revenue attributed to page visit exchange marketing activities',
-      details: {
-        description: 'Revenue attributed to page visit exchange marketing activities',
-        breakdown: [
-          { label: 'Page Visits', value: '2.4M' },
-          { label: 'Conversion Rate', value: '3.2%' },
-          { label: 'Avg. Order Value', value: '$275' }
-        ]
-      }
-    },
-    {
-      id: 'digital-display',
-      title: 'Digital Display',
-      value: '$0.6M',
-      change: '+22.4%',
-      changeType: 'positive',
-      comparison: 'Revenue Attribution',
-      icon: BarChart3,
-      category: 'situation',
-      section: 'situation',
-      description: 'Revenue generated from digital display advertising campaigns',
-      details: {
-        description: 'Revenue generated from digital display advertising campaigns',
-        breakdown: [
-          { label: 'Impressions', value: '45.2M' },
-          { label: 'Click Rate', value: '1.8%' },
-          { label: 'CTR Impact', value: '+0.3%' }
-        ]
-      }
-    },
-    {
-      id: 'digital-video',
-      title: 'Digital Video',
-      value: '$0.4M',
-      change: '+18.7%',
-      changeType: 'positive',
-      comparison: 'Revenue Attribution',
-      icon: BarChart3,
-      category: 'situation',
-      section: 'situation',
-      description: 'Revenue attributed to digital video marketing campaigns',
-      details: {
-        description: 'Revenue attributed to digital video marketing campaigns',
-        breakdown: [
-          { label: 'Video Views', value: '8.7M' },
-          { label: 'Completion Rate', value: '67%' },
-          { label: 'Engagement Score', value: '8.9/10' }
+          { label: 'Emails Sent', value: '120,000' },
+          { label: 'Open Rate', value: '24.7%' },
+          { label: 'Revenue per Email', value: '$3.33' }
         ]
       }
     }
@@ -1048,10 +989,10 @@ const FarmaMetricsWithAssistant = () => {
         {/* Situation Metrics */}
         {renderMetricSection(situationMetrics, situationMetricsExpanded, setSituationMetricsExpanded, "Channel Impact", true)}
 
-        {/* Sales Volume Analysis */}
+        {/* Model Performance Stats */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-glow">Sales Volume Analysis</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-glow">Model Performance Stats</h2>
             <Button
               variant="ghost"
               size="sm"
@@ -1069,39 +1010,88 @@ const FarmaMetricsWithAssistant = () => {
             </Button>
           </div>
           
-          {/* Sales Volume Analysis Metrics - Always Visible */}
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-3 lg:grid-cols-6 mb-4">
-            <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
-              <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">R²</div>
-              <div className="text-lg font-semibold text-green-600 dark:text-green-400">97.55%</div>
-              <div className="text-xs text-gray-500 dark:text-slate-500 mt-1">Overall model fit</div>
+          {/* Model Performance Stats Metrics - Always Visible */}
+          <TooltipProvider>
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-3 lg:grid-cols-6 mb-4">
+              <UITooltip>
+                <TooltipTrigger asChild>
+                  <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10 cursor-help transition-colors hover:bg-white/10">
+                    <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">R²</div>
+                    <div className="text-lg font-semibold text-green-600 dark:text-green-400">97.55%</div>
+                    <div className="text-xs text-gray-500 dark:text-slate-500 mt-1">Overall model fit</div>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="bg-white/5 border border-white/10 backdrop-blur-sm text-gray-900 dark:text-white">
+                  <p className="max-w-xs">Coefficient of determination - shows what proportion of the variance in the dependent variable is explained by the model. 97.55% indicates very high model quality.</p>
+                </TooltipContent>
+              </UITooltip>
+              
+              <UITooltip>
+                <TooltipTrigger asChild>
+                  <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10 cursor-help transition-colors hover:bg-white/10">
+                    <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">Adj R²</div>
+                    <div className="text-lg font-semibold text-orange-600 dark:text-orange-400">43.7%</div>
+                    <div className="text-xs text-gray-500 dark:text-slate-500 mt-1">Adjusted for predictors</div>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="bg-white/5 border border-white/10 backdrop-blur-sm text-gray-900 dark:text-white">
+                  <p className="max-w-xs">Adjusted R² accounts for the number of predictors in the model. Low values may indicate overfitting or excess variables.</p>
+                </TooltipContent>
+              </UITooltip>
+              
+              <UITooltip>
+                <TooltipTrigger asChild>
+                  <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10 cursor-help transition-colors hover:bg-white/10">
+                    <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">MAPE</div>
+                    <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">3.01%</div>
+                    <div className="text-xs text-gray-500 dark:text-slate-500 mt-1">Prediction accuracy</div>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="bg-white/5 border border-white/10 backdrop-blur-sm text-gray-900 dark:text-white">
+                  <p className="max-w-xs">Mean Absolute Percentage Error. 3.01% is an excellent result, indicating high accuracy of model predictions.</p>
+                </TooltipContent>
+              </UITooltip>
+              
+              <UITooltip>
+                <TooltipTrigger asChild>
+                  <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10 cursor-help transition-colors hover:bg-white/10">
+                    <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">DW</div>
+                    <div className="text-lg font-semibold text-red-600 dark:text-red-400">0.63</div>
+                    <div className="text-xs text-gray-500 dark:text-slate-500 mt-1">Autocorrelation</div>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="bg-white/5 border border-white/10 backdrop-blur-sm text-gray-900 dark:text-white">
+                  <p className="max-w-xs">Durbin-Watson statistic tests for autocorrelation in residuals. Value of 0.63 indicates positive autocorrelation (normal range: 1.5-2.5).</p>
+                </TooltipContent>
+              </UITooltip>
+              
+              <UITooltip>
+                <TooltipTrigger asChild>
+                  <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10 cursor-help transition-colors hover:bg-white/10">
+                    <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">AIC</div>
+                    <div className="text-lg font-semibold text-purple-600 dark:text-purple-400">325.99</div>
+                    <div className="text-xs text-gray-500 dark:text-slate-500 mt-1">Model comparison</div>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="bg-white/5 border border-white/10 backdrop-blur-sm text-gray-900 dark:text-white">
+                  <p className="max-w-xs">Akaike Information Criterion for model comparison. Lower values indicate better models when accounting for complexity.</p>
+                </TooltipContent>
+              </UITooltip>
+              
+              <UITooltip>
+                <TooltipTrigger asChild>
+                  <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10 cursor-help transition-colors hover:bg-white/10">
+                    <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">BIC</div>
+                    <div className="text-lg font-semibold text-indigo-600 dark:text-indigo-400">353.08</div>
+                    <div className="text-xs text-gray-500 dark:text-slate-500 mt-1">Model comparison</div>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="bg-white/5 border border-white/10 backdrop-blur-sm text-gray-900 dark:text-white">
+                  <p className="max-w-xs">Bayesian Information Criterion. More strictly penalizes complex models compared to AIC. Used for optimal model selection.</p>
+                </TooltipContent>
+              </UITooltip>
             </div>
-            <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
-              <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">Adj R²</div>
-              <div className="text-lg font-semibold text-orange-600 dark:text-orange-400">43.7%</div>
-              <div className="text-xs text-gray-500 dark:text-slate-500 mt-1">Adjusted for predictors</div>
-            </div>
-            <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
-              <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">MAPE</div>
-              <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">3.01%</div>
-              <div className="text-xs text-gray-500 dark:text-slate-500 mt-1">Prediction accuracy</div>
-            </div>
-            <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
-              <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">DW</div>
-              <div className="text-lg font-semibold text-red-600 dark:text-red-400">0.63</div>
-              <div className="text-xs text-gray-500 dark:text-slate-500 mt-1">Autocorrelation</div>
-            </div>
-            <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
-              <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">AIC</div>
-              <div className="text-lg font-semibold text-purple-600 dark:text-purple-400">325.99</div>
-              <div className="text-xs text-gray-500 dark:text-slate-500 mt-1">Model comparison</div>
-            </div>
-            <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
-              <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">BIC</div>
-              <div className="text-lg font-semibold text-indigo-600 dark:text-indigo-400">353.08</div>
-              <div className="text-xs text-gray-500 dark:text-slate-500 mt-1">Model comparison</div>
-            </div>
-          </div>
+          </TooltipProvider>
           
           {/* Chart - Conditionally Visible */}
           {salesVolumeAnalysisExpanded && (
@@ -1206,15 +1196,15 @@ const FarmaMetricsWithAssistant = () => {
             </div>
             <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
               <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">Base Contribution</div>
-              <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">~85%</div>
+              <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">78%</div>
             </div>
             <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
               <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">Top Channel</div>
-              <div className="text-lg font-semibold text-green-600 dark:text-green-400">Phone/Web ABC</div>
+              <div className="text-lg font-semibold text-green-600 dark:text-green-400">F2F calls</div>
             </div>
             <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
               <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">Growth Trend</div>
-              <div className="text-lg font-semibold text-orange-600 dark:text-orange-400">+847%</div>
+              <div className="text-lg font-semibold text-orange-600 dark:text-orange-400">+47%</div>
             </div>
           </div>
           
