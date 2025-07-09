@@ -27,6 +27,7 @@ import SituationDetailModal from './SituationDetailModal';
 import ScenarioComparison from './ScenarioComparison';
 import AnimatedNumber from './AnimatedNumber';
 import Simulation from './Simulation';
+import TailoredPresentation from './TailoredPresentation';
 import { useTheme } from '@/hooks/useTheme';
 
 interface MetricCard {
@@ -426,6 +427,7 @@ const FarmaMetricsWithBauhaus = () => {
 
             <TabsContent value="simulation" className="space-y-6">
               <Simulation />
+              <TailoredPresentation />
             </TabsContent>
           </Tabs>
         </div>

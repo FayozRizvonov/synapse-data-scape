@@ -20,6 +20,7 @@ import {
 import SituationDetailModal from './SituationDetailModal';
 import ScenarioComparison from './ScenarioComparison';
 import Simulation from './Simulation';
+import TailoredPresentation from './TailoredPresentation';
 import CampaignManagement from './CampaignManagement';
 import SOJMContainer from './SOJMContainer';
 import { BauhausBorder } from '@/components/ui/bauhaus-border';
@@ -1401,6 +1402,8 @@ const FarmaMetricsWithAssistant = () => {
         <ScenarioComparison />
 
         <Simulation />
+
+        <TailoredPresentation />
 
         <CampaignManagement />
 

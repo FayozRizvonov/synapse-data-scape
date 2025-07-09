@@ -19,6 +19,7 @@ import {
 import SituationDetailModal from './SituationDetailModal';
 import ScenarioComparison from './ScenarioComparison';
 import Simulation from './Simulation';
+import TailoredPresentation from './TailoredPresentation';
 import CampaignManagement from './CampaignManagement';
 import SOJMContainer from './SOJMContainer';
 import { LineChart, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line, Area, ResponsiveContainer } from 'recharts';
@@ -738,6 +739,8 @@ const FarmaMetricsWithFeatureCards = () => {
         <ScenarioComparison />
 
         <Simulation />
+
+        <TailoredPresentation />
 
         <CampaignManagement />
 

@@ -25,6 +25,7 @@ import SituationDetailModal from './SituationDetailModal';
 import ScenarioComparison from './ScenarioComparison';
 import AnimatedNumber from './AnimatedNumber';
 import Simulation from './Simulation';
+import TailoredPresentation from './TailoredPresentation';
 import CampaignManagement from './CampaignManagement';
 import SOJMContainer from './SOJMContainer';
 import { useTheme } from '@/hooks/useTheme';
@@ -1079,6 +1080,8 @@ const FarmaMetrics = () => {
         <ScenarioComparison />
 
         <Simulation />
+
+        <TailoredPresentation />
 
         <CampaignManagement />
 

@@ -25,6 +25,7 @@ import SituationDetailModal from './SituationDetailModal';
 import ScenarioComparison from './ScenarioComparison';
 import AnimatedNumber from './AnimatedNumber';
 import Simulation from './Simulation';
+import TailoredPresentation from './TailoredPresentation';
 import CampaignManagement from './CampaignManagement';
 import { useTheme } from '@/hooks/useTheme';
 import { LineChart, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line, Area, ResponsiveContainer } from 'recharts';
@@ -923,6 +924,8 @@ const FarmaMetricsWithGlow = () => {
         <ScenarioComparison />
 
         <Simulation />
+
+        <TailoredPresentation />
 
         <CampaignManagement />
 

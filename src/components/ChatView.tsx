@@ -211,7 +211,7 @@ const ChatView: React.FC<ChatViewProps> = ({
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  {isAI ? 'CLAIRE AI Assistant' : 'You'}
+                  {isAI ? 'Trigma AI Assistant' : 'You'}
                 </span>
                 {isAI && (
                   <Badge variant="outline" className="text-xs border-blue-300 text-blue-600 dark:border-blue-600 dark:text-blue-400">
@@ -292,7 +292,7 @@ const ChatView: React.FC<ChatViewProps> = ({
             <Bot className="w-4 h-4 text-white" />
           </div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            CLAIRE AI Assistant
+            Trigma AI Assistant
           </h2>
         </div>
         {onClose && (
@@ -317,7 +317,7 @@ const ChatView: React.FC<ChatViewProps> = ({
                     <Bot className="w-8 h-8 text-white" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                    Welcome to CLAIRE AI Assistant
+                    Welcome to Trigma AI Assistant
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
                     Ask me about your pharmaceutical analytics data, marketing performance, 
@@ -376,7 +376,7 @@ const ChatView: React.FC<ChatViewProps> = ({
                       <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                           <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                            CLAIRE AI Assistant
+                            Trigma AI Assistant
                           </span>
                           <Badge variant="outline" className="text-xs border-blue-300 text-blue-600 dark:border-blue-600 dark:text-blue-400">
                             AI

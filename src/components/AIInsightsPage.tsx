@@ -283,7 +283,7 @@ function MiniNavbar() {
           <div className="p-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
             <Brain className="w-5 h-5 text-cyan-400" />
           </div>
-          <span className="text-lg font-semibold text-gray-900 dark:text-white">CLAIRE</span>
+          <span className="text-lg font-semibold text-gray-900 dark:text-white">Trigma AI</span>
         </div>
       </div>
 

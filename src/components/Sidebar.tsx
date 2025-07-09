@@ -35,13 +35,13 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
           <div className="flex justify-center">
             <div className="rounded-lg overflow-hidden">
-              <img src="/images/claire_logo.png" alt="CLAIRE Logo" className="w-12 h-12 object-contain" />
+              <img src="/images/logo-trigma.png" alt="Trigma Logo" className="w-12 h-12 object-contain" />
             </div>
           </div>
           {!isCollapsed && (
             <div className="min-w-0">
               <div className="text-xs text-gray-500 dark:text-white/40">v1.0.0</div>
-              <div className="text-sm font-medium text-gray-900 dark:text-white">CLAIRE Platform</div>
+              <div className="text-sm font-medium text-gray-900 dark:text-white">Trigma AI</div>
             </div>
           )}
         </div>
