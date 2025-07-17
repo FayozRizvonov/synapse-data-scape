@@ -137,7 +137,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
   return (
     <>
-      <div className={`fixed bottom-5 right-0 px-4 z-50 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'left-16' : 'left-64'}`}>
+      <div className={`fixed bottom-5 right-0 px-4 z-[60] transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'left-16' : 'left-64'}`}>
         <motion.div
           ref={wrapperRef}
           className="w-full max-w-2xl mx-auto"

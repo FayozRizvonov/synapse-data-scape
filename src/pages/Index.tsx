@@ -81,13 +81,13 @@ const Index = () => {
       <div className="relative z-10 text-center space-y-4 pt-16">
         <div className="flex items-center justify-center gap-3 mb-6">
           <div className="rounded-xl overflow-hidden">
-            <img src="/images/logo-trigma.png" alt="Trigma Logo" className="w-12 h-12 object-contain" />
+            <img src="/images/claire_logo.png" alt="CLAIRE Logo" className="w-12 h-12 object-contain" />
           </div>
-          <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-gray-900 dark:text-white">Trigma AI</h1>
+          <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-gray-900 dark:text-white">CLAIRE AI</h1>
         </div>
         <p className="text-xl text-gray-600 dark:text-white/70 font-light max-w-2xl mx-auto">
-          Welcome to the future of business intelligence. Trigma AI will help you analyze data, 
-          make informed decisions, and optimize business processes with advanced AI capabilities.
+          CLAIRE AI — Commercial Life Science AI recommendation engine. It helps you analyze data,
+          make informed decisions and optimize business processes with advanced AI capabilities.
         </p>
       </div>
 

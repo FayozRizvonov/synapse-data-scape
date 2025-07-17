@@ -1,5 +1,12 @@
+// deno-lint-ignore-file
+// Этот файл выполняется в среде Deno на Supabase Edge Functions
+
+// @ts-expect-error - Deno remote import (TS in Node context)
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+// @ts-expect-error - Deno remote import (TS in Node context)
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+// eslint-disable
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
@@ -87,6 +94,8 @@ INSTRUCTIONS:
 6. Be concise but comprehensive
 7. Focus on business impact and strategic insights
 8. When showing charts, use: {"action": "show_chart", "metric_id": "metric-id"}
+9. AFTER your narrative, ALWAYS include the JSON block on a new line like:
+{"action": "show_card", "metric_id": "metric-id"}
 `;
 
 serve(async (req) => {

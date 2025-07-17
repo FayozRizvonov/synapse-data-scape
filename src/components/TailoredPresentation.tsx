@@ -3,6 +3,7 @@ import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContai
 import { Button } from '@/components/ui/button';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from '@/hooks/useTheme';
 
 // Utility to generate smooth diminishing curves for demonstration
 const generateDiminishingData = () => {
@@ -53,10 +54,20 @@ const generateBudgetShareData = () => {
 const { data: diminishingData, channels: diminishingChannels } = generateDiminishingData();
 const budgetShareData = generateBudgetShareData();
 
+// Цвета каналов — в стиле Sales Volume Breakdown
+const CHANNEL_COLORS: Record<string, { dark: string; light: string }> = {
+  sf_calls: { dark: '#3b82f6', light: '#2563eb' },
+  digital: { dark: '#ef4444', light: '#dc2626' },
+  email: { dark: '#f59e0b', light: '#d97706' },
+  other: { dark: '#10b981', light: '#059669' }
+};
+
 const TailoredPresentation: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [diminishingCollapsed, setDiminishingCollapsed] = useState(false);
   const [budgetCollapsed, setBudgetCollapsed] = useState(false);
+  const { theme } = useTheme();
+  const getColor = (key: string) => CHANNEL_COLORS[key as keyof typeof CHANNEL_COLORS][theme === 'dark' ? 'dark' : 'light'];
 
   return (
     <div className="space-y-8 mt-12 pb-24">
@@ -134,15 +145,35 @@ const TailoredPresentation: React.FC = () => {
                       formatter={(value: number) => value.toLocaleString()}
                     />
                     <Legend />
+                    {/* Gradients for diminishing curves area fill */}
+                    <defs>
+                      {diminishingChannels.map((ch) => (
+                        <linearGradient key={ch.key} id={`dimGrad-${ch.key}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={getColor(ch.key)} stopOpacity={0.3} />
+                          <stop offset="95%" stopColor={getColor(ch.key)} stopOpacity={0.05} />
+                        </linearGradient>
+                      ))}
+                    </defs>
                     {diminishingChannels.map((ch) => (
                       <Line
                         key={ch.key}
                         type="monotone"
                         dataKey={ch.key}
-                        stroke={ch.color}
+                        stroke={getColor(ch.key)}
                         dot={false}
                         strokeWidth={2}
                       />
+                    ))}
+                    {/* Area shadows */}
+                    {diminishingChannels.map((ch) => (
+                       <Area
+                         key={ch.key + '-area'}
+                         type="monotone"
+                         dataKey={ch.key}
+                         stroke="none"
+                         fill={`url(#dimGrad-${ch.key})`}
+                         fillOpacity={1}
+                       />
                     ))}
                   </LineChart>
                 </ResponsiveContainer>
@@ -202,10 +233,19 @@ const TailoredPresentation: React.FC = () => {
                       formatter={(value: number, name: string) => [ (value * 100).toFixed(1) + '%', name ] }
                     />
                     <Legend formatter={(value) => value.replace('_', ' ').toUpperCase()} />
-                    <Area type="monotone" dataKey="sf_calls" stackId="1" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.8} name="SF Calls" />
-                    <Area type="monotone" dataKey="digital" stackId="1" stroke="#ef4444" fill="#ef4444" fillOpacity={0.8} name="Digital" />
-                    <Area type="monotone" dataKey="email" stackId="1" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.8} name="Email" />
-                    <Area type="monotone" dataKey="other" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.8} name="Other" />
+                    {/* Gradients for channel fill */}
+                    <defs>
+                      {Object.keys(CHANNEL_COLORS).map((key) => (
+                        <linearGradient key={key} id={`areaGrad-${key}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={getColor(key)} stopOpacity={0.9} />
+                          <stop offset="95%" stopColor={getColor(key)} stopOpacity={0.1} />
+                        </linearGradient>
+                      ))}
+                    </defs>
+                    <Area type="monotone" dataKey="sf_calls" stackId="1" stroke={getColor('sf_calls')} fill="url(#areaGrad-sf_calls)" name="SF Calls" />
+                    <Area type="monotone" dataKey="digital" stackId="1" stroke={getColor('digital')} fill="url(#areaGrad-digital)" name="Digital" />
+                    <Area type="monotone" dataKey="email" stackId="1" stroke={getColor('email')} fill="url(#areaGrad-email)" name="Email" />
+                    <Area type="monotone" dataKey="other" stackId="1" stroke={getColor('other')} fill="url(#areaGrad-other)" name="Other" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>

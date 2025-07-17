@@ -112,7 +112,7 @@ const Simulation = () => {
                        <p className="text-sm text-gray-600 dark:text-white/70">Optimal Range</p>
                        <p className="text-2xl font-bold text-gray-900 dark:text-white my-1">40 - 70 reps</p>
                        <Button variant="outline" className="mt-2 border-cyan-500/50 text-gray-900 dark:text-white hover:bg-cyan-500/20 hover:text-white">
-                           Reset to MMM
+                           Reset to Model
                        </Button>
                   </div>
 

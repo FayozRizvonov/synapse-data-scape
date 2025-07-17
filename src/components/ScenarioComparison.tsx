@@ -74,48 +74,86 @@ const COLORS = [
   'var(--text-muted)'       // #6b7280 -> gray-500
 ];
 
+const GRADIENT_PAIRS = [
+  ['#60a5fa', '#3b82f6'], // blue gradient
+  ['#34d399', '#10b981'], // green gradient
+  ['#c084fc', '#a855f7'], // purple gradient
+  ['#9ca3af', '#6b7280']  // gray gradient
+];
+
 const AllocationChart = ({ title, data }: { title: string; data: typeof currentSpendData }) => (
-    <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-xl p-4">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{title}</h3>
-      <div style={{ width: '100%', height: 300 }}>
-        <ResponsiveContainer>
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              innerRadius={60}
-              outerRadius={80}
-              fill="var(--chart-secondary)"
-              paddingAngle={5}
-              dataKey="value"
-              label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
-            >
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip 
-              contentStyle={{
-                background: 'var(--chart-tooltip-bg)',
-                borderColor: 'var(--chart-tooltip-border)',
-                color: 'var(--chart-tooltip-text)',
-                borderRadius: '8px',
-                backdropFilter: 'blur(10px)'
-              }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-      <div className="mt-4 space-y-2">
-        {data.map((entry, index) => (
-            <div key={entry.name} className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                <span className="text-gray-700 dark:text-white/80">{entry.name}</span>
-            </div>
-        ))}
-      </div>
+  <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-xl p-4">
+    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{title}</h3>
+    <div style={{ width: '100%', height: 340 }}>
+      <ResponsiveContainer>
+        <PieChart>
+          {/* Gradient definitions */}
+          <defs>
+            {GRADIENT_PAIRS.map(([start, end], idx) => (
+              <linearGradient key={idx} id={`allocGrad-${idx}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={start} />
+                <stop offset="100%" stopColor={end} />
+              </linearGradient>
+            ))}
+          </defs>
+          <Pie
+            data={data}
+            cx="50%"
+            cy="50%"
+            innerRadius={70}
+            outerRadius={110}
+            stroke="none"
+            strokeWidth={0}
+            cornerRadius={4}
+            paddingAngle={5}
+            dataKey="value"
+            label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+              const RADIAN = Math.PI / 180;
+              const radius = innerRadius + (outerRadius - innerRadius) * 0.6;
+              const x = cx + radius * Math.cos(-midAngle * RADIAN);
+              const y = cy + radius * Math.sin(-midAngle * RADIAN);
+              return (
+                <text
+                  x={x}
+                  y={y}
+                  fill="#ffffff"
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  style={{ fontSize: 14, fontWeight: 600 }}
+                >
+                  {`${(percent * 100).toFixed(0)}%`}
+                </text>
+              );
+            }}
+          >
+            {data.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={`url(#allocGrad-${index % GRADIENT_PAIRS.length})`} />
+            ))}
+          </Pie>
+          <Tooltip
+            contentStyle={{
+              background: 'rgba(255, 255, 255, 0.15)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              color: '#ffffff',
+              borderRadius: '12px',
+              backdropFilter: 'blur(12px)',
+              padding: '8px 12px'
+            }}
+            itemStyle={{ color: '#ffffff' }}
+            labelStyle={{ color: '#ffffff' }}
+          />
+        </PieChart>
+      </ResponsiveContainer>
     </div>
+    <div className="mt-4 space-y-2">
+      {data.map((entry, index) => (
+        <div key={entry.name} className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full" style={{ background: `linear-gradient(180deg, ${GRADIENT_PAIRS[index % GRADIENT_PAIRS.length][0]}, ${GRADIENT_PAIRS[index % GRADIENT_PAIRS.length][1]})` }} />
+          <span className="text-base font-medium text-gray-200 dark:text-white">{entry.name}</span>
+        </div>
+      ))}
+    </div>
+  </div>
 );
 
 const ScenarioComparison = () => {

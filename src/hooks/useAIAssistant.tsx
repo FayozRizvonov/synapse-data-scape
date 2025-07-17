@@ -77,24 +77,49 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
       let action: AIResponse['action'];
       let metric: MetricCard | undefined;
       let metricId: string | undefined;
-      
+
       try {
-        // Try multiple patterns for robust parsing
-        const patterns = [
-          /\{"action":\s*"(show_card|show_chart)",\s*"metric_id":\s*"([^"]+)"\}/,
-          /\{"action":\s*"(show_card|show_chart)",\s*"metricId":\s*"([^"]+)"\}/,
-          /\{.*"action".*:\s*"(show_card|show_chart)".*"metric_id".*:\s*"([^"]+)".*\}/
-        ];
-        
-        for (const pattern of patterns) {
-          const actionMatch = responseText.match(pattern);
-          if (actionMatch) {
-            action = actionMatch[1] as 'show_card' | 'show_chart';
-            metricId = actionMatch[2];
-            metric = metricsKnowledgeBase.find(m => m.id === metricId);
-            break;
+        // Шаг 1: попытка найти JSON-блок целиком (может быть с переносами строк)
+        const jsonBlockMatch = responseText.match(/\{[\s\S]*?\}/);
+        if (jsonBlockMatch) {
+          const jsonString = jsonBlockMatch[0]
+            .replace(/\n/g, ' ')   // убираем переводы строк для корректного JSON
+            .replace(/'/g, '"');   // заменяем одиночные кавычки на двойные
+
+          try {
+            const parsed = JSON.parse(jsonString);
+            if (parsed.action && parsed.metric_id) {
+              action = parsed.action as 'show_card' | 'show_chart';
+              metricId = parsed.metric_id as string;
+            } else if (parsed.action && parsed.metricId) {
+              action = parsed.action as 'show_card' | 'show_chart';
+              metricId = parsed.metricId as string;
+            }
+          } catch (_) {
+            // JSON.parse не удался, перейдём к regex
           }
         }
+
+        // Шаг 2: если предыдущий способ не сработал — fallback на расширенный regex
+        if (!action || !metricId) {
+          const patterns = [
+            /\{[^}]*"action"\s*:\s*"?(show_card|show_chart)"?[^}]*"metric_id"\s*:\s*"?([a-zA-Z0-9_-]+)"?[^}]*\}/i,
+            /\{[^}]*"action"\s*:\s*"?(show_card|show_chart)"?[^}]*"metricId"\s*:\s*"?([a-zA-Z0-9_-]+)"?[^}]*\}/i
+          ];
+          for (const pattern of patterns) {
+            const match = responseText.match(pattern);
+            if (match) {
+              action = match[1] as 'show_card' | 'show_chart';
+              metricId = match[2];
+              break;
+            }
+          }
+        }
+
+        if (metricId) {
+          metric = metricsKnowledgeBase.find(m => m.id === metricId);
+        }
+
       } catch (parseError) {
         console.warn('Failed to parse action from response:', parseError);
       }

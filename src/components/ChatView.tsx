@@ -185,8 +185,8 @@ const ChatView: React.FC<ChatViewProps> = ({
     }
     
     return (
+      <React.Fragment key={message.id}>
       <div
-        key={message.id}
         className={cn(
           "flex gap-3 mb-4",
           isAI ? "justify-start" : "justify-end"
@@ -211,7 +211,7 @@ const ChatView: React.FC<ChatViewProps> = ({
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  {isAI ? 'Trigma AI Assistant' : 'You'}
+                  {isAI ? 'CLAIRE AI Assistant' : 'You'}
                 </span>
                 {isAI && (
                   <Badge variant="outline" className="text-xs border-blue-300 text-blue-600 dark:border-blue-600 dark:text-blue-400">
@@ -224,20 +224,9 @@ const ChatView: React.FC<ChatViewProps> = ({
                 {isAI ? formatAIResponse(message.content) : message.content}
               </div>
               
-              {/* Карточка метрики только если нет текста */}
-              {!message.content.trim() && message.metric && (
-                <div className="mt-3">
-                  <ChatMetricCardEnhanced
-                    metric={message.metric}
-                    onGoToCard={handleGoToCard}
-                    onShowChart={handleShowChart}
-                    isExpanded={expandedCards.has(message.metric.id)}
-                    onToggleExpand={() => handleToggleExpand(message.metric.id)}
-                  />
-                </div>
-              )}
+              {/* карточка удалена из этого контейнера */}
               
-              {message.action && message.metricId && (
+              {message.action && message.metricId && !(message.action === 'show_card' && message.metric) && (
                 <div className="mt-3 flex gap-2">
                   <Button
                     size="sm"
@@ -274,6 +263,25 @@ const ChatView: React.FC<ChatViewProps> = ({
           </div>
         )}
       </div>
+
+      {isAI && message.metric && (
+        <div className="flex gap-3 mb-4 justify-start">
+          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center">
+            <Bot className="w-4 h-4 text-white" />
+          </div>
+          <div className="flex-1 max-w-[80%]">
+            <ChatMetricCardEnhanced
+              metric={message.metric}
+              onGoToCard={handleGoToCard}
+              onShowChart={handleShowChart}
+              isExpanded={expandedCards.has(message.metric.id)}
+              onToggleExpand={() => handleToggleExpand(message.metric.id)}
+            />
+          </div>
+        </div>
+      )}
+
+      </React.Fragment>
     );
   };
 
@@ -292,7 +300,7 @@ const ChatView: React.FC<ChatViewProps> = ({
             <Bot className="w-4 h-4 text-white" />
           </div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Trigma AI Assistant
+            CLAIRE AI Assistant
           </h2>
         </div>
         {onClose && (
@@ -317,7 +325,7 @@ const ChatView: React.FC<ChatViewProps> = ({
                     <Bot className="w-8 h-8 text-white" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                    Welcome to Trigma AI Assistant
+                    Welcome to CLAIRE AI Assistant
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
                     Ask me about your pharmaceutical analytics data, marketing performance, 
@@ -376,7 +384,7 @@ const ChatView: React.FC<ChatViewProps> = ({
                       <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                           <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                            Trigma AI Assistant
+                            CLAIRE AI Assistant
                           </span>
                           <Badge variant="outline" className="text-xs border-blue-300 text-blue-600 dark:border-blue-600 dark:text-blue-400">
                             AI
