@@ -30,12 +30,12 @@ type FeatureCardProps = React.ComponentProps<'div'> & {
 export function FeatureCard({ feature, className, onClick, id, ...props }: FeatureCardProps) {
 	const p = genRandomPattern();
 	const { theme } = useTheme();
-	const backgroundColor = theme === 'dark' ? '#151419' : '#fff';
+	const backgroundColor = 'var(--bg-card)';
 
 	// Настройки для Key Metrics
 	const isKeyMetric = feature.category === 'key';
 	const borderWidth = isKeyMetric ? '4px' : '2px';
-	const accentColor = isKeyMetric ? '#24d200' : '#156ef6';
+	const accentColor = isKeyMetric ? 'var(--metric-key)' : 'hsl(var(--accent))';
 
 	return (
 		<div className="p-2">
@@ -65,27 +65,27 @@ export function FeatureCard({ feature, className, onClick, id, ...props }: Featu
 						</div>
 					</div>
 					<feature.icon className="text-foreground/75 size-6" strokeWidth={1} aria-hidden />
-					<h3 className="mt-10 text-sm md:text-base font-semibold text-gray-900 dark:text-white">{feature.title}</h3>
+					<h3 className="mt-10 text-sm md:text-base font-semibold text-foreground">{feature.title}</h3>
 					{feature.value && (
 						<div className="mt-2 flex items-end gap-2">
-							<span className="text-2xl font-bold text-gray-900 dark:text-white">{feature.value}</span>
+							<span className={`text-2xl font-bold ${feature.value.includes('%') ? 'text-success-foreground' : 'text-foreground'}`}>{feature.value}</span>
 							{feature.change && (
 								<span className={`text-sm font-medium ${
-									feature.changeType === 'positive' ? 'text-green-400' : 'text-red-400'
+									feature.changeType === 'positive' ? 'text-success-foreground' : 'text-error-foreground'
 								}`}>{feature.change}</span>
 							)}
 						</div>
 					)}
 					{feature.comparison && (
-						<p className="text-xs text-gray-700 dark:text-slate-400 mt-1">{feature.comparison}</p>
+						<p className="text-xs text-muted-foreground mt-1">{feature.comparison}</p>
 					)}
-					<p className="relative z-20 mt-2 text-xs font-light text-gray-700 dark:text-slate-400">{feature.description}</p>
+					<p className="relative z-20 mt-2 text-xs font-light text-muted-foreground">{feature.description}</p>
 					{/* Three dots menu in the top right corner */}
 					<div className="absolute top-3 right-3 z-30">
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
-								<button className="p-1 rounded-full hover:bg-gray-200/30 dark:hover:bg-white/10 transition-colors">
-									<MoreVertical className="w-5 h-5 text-gray-500 dark:text-white/70" />
+								<button className="p-1 rounded-full hover:bg-muted/20 transition-colors">
+									<MoreVertical className="w-5 h-5 text-muted" />
 								</button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end" className="backdrop-blur-md border shadow-xl p-1 bg-white/90 dark:bg-black/30 dark:backdrop-blur-md dark:border-white/10 dark:shadow-none">

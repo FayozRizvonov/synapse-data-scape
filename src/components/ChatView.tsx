@@ -220,7 +220,7 @@ const ChatView: React.FC<ChatViewProps> = ({
                 )}
               </div>
               
-              <div className="text-sm leading-relaxed">
+              <div className="text-base leading-relaxed">
                 {isAI ? formatAIResponse(message.content) : message.content}
               </div>
               

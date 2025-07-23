@@ -108,15 +108,15 @@ interface ChronicleButtonProps {
 export const ChronicleButton: React.FC<ChronicleButtonProps> = ({
   text,
   onClick,
-  hoverColor = "#a594fd",
+  hoverColor = "var(--accent)",
   width = "160px",
   outlined = false,
   outlinePaddingAdjustment = "2px",
   borderRadius = "8px",
   outlinedButtonBackgroundOnHover = "transparent",
-  customBackground = "#fff",
-  customForeground = "#111014",
-  hoverForeground = "#111014",
+  customBackground = "var(--bauhaus-chronicle-bg)",
+  customForeground = "var(--bauhaus-chronicle-fg)",
+  hoverForeground = "var(--bauhaus-chronicle-hover-fg)",
 }) => {
   // Inject styles once
   React.useEffect(() => {

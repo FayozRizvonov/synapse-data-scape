@@ -40,6 +40,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const [showVoiceAssistant, setShowVoiceAssistant] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   // Cycle placeholder text when input is inactive
   useEffect(() => {
@@ -149,9 +150,20 @@ const ChatInput: React.FC<ChatInputProps> = ({
         >
           <div className="flex flex-col items-stretch w-full h-full">
             {/* Input Row */}
-            <div className="flex items-center gap-2 p-3 rounded-full backdrop-blur-[2px] bg-white/5 border border-white/10 max-w-2xl w-full">
+            {/* Адаптивный стиль контейнера ввода */}
+            <div
+              className={`flex items-center gap-2 p-3 rounded-full backdrop-blur-[2px] max-w-2xl w-full ${
+                isDark
+                  ? 'bg-white/5 border border-white/10'
+                  : 'bg-white/90 border border-gray-300 shadow-sm'
+              }`}
+            >
               <button
-                className="p-3 rounded-full hover:bg-white/10 transition text-white/70 hover:text-white"
+                className={`p-3 rounded-full transition ${
+                  isDark
+                    ? 'text-white/70 hover:bg-white/10 hover:text-white'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-800'
+                }`}
                 title="Attach file"
                 type="button"
                 tabIndex={-1}
@@ -179,7 +191,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
                     {showPlaceholder && !isActive && !message && (
                       <motion.span
                         key={placeholderIndex}
-                        className="absolute left-0 top-1/2 -translate-y-1/2 text-white/60 dark:text-white/70 select-none pointer-events-none font-medium"
+                        className={`absolute left-0 top-1/2 -translate-y-1/2 select-none pointer-events-none font-medium ${
+                          isDark ? 'text-white/70' : 'text-gray-400'
+                        }`}
                         style={{
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
@@ -210,7 +224,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
               {/* Voice Assistant Button */}
               <button
-                className="p-3 rounded-full hover:bg-white/10 transition text-white/70 hover:text-white"
+                className={`p-3 rounded-full transition ${
+                  isDark
+                    ? 'text-white/70 hover:bg-white/10 hover:text-white'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-800'
+                }`}
                 title="Voice Assistant"
                 type="button"
                 tabIndex={-1}
@@ -260,7 +278,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
                           onSendMessage(suggestion);
                           setMessage('');
                         }}
-                        className="px-2 py-1 text-xs rounded-full backdrop-blur-sm bg-white/10 border border-white/20 text-white/80 hover:bg-white/20 hover:text-white transition-all duration-200"
+                        className={`px-2 py-1 text-xs rounded-full backdrop-blur-sm transition-all duration-200 ${
+                          isDark
+                            ? 'bg-white/10 border border-white/20 text-white/80 hover:bg-white/20 hover:text-white'
+                            : 'bg-gray-100 border border-gray-300 text-gray-600 hover:bg-gray-200 hover:text-gray-800'
+                        }`}
                       >
                         {suggestion}
                       </motion.button>

@@ -75,15 +75,15 @@ const COLORS = [
 ];
 
 const GRADIENT_PAIRS = [
-  ['#60a5fa', '#3b82f6'], // blue gradient
-  ['#34d399', '#10b981'], // green gradient
-  ['#c084fc', '#a855f7'], // purple gradient
-  ['#9ca3af', '#6b7280']  // gray gradient
+  ['hsl(var(--chart-senary))', 'hsl(var(--chart-senary))'],
+  ['hsl(var(--chart-quinary))', 'hsl(var(--chart-quinary))'],
+  ['hsl(var(--chart-secondary))', 'hsl(var(--chart-secondary))'],
+  ['hsl(var(--text-muted))', 'hsl(var(--text-muted))']
 ];
 
 const AllocationChart = ({ title, data }: { title: string; data: typeof currentSpendData }) => (
-  <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-xl p-4">
-    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{title}</h3>
+  <div className="backdrop-blur-[2px] bg-background/5 border border-border/10 rounded-xl p-4">
+    <h3 className="text-lg font-semibold text-foreground mb-4">{title}</h3>
     <div style={{ width: '100%', height: 340 }}>
       <ResponsiveContainer>
         <PieChart>
@@ -116,7 +116,7 @@ const AllocationChart = ({ title, data }: { title: string; data: typeof currentS
                 <text
                   x={x}
                   y={y}
-                  fill="#ffffff"
+                  fill="var(--chart-tooltip-text)"
                   textAnchor="middle"
                   dominantBaseline="central"
                   style={{ fontSize: 14, fontWeight: 600 }}
@@ -132,15 +132,15 @@ const AllocationChart = ({ title, data }: { title: string; data: typeof currentS
           </Pie>
           <Tooltip
             contentStyle={{
-              background: 'rgba(255, 255, 255, 0.15)',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-              color: '#ffffff',
+              background: 'var(--chart-tooltip-bg)',
+              border: '1px solid var(--chart-tooltip-border)',
+              color: 'var(--chart-tooltip-text)',
               borderRadius: '12px',
               backdropFilter: 'blur(12px)',
               padding: '8px 12px'
             }}
-            itemStyle={{ color: '#ffffff' }}
-            labelStyle={{ color: '#ffffff' }}
+            itemStyle={{ color: 'var(--chart-tooltip-text)' }}
+            labelStyle={{ color: 'var(--chart-tooltip-text)' }}
           />
         </PieChart>
       </ResponsiveContainer>
@@ -149,7 +149,7 @@ const AllocationChart = ({ title, data }: { title: string; data: typeof currentS
       {data.map((entry, index) => (
         <div key={entry.name} className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full" style={{ background: `linear-gradient(180deg, ${GRADIENT_PAIRS[index % GRADIENT_PAIRS.length][0]}, ${GRADIENT_PAIRS[index % GRADIENT_PAIRS.length][1]})` }} />
-          <span className="text-base font-medium text-gray-200 dark:text-white">{entry.name}</span>
+          <span className="text-base font-medium text-foreground">{entry.name}</span>
         </div>
       ))}
     </div>
@@ -174,20 +174,20 @@ const ScenarioComparison = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 hover:border-white/20 transition-all duration-300">
+          <div className="backdrop-blur-[2px] bg-background/5 border border-border/10 rounded-2xl p-6 hover:bg-background/10 hover:border-border/20 transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
-                  <DollarSign className="w-5 h-5 text-cyan-400" />
+                <div className="p-2 rounded-lg bg-gradient-to-r from-accent/20 to-accent/10 border border-accent/30">
+                  <DollarSign className="w-5 h-5 text-accent" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Current</h3>
+                <h3 className="text-lg font-semibold text-foreground">Current</h3>
               </div>
-              <Badge variant="outline" className="border-cyan-500/30 text-cyan-400 bg-cyan-500/10">0.7М$ Spend</Badge>
+              <Badge variant="outline" className="border-accent/30 text-accent bg-accent/10">0.7М$ Spend</Badge>
             </div>
             <div className="space-y-4">
               <div className="flex items-end gap-2">
-                <span className="text-3xl font-bold text-gray-900 dark:text-white">21.3М</span>
-                <span className="text-sm text-gray-600 dark:text-white/60">Projected Sales</span>
+                <span className="text-3xl font-bold text-foreground">21.3М</span>
+                <span className="text-sm text-muted">Projected Sales</span>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-gray-600 dark:text-white/80">

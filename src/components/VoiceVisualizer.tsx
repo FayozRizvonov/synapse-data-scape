@@ -21,7 +21,7 @@ export const VoiceVisualizer: React.FC<VoiceVisualizerProps> = ({
   return (
     <div className={cn("flex items-center justify-center space-x-4", className)}>
       {/* Индикатор состояния с стеклянным эффектом */}
-      <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 hover:border-white/20 transition-all duration-300 shadow-md">
+      <div className="backdrop-blur-[2px] bg-background/5 border border-border/10 rounded-xl p-4 hover:bg-background/10 hover:border-border/20 transition-all duration-300 shadow-md">
         <div className="flex items-center justify-center space-x-2">
           {/* Анимированные точки для обработки */}
           {isProcessing && (
@@ -29,7 +29,7 @@ export const VoiceVisualizer: React.FC<VoiceVisualizerProps> = ({
               {[0, 1, 2].map((i) => (
                 <div
                   key={i}
-                  className="w-3 h-3 bg-cyan-500 dark:bg-cyan-400 rounded-full animate-pulse shadow-md"
+                  className="w-3 h-3 bg-accent rounded-full animate-pulse shadow-md"
                   style={{
                     animationDelay: `${i * 0.2}s`,
                     animationDuration: '1s'
@@ -45,7 +45,7 @@ export const VoiceVisualizer: React.FC<VoiceVisualizerProps> = ({
               {[0, 1, 2, 3, 4].map((i) => (
                 <div
                   key={i}
-                  className="w-1.5 bg-blue-500 dark:bg-cyan-400 rounded-full animate-pulse shadow-sm"
+                  className="w-1.5 bg-accent rounded-full animate-pulse shadow-sm"
                   style={{
                     height: `${24 + i * 8}px`,
                     animationDelay: `${i * 0.1}s`,
@@ -59,16 +59,16 @@ export const VoiceVisualizer: React.FC<VoiceVisualizerProps> = ({
           {/* Пульсация для записи */}
           {isListening && (
             <div className="relative">
-              <div className="w-5 h-5 bg-cyan-500 dark:bg-cyan-400 rounded-full animate-ping shadow-lg" />
-              <div className="absolute inset-0 w-5 h-5 bg-cyan-500 dark:bg-cyan-400 rounded-full shadow-md" />
+              <div className="w-5 h-5 bg-accent rounded-full animate-ping shadow-lg" />
+              <div className="absolute inset-0 w-5 h-5 bg-accent rounded-full shadow-md" />
             </div>
           )}
         </div>
       </div>
 
       {/* Текст состояния с стеклянным эффектом */}
-      <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-lg px-4 py-2 hover:bg-white/10 hover:border-white/20 transition-all duration-300 shadow-md">
-        <span className="text-sm font-medium text-slate-800 dark:text-white/70">
+      <div className="backdrop-blur-[2px] bg-background/5 border border-border/10 rounded-lg px-4 py-2 hover:bg-background/10 hover:border-border/20 transition-all duration-300 shadow-md">
+        <span className="text-sm font-medium text-foreground/80">
           {isProcessing && 'Processing...'}
           {isSpeaking && 'Speaking...'}
           {isListening && 'Listening...'}
@@ -106,11 +106,11 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
       disabled={disabled || isProcessing}
       className={cn(
         "relative flex items-center justify-center rounded-2xl transition-all duration-300 ease-in-out",
-        "backdrop-blur-[2px] bg-white/5 border border-white/10 shadow-lg hover:shadow-xl",
-        "focus:outline-none focus:ring-2 focus:ring-cyan-500/50 dark:focus:ring-cyan-400/50 focus:ring-offset-2",
+        "backdrop-blur-[2px] bg-background/5 border border-border/10 shadow-lg hover:shadow-xl",
+        "focus:outline-none focus:ring-2 focus:ring-accent/50 focus:ring-offset-2",
         {
           "opacity-50 cursor-not-allowed": disabled || isProcessing,
-          "cursor-pointer hover:scale-105 hover:bg-white/10 hover:border-white/20": !disabled && !isProcessing,
+          "cursor-pointer hover:scale-105 hover:bg-background/10 hover:border-border/20": !disabled && !isProcessing,
           "scale-110 border-cyan-400/50 dark:border-cyan-400/50": isActive,
         },
         className
@@ -119,10 +119,12 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
       {/* Иконка микрофона */}
       <svg
         className={cn(
-          "w-6 h-6 transition-all duration-300",
-          isListening 
-            ? "text-cyan-600 dark:text-cyan-400" 
-            : "text-blue-600 dark:text-cyan-400"
+          "w-6 h-6 transition-all duration-300 text-accent",
+          isListening ? (
+            "text-cyan-600 dark:text-cyan-400"
+          ) : (
+            "text-blue-600 dark:text-cyan-400"
+          )
         )}
         fill="none"
         stroke="currentColor"
@@ -149,12 +151,12 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
 
       {/* Анимированное кольцо для записи */}
       {isListening && (
-        <div className="absolute inset-0 rounded-2xl border-2 border-cyan-500/70 dark:border-cyan-400/70 animate-ping" />
+        <div className="absolute inset-0 rounded-2xl border-2 border-accent/70 animate-ping" />
       )}
 
       {/* Анимированное кольцо для речи */}
       {isSpeaking && (
-        <div className="absolute inset-0 rounded-2xl border-2 border-blue-500/70 dark:border-cyan-400/70 animate-pulse" />
+        <div className="absolute inset-0 rounded-2xl border-2 border-accent/70 animate-pulse" />
       )}
 
       {/* Анимированное кольцо для обработки */}

@@ -14,10 +14,10 @@ interface ProcessFlowDiagramProps {
 
 const ProcessFlowDiagram: React.FC<ProcessFlowDiagramProps> = ({ activePersona }) => {
   const processLevels: ProcessLevel[] = [
-    { level: 1, circles: [1, 2, 3, 4], color: '#06B6D4' },
-    { level: 2, circles: [1, 2, 3], color: '#06B6D4' },
-    { level: 3, circles: [1, 2], color: '#06B6D4' },
-    { level: 4, circles: [1, 2], color: '#06B6D4' }
+    { level: 1, circles: [1, 2, 3, 4], color: 'var(--chart-primary)' },
+    { level: 2, circles: [1, 2, 3], color: 'var(--chart-primary)' },
+    { level: 3, circles: [1, 2], color: 'var(--chart-primary)' },
+    { level: 4, circles: [1, 2], color: 'var(--chart-primary)' }
   ];
 
   const lineWidth = 500; // Одинаковая длина для всех линий
@@ -31,45 +31,47 @@ const ProcessFlowDiagram: React.FC<ProcessFlowDiagramProps> = ({ activePersona }
   };
 
   const getIconForCircle = (level: number, circleNumber: number) => {
+    const iconClass = "w-6 h-6 text-gray-900 dark:text-white";
+
     if (level === 1) {
       switch (circleNumber) {
         case 1:
-          return <Pill className="w-6 h-6 text-white" />;
+          return <Pill className={iconClass} />;
         case 2:
-          return <Megaphone className="w-6 h-6 text-white" />;
+          return <Megaphone className={iconClass} />;
         case 3:
-          return <Smartphone className="w-6 h-6 text-white" />;
+          return <Smartphone className={iconClass} />;
         case 4:
-          return <Search className="w-6 h-6 text-white" />;
+          return <Search className={iconClass} />;
         default:
           return null;
       }
     } else if (level === 2) {
       switch (circleNumber) {
         case 1:
-          return <Pill className="w-6 h-6 text-white" />;
+          return <Pill className={iconClass} />;
         case 2:
-          return <Megaphone className="w-6 h-6 text-white" />;
+          return <Megaphone className={iconClass} />;
         case 3:
-          return <Search className="w-6 h-6 text-white" />;
+          return <Search className={iconClass} />;
         default:
           return null;
       }
     } else if (level === 3) {
       switch (circleNumber) {
         case 1:
-          return <Pill className="w-6 h-6 text-white" />;
+          return <Pill className={iconClass} />;
         case 2:
-          return <Smartphone className="w-6 h-6 text-white" />;
+          return <Smartphone className={iconClass} />;
         default:
           return null;
       }
     } else if (level === 4) {
       switch (circleNumber) {
         case 1:
-          return <Smartphone className="w-6 h-6 text-white" />;
+          return <Smartphone className={iconClass} />;
         case 2:
-          return <Search className="w-6 h-6 text-white" />;
+          return <Search className={iconClass} />;
         default:
           return null;
       }
@@ -121,7 +123,7 @@ const ProcessFlowDiagram: React.FC<ProcessFlowDiagramProps> = ({ activePersona }
   return (
     <div className="w-full">
       <div className="text-center mb-6">
-        <h3 className="text-xl font-semibold text-slate-800 dark:text-white mb-6">
+        <h3 className="text-xl font-semibold text-foreground mb-6">
           Process Flow Diagram
         </h3>
       </div>
@@ -138,7 +140,7 @@ const ProcessFlowDiagram: React.FC<ProcessFlowDiagramProps> = ({ activePersona }
             // Проверяем, является ли уровень активным
             const isActiveLevel = personaToLevel[activePersona] === level.level;
             const levelOpacity = isActiveLevel ? 1 : 0.3;
-            const levelColor = isActiveLevel ? level.color : '#64748b';
+            const levelColor = isActiveLevel ? level.color : 'var(--text-muted)';
             
             return (
               <motion.div
@@ -154,7 +156,7 @@ const ProcessFlowDiagram: React.FC<ProcessFlowDiagramProps> = ({ activePersona }
                   <svg
                     width={lineWidth + 40}
                     height="120"
-                    className="absolute -left-5"
+                    className="absolute -left-5 stroke-[var(--chart-primary)]"
                     style={{ top: '-40px' }}
                   >
                     {/* Левая стрелка */}
@@ -225,7 +227,7 @@ const ProcessFlowDiagram: React.FC<ProcessFlowDiagramProps> = ({ activePersona }
                           x={circlePositions[circleIndex] + 20}
                           y="52"
                           textAnchor="middle"
-                          className="text-xs font-bold fill-white"
+                          className="text-xs font-bold text-gray-900 dark:text-white"
                           opacity={levelOpacity}
                         >
                           {circleNumber}

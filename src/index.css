@@ -112,31 +112,35 @@
 /* ============ УЛУЧШЕННЫЕ ТЕНИ ДЛЯ LIGHT MODE ============ */
 [data-theme="light"] {
   /* Мягкие тени для карточек */
-  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -1px rgba(15, 23, 42, 0.04);
-  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -2px rgba(15, 23, 42, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.12), 0 10px 10px -5px rgba(15, 23, 42, 0.04);
-  --shadow-2xl: 0 25px 50px -12px rgba(15, 23, 42, 0.15);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.09), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.12);
   
-  /* Цветные тени с синим оттенком */
-  --shadow-blue-sm: 0 1px 2px 0 rgba(37, 99, 235, 0.08);
-  --shadow-blue-md: 0 4px 6px -1px rgba(37, 99, 235, 0.12), 0 2px 4px -1px rgba(37, 99, 235, 0.06);
-  --shadow-blue-lg: 0 10px 15px -3px rgba(37, 99, 235, 0.15), 0 4px 6px -2px rgba(37, 99, 235, 0.08);
-  --shadow-blue-xl: 0 20px 25px -5px rgba(37, 99, 235, 0.18), 0 10px 10px -5px rgba(37, 99, 235, 0.06);
-  
+  /* Нейтральные тени вместо синих */
+  --shadow-blue-sm: var(--shadow-sm);
+  --shadow-blue-md: var(--shadow-md);
+  --shadow-blue-lg: var(--shadow-lg);
+  --shadow-blue-xl: var(--shadow-xl);
+   
   /* Тени для ховера */
-  --shadow-hover: 0 8px 25px -5px rgba(15, 23, 42, 0.15), 0 4px 6px -2px rgba(15, 23, 42, 0.08);
-  --shadow-blue-hover: 0 8px 25px -5px rgba(37, 99, 235, 0.2), 0 4px 6px -2px rgba(37, 99, 235, 0.1);
-  
+  --shadow-hover: 0 8px 25px -5px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+  --shadow-blue-hover: var(--shadow-hover);
+   
   /* Тени для модалок и попапов */
   --shadow-modal: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
   --shadow-dropdown: 0 10px 15px -3px rgba(15, 23, 42, 0.15), 0 4px 6px -2px rgba(15, 23, 42, 0.08);
-  
+   
   /* Тени для кнопок */
-  --shadow-button: 0 1px 3px 0 rgba(15, 23, 42, 0.1), 0 1px 2px 0 rgba(15, 23, 42, 0.06);
-  --shadow-button-hover: 0 4px 6px -1px rgba(15, 23, 42, 0.15), 0 2px 4px -1px rgba(15, 23, 42, 0.08);
-  --shadow-button-blue: 0 1px 3px 0 rgba(37, 99, 235, 0.15), 0 1px 2px 0 rgba(37, 99, 235, 0.08);
-  --shadow-button-blue-hover: 0 4px 6px -1px rgba(37, 99, 235, 0.2), 0 2px 4px -1px rgba(37, 99, 235, 0.12);
+  --shadow-button: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-button-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.12), 0 2px 4px -1px rgba(0, 0, 0, 0.08);
+  --shadow-button-blue: var(--shadow-button);
+  --shadow-button-blue-hover: var(--shadow-button-hover);
+ 
+  /* Обновлённое свечение */
+  --pulse-glow: rgba(0, 0, 0, 0.1);
+  --pulse-glow-hover: rgba(0, 0, 0, 0.25);
 }
 
 /* Применение улучшенных теней для light mode */
@@ -477,6 +481,11 @@
   text-shadow: 0 0 10px var(--pulse-glow);
 }
 
+/* В светлой теме убираем свечение текста */
+[data-theme="light"] .text-glow {
+  text-shadow: none;
+}
+
 .dark .text-glow {
   text-shadow: 0 0 10px var(--pulse-glow);
 }
@@ -756,5 +765,24 @@ html {
     text-decoration: none !important;
     cursor: default;
   }
+}
+
+/* --------------------------- */
+/* Улучшение светлой темы       */
+/* --------------------------- */
+
+/* Карточки с классом bg-white/5 делают интерфейс блеклым в white theme.
+   Заменяем фон на #f9fafb и чуть заметную границу */
+[data-theme="light"] .bg-white\/5 {
+  background-color: #f9fafb !important; /* gray-50 */
+}
+[data-theme="light"] .hover\:bg-white\/10:hover {
+  background-color: #f3f4f6 !important; /* gray-100 */
+}
+[data-theme="light"] .border-white\/10 {
+  border-color: rgba(0,0,0,0.08) !important; /* subtle gray */
+}
+[data-theme="light"] .hover\:border-white\/20:hover {
+  border-color: rgba(0,0,0,0.12) !important;
 }
 

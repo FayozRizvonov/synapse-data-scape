@@ -101,7 +101,7 @@ const ChatMetricCardEnhanced: React.FC<ChatMetricCardEnhancedProps> = ({
   const backgroundColor = theme === 'dark' ? '#151419' : '#fff';
 
   return (
-    <div className="p-2 max-w-md backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl">
+    <div className="p-1 max-w-sm backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl">
       <BauhausBorder
         borderRadius="1.25em"
         borderWidth={borderWidth}
@@ -109,7 +109,7 @@ const ChatMetricCardEnhanced: React.FC<ChatMetricCardEnhancedProps> = ({
         backgroundColor={backgroundColor}
         className="transition-all duration-300 hover:scale-105"
       >
-        <div className="relative overflow-hidden p-6">
+        <div className="relative overflow-hidden p-4">
           {/* Grid Pattern Background */}
           <div className="pointer-events-none absolute top-0 left-1/2 -mt-2 -ml-20 h-full w-full [mask-image:linear-gradient(white,transparent)]">
             <div className="from-foreground/5 to-foreground/1 absolute inset-0 bg-gradient-to-r [mask-image:radial-gradient(farthest-side_at_top,white,transparent)] opacity-100">
@@ -141,7 +141,7 @@ const ChatMetricCardEnhanced: React.FC<ChatMetricCardEnhancedProps> = ({
 
           {/* Main Value */}
           <div className="mt-4 flex items-end gap-2">
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">
+            <span className={`text-2xl font-bold ${metric.value.includes('%') ? 'text-success-foreground' : 'text-gray-900 dark:text-white'}`}>
               <AnimatedNumber 
                 value={parseValue(metric.value)}
                 formatter={(val) => {

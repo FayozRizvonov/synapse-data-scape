@@ -417,7 +417,7 @@ const FarmaMetricsWithGlow = () => {
             <div className="flex items-end gap-2">
               <AnimatedNumber 
                 value={parseValue(card.value)}
-                className="text-3xl font-bold text-gray-900 dark:text-white"
+                className={`text-3xl font-bold ${card.value.includes('%') ? 'text-success-foreground' : 'text-gray-900 dark:text-white'}`}
                 formatter={(val) => {
                     const original = card.value;
                     if (original.includes('M')) return `$${(val).toFixed(1)}M`;

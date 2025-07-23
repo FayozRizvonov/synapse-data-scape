@@ -46,7 +46,7 @@ const Settings: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
           {/* Appearance Settings */}
-          <Card className="bg-gradient-card backdrop-blur-xl border border-gray-200/50 dark:border-slate-700/50">
+          <Card className="bg-gradient-card backdrop-blur-xl border border-gray-200/50 dark:!bg-none dark:bg-white/5 dark:backdrop-blur-xl dark:border-white/10">
             <CardHeader>
               <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
                 <Palette className="w-5 h-5 text-blue-600 dark:text-cyan-500" />
@@ -88,7 +88,7 @@ const Settings: React.FC = () => {
           </Card>
 
           {/* Notifications */}
-          <Card className="bg-gradient-card backdrop-blur-xl border border-gray-200/50 dark:border-slate-700/50">
+          <Card className="bg-gradient-card backdrop-blur-xl border border-gray-200/50 dark:!bg-none dark:bg-white/5 dark:backdrop-blur-xl dark:border-white/10">
             <CardHeader>
               <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
                 <Bell className="w-5 h-5 text-blue-600 dark:text-cyan-500" />
@@ -123,7 +123,7 @@ const Settings: React.FC = () => {
           </Card>
 
           {/* Security */}
-          <Card className="bg-gradient-card backdrop-blur-xl border border-gray-200/50 dark:border-slate-700/50">
+          <Card className="bg-gradient-card backdrop-blur-xl border border-gray-200/50 dark:!bg-none dark:bg-white/5 dark:backdrop-blur-xl dark:border-white/10">
             <CardHeader>
               <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
                 <Shield className="w-5 h-5 text-blue-600 dark:text-cyan-500" />
@@ -158,7 +158,7 @@ const Settings: React.FC = () => {
           </Card>
 
           {/* Data Management */}
-          <Card className="bg-gradient-card backdrop-blur-xl border border-gray-200/50 dark:border-slate-700/50">
+          <Card className="bg-gradient-card backdrop-blur-xl border border-gray-200/50 dark:!bg-none dark:bg-white/5 dark:backdrop-blur-xl dark:border-white/10">
             <CardHeader>
               <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
                 <Database className="w-5 h-5 text-blue-600 dark:text-cyan-500" />

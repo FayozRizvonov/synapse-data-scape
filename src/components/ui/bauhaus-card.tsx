@@ -13,16 +13,16 @@ const BAUHAUS_CARD_STYLES = `
   place-content: center;
   place-items: center;
   text-align: center;
-  box-shadow: 1px 12px 25px rgb(0,0,0/78%);
+  box-shadow: var(--shadow-card);
   border-radius: var(--card-radius, 20px);
   border: var(--card-border-width, 2px) solid transparent;
   --rotation: 4.2rad;
   background-image:
-    linear-gradient(var(--card-bg, #151419), var(--card-bg, #151419)),
-    linear-gradient(calc(var(--rotation,4.2rad)), var(--card-accent, #156ef6) 0, var(--card-bg, #151419) 30%, transparent 80%);
+    linear-gradient(var(--card-bg), var(--card-bg)),
+    linear-gradient(calc(var(--rotation,4.2rad)), var(--card-accent) 0, var(--card-bg) 30%, transparent 80%);
   background-origin: border-box;
   background-clip: padding-box, border-box;
-  color: var(--card-text-main, #f0f0f1);
+  color: var(--card-text-main);
   transition: all 0.3s ease;
 }
 .bauhaus-card::before {
@@ -40,7 +40,7 @@ const BAUHAUS_CARD_STYLES = `
 }
 .bauhaus-card:hover {
   transform: translateY(-2px);
-  box-shadow: 1px 16px 35px rgb(0,0,0/85%);
+  box-shadow: var(--shadow-card);
 }
 .bauhaus-card-header {
   position: absolute;
@@ -62,7 +62,7 @@ const BAUHAUS_CARD_STYLES = `
   padding-bottom: 7px;
 }
 .bauhaus-date {
-  color: var(--card-text-top, #bfc7d5);
+  color: var(--card-text-top);
 }
 .bauhaus-size6 {
   width: 2.5rem;
@@ -86,10 +86,10 @@ const BAUHAUS_CARD_STYLES = `
   margin-top: -0.4em;
   margin-bottom: 0.188em;
   font-weight: 600;
-  color: var(--card-text-main, #f0f0f1);
+  color: var(--card-text-main);
 }
 .bauhaus-card-body p {
-  color: var(--card-text-sub, #a0a1b3);
+  color: var(--card-text-sub);
   font-size: 1rem;
   letter-spacing: 0.031rem;
 }
@@ -99,7 +99,7 @@ const BAUHAUS_CARD_STYLES = `
 .bauhaus-progress-bar {
   position: relative;
   width: 100%;
-  background: var(--card-progress-bar-bg, #363636);
+  background: var(--card-progress-bar-bg);
   height: 0.313rem;
   display: block;
   border-radius: 3.125rem;
@@ -116,13 +116,13 @@ const BAUHAUS_CARD_STYLES = `
   width: 100%;
   display: block;
   margin-bottom: 0.313rem;
-  color: var(--card-text-progress-label, #b4c7e7);
+  color: var(--card-text-progress-label);
 }
 .bauhaus-progress span:last-of-type {
   margin-top: 0.313rem;
   text-align: right;
   display: block;
-  color: var(--card-text-progress-value, #e7e7f7);
+  color: var(--card-text-progress-value);
 }
 .bauhaus-card-footer {
   position: absolute;
@@ -136,7 +136,7 @@ const BAUHAUS_CARD_STYLES = `
   padding: 0.7em 1.25em 0.5em 1.5em;
   border-bottom-left-radius: var(--card-radius, 20px);
   border-bottom-right-radius: var(--card-radius, 20px);
-  border-top: 0.063rem solid var(--card-separator, #2F2B2A);
+  border-top: 0.063rem solid var(--card-separator);
 }
 `;
 

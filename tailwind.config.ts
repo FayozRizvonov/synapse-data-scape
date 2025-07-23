@@ -95,6 +95,42 @@ export default {
 				orange: {
 					500: 'hsl(var(--orange-500))',
 				},
+				/* -------------------------------------------------- */
+				/* Новые токены, ссылающиеся на CSS-переменные темы  */
+				/* -------------------------------------------------- */
+				// Статусы
+				success: {
+					DEFAULT: 'hsl(var(--success))',
+					foreground: 'hsl(var(--success-light))',
+				},
+				warning: {
+					DEFAULT: 'hsl(var(--warning))',
+					foreground: 'hsl(var(--warning-light))',
+				},
+				error: {
+					DEFAULT: 'hsl(var(--error))',
+					foreground: 'hsl(var(--error-light))',
+				},
+				info: {
+					DEFAULT: 'hsl(var(--info))',
+					foreground: 'hsl(var(--info-light))',
+				},
+
+				// Палитра графиков
+				'chart-primary': 'hsl(var(--chart-primary))',
+				'chart-secondary': 'hsl(var(--chart-secondary))',
+				'chart-tertiary': 'hsl(var(--chart-tertiary))',
+				'chart-quaternary': 'hsl(var(--chart-quaternary))',
+				'chart-quinary': 'hsl(var(--chart-quinary))',
+				'chart-senary': 'hsl(var(--chart-senary))',
+
+				// Специальные
+				'metric-key': 'hsl(var(--metric-key))',
+			},
+			boxShadow: {
+				// Глубокая карточная тень, совпадающая с прежним дизайном
+				card: 'var(--shadow-card, 1px 12px 25px rgba(0,0,0,0.78))',
+				holo: 'var(--shadow-holo, 0 0 20px var(--holo-shadow-strong))',
 			},
 			backgroundImage: {
 				'gradient-cyan': 'var(--gradient-cyan)',

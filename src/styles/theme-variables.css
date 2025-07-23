@@ -71,6 +71,8 @@
   --recommendation-low: #4ade80; /* зелёный для низкого воздействия */
   --recommendation-bg: #151419; /* фон для карточек рекомендаций */
   --recommendation-grid: rgba(255, 255, 255, 0.07); /* цвет сетки */
+  /* Новый акцент для Key Metrics */
+  --metric-key: #24d200; /* ярко-зелёный, хорошо заметен на обеих темах */
   
   /* Charts и графики */
   --chart-primary: #06b6d4;
@@ -205,6 +207,8 @@
   --recommendation-low: #059669; /* emerald-600 - более насыщенный */
   --recommendation-bg: #ffffff; /* белый фон */
   --recommendation-grid: rgba(15, 23, 42, 0.08); /* slate-900 с прозрачностью */
+  /* Акцент Key Metrics для светлой темы */
+  --metric-key: #059669; /* из emerald-600 */
   
   /* Charts и графики - улучшенные */
   --chart-primary: #0891b2; /* cyan-600 - насыщенный циан */
@@ -228,8 +232,8 @@
   --chart-tooltip-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.15); /* тень с синим оттенком */
   
   /* Статусы - улучшенные */
-  --success: #059669; /* emerald-600 - более насыщенный */
-  --success-light: #10b981; /* emerald-500 - яркий зелёный */
+  --success: 161 94% 30%; /* emerald-600 */
+  --success-light: 160 84% 39%; /* emerald-500 */
   --warning: #d97706; /* amber-600 - более насыщенный */
   --warning-light: #f59e0b; /* amber-500 - яркий янтарный */
   --error: #dc2626; /* red-600 - более насыщенный */
@@ -332,6 +336,8 @@
   --recommendation-low: #4ade80; /* зелёный для низкого воздействия */
   --recommendation-bg: #151419; /* фон для карточек рекомендаций */
   --recommendation-grid: rgba(255, 255, 255, 0.07); /* цвет сетки */
+  /* Акцент Key Metrics для тёмной темы */
+  --metric-key: #24d200; /* ярко-зелёный */
   
   --chart-primary: #06b6d4;
   --chart-secondary: #8b5cf6;
@@ -345,8 +351,8 @@
   --chart-tooltip-border: #333;
   --chart-tooltip-text: #fff;
   
-  --success: #22c55e;
-  --success-light: #4ade80;
+  --success: 142 70% 45%;
+  --success-light: 142 70% 58%;
   --warning: #f59e0b;
   --warning-light: #fbbf24;
   --error: #ef4444;

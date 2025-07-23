@@ -8,8 +8,8 @@ const BAUHAUS_GLOW_STYLES = `
   border: var(--card-border-width, 2px) solid transparent;
   --rotation: 4.2rad;
   background-image:
-    linear-gradient(var(--card-bg, transparent), var(--card-bg, transparent)),
-    linear-gradient(calc(var(--rotation,4.2rad)), var(--card-accent, #156ef6) 0, transparent 30%, transparent 80%);
+    linear-gradient(var(--card-bg), var(--card-bg)),
+    linear-gradient(calc(var(--rotation,4.2rad)), var(--card-accent) 0, transparent 30%, transparent 80%);
   background-origin: border-box;
   background-clip: padding-box, border-box;
   transition: all 0.3s ease;
@@ -24,7 +24,7 @@ const BAUHAUS_GLOW_STYLES = `
   right: -2px;
   bottom: -2px;
   border-radius: inherit;
-  background: linear-gradient(calc(var(--rotation,4.2rad)), var(--card-accent, #156ef6) 0, transparent 30%, transparent 80%);
+  background: linear-gradient(calc(var(--rotation,4.2rad)), var(--card-accent) 0, transparent 30%, transparent 80%);
   z-index: -1;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -37,13 +37,13 @@ const BAUHAUS_GLOW_STYLES = `
 
 .bauhaus-glow-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-card);
 }
 
 .bauhaus-glow-card .card-content {
   position: relative;
   z-index: 1;
-  background: var(--card-bg, transparent);
+  background: var(--card-bg);
   border-radius: inherit;
   height: 100%;
   width: 100%;
@@ -72,8 +72,8 @@ interface BauhausGlowCardProps {
 
 export const BauhausGlowCard: React.FC<BauhausGlowCardProps> = ({
   children,
-  accentColor = "#156ef6",
-  backgroundColor = "transparent",
+  accentColor = "var(--bauhaus-card-accent)",
+  backgroundColor = "var(--bauhaus-card-bg)",
   borderRadius = "1rem",
   borderWidth = "2px",
   className = "",

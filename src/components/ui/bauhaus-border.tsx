@@ -8,15 +8,15 @@ const BAUHAUS_BORDER_STYLES = `
   border: var(--bauhaus-border-width, 2px) solid transparent;
   --bauhaus-rotation: 4.2rad;
   background-image:
-    linear-gradient(var(--bauhaus-border-bg, #151419), var(--bauhaus-border-bg, #151419)),
-    linear-gradient(calc(var(--bauhaus-rotation,4.2rad)), var(--bauhaus-border-accent, #156ef6) 0, var(--bauhaus-border-bg, #151419) 30%, transparent 80%);
+    linear-gradient(var(--bauhaus-border-bg), var(--bauhaus-border-bg)),
+    linear-gradient(calc(var(--bauhaus-rotation,4.2rad)), var(--bauhaus-border-accent) 0, var(--bauhaus-border-bg) 30%, transparent 80%);
   background-origin: border-box;
   background-clip: padding-box, border-box;
   transition: box-shadow 0.3s, transform 0.3s;
 }
 .bauhaus-border:hover {
   transform: translateY(-2px);
-  box-shadow: 1px 16px 35px rgb(0,0,0/85%);
+  box-shadow: var(--shadow-card);
 }
 `;
 
@@ -34,8 +34,8 @@ export const BauhausBorder: React.FC<BauhausBorderProps> = ({
   children,
   borderRadius = "1.25em",
   borderWidth = "2px",
-  accentColor = "#156ef6",
-  backgroundColor = "#151419",
+  accentColor = "var(--bauhaus-border-accent)",
+  backgroundColor = "var(--bauhaus-border-bg)",
   style = {},
   className = "",
 }) => {

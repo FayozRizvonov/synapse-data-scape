@@ -314,7 +314,7 @@ const FarmaMetricsWithFeatureCards = () => {
             comparison: card.comparison,
             category: card.category
           }}
-          className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl hover:bg-white/20 hover:border-white/30"
+          className="bg-white/10 backdrop-blur-xl border border-transparent rounded-xl hover:bg-white/20"
           onClick={() => handleCardClick(card)}
           style={{ animation: `fade-in 0.5s ease-out ${(startIndex + index) * 0.1}s forwards` }}
         />

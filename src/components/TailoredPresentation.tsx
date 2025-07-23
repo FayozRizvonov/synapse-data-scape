@@ -9,10 +9,10 @@ import { useTheme } from '@/hooks/useTheme';
 const generateDiminishingData = () => {
   const maxSpend = 850000; // max x value from screenshot
   const channels = [
-    { key: 'sf_calls', label: 'SF Calls', color: '#3b82f6', k: 1.2, max: 90000 },
-    { key: 'digital', label: 'Digital', color: '#ef4444', k: 0.8, max: 65000 },
-    { key: 'email', label: 'Email', color: '#f59e0b', k: 0.6, max: 50000 },
-    { key: 'other', label: 'Other', color: '#10b981', k: 0.4, max: 30000 },
+    { key: 'sf_calls', label: 'SF Calls', color: 'var(--chart-primary)', k: 1.2, max: 90000 },
+    { key: 'digital', label: 'Digital', color: 'var(--chart-quaternary)', k: 0.8, max: 65000 },
+    { key: 'email', label: 'Email', color: 'var(--chart-tertiary)', k: 0.6, max: 50000 },
+    { key: 'other', label: 'Other', color: 'var(--chart-quinary)', k: 0.4, max: 30000 },
   ];
   const points = 120;
   const data: Record<string, number>[] = [];
@@ -55,11 +55,11 @@ const { data: diminishingData, channels: diminishingChannels } = generateDiminis
 const budgetShareData = generateBudgetShareData();
 
 // Цвета каналов — в стиле Sales Volume Breakdown
-const CHANNEL_COLORS: Record<string, { dark: string; light: string }> = {
-  sf_calls: { dark: '#3b82f6', light: '#2563eb' },
-  digital: { dark: '#ef4444', light: '#dc2626' },
-  email: { dark: '#f59e0b', light: '#d97706' },
-  other: { dark: '#10b981', light: '#059669' }
+const CHANNEL_TOKENS: Record<string, string> = {
+  sf_calls: 'var(--chart-primary)',
+  digital: 'var(--chart-quaternary)',
+  email: 'var(--chart-tertiary)',
+  other: 'var(--chart-quinary)'
 };
 
 const TailoredPresentation: React.FC = () => {
@@ -67,7 +67,7 @@ const TailoredPresentation: React.FC = () => {
   const [diminishingCollapsed, setDiminishingCollapsed] = useState(false);
   const [budgetCollapsed, setBudgetCollapsed] = useState(false);
   const { theme } = useTheme();
-  const getColor = (key: string) => CHANNEL_COLORS[key as keyof typeof CHANNEL_COLORS][theme === 'dark' ? 'dark' : 'light'];
+  const getColor = (key: string) => CHANNEL_TOKENS[key as keyof typeof CHANNEL_TOKENS];
 
   return (
     <div className="space-y-8 mt-12 pb-24">
@@ -78,7 +78,7 @@ const TailoredPresentation: React.FC = () => {
         <Button
           variant="outline"
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="border-cyan-500/50 text-gray-900 dark:text-white hover:bg-cyan-500/20 hover:text-white"
+          className="border-accent/50 text-foreground hover:bg-accent/20 hover:text-accent-foreground"
         >
           {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
           {isCollapsed ? 'Expand' : 'Collapse'}
@@ -95,7 +95,7 @@ const TailoredPresentation: React.FC = () => {
           >
 
       {/* Diminishing Curves Chart */}
-      <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-6">
+      <div className="backdrop-blur-[2px] bg-background/5 border border-border/10 rounded-2xl p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
             Diminishing Curves for Each Channel
@@ -103,7 +103,7 @@ const TailoredPresentation: React.FC = () => {
           <Button
             variant="ghost"
             onClick={() => setDiminishingCollapsed(!diminishingCollapsed)}
-            className="text-gray-900 dark:text-white hover:bg-cyan-500/20 p-2"
+            className="text-foreground hover:bg-accent/20 p-2"
           >
             {diminishingCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
           </Button>
@@ -184,7 +184,7 @@ const TailoredPresentation: React.FC = () => {
       </div>
 
       {/* Total Media Budget Share Chart */}
-      <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-6 mt-6">
+      <div className="backdrop-blur-[2px] bg-background/5 border border-border/10 rounded-2xl p-6 mt-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
             Total Media Budget
@@ -192,7 +192,7 @@ const TailoredPresentation: React.FC = () => {
           <Button
             variant="ghost"
             onClick={() => setBudgetCollapsed(!budgetCollapsed)}
-            className="text-gray-900 dark:text-white hover:bg-cyan-500/20 p-2"
+            className="text-foreground hover:bg-accent/20 p-2"
           >
             {budgetCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
           </Button>
@@ -235,7 +235,7 @@ const TailoredPresentation: React.FC = () => {
                     <Legend formatter={(value) => value.replace('_', ' ').toUpperCase()} />
                     {/* Gradients for channel fill */}
                     <defs>
-                      {Object.keys(CHANNEL_COLORS).map((key) => (
+                      {Object.keys(CHANNEL_TOKENS).map((key) => (
                         <linearGradient key={key} id={`areaGrad-${key}`} x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor={getColor(key)} stopOpacity={0.9} />
                           <stop offset="95%" stopColor={getColor(key)} stopOpacity={0.1} />

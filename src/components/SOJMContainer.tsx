@@ -72,37 +72,37 @@ const SOJMContainer: React.FC = () => {
       id: 'tech-savvy',
       name: 'Tech-Savvy Millennial',
       description: 'Digital-first, mobile-native user who researches extensively online',
-      color: '#3B82F6',
-      icon: <Smartphone className="w-6 h-6 text-blue-500 dark:text-cyan-400" />
+      color: 'var(--chart-senary)',
+      icon: <Smartphone className="w-6 h-6 text-[var(--chart-senary)] dark:text-[var(--chart-primary)]" />
     },
     {
       id: 'traditional',
       name: 'Traditional Shopper',
       description: 'Prefers in-store experiences with some digital touchpoints',
-      color: '#10B981',
-      icon: <Store className="w-6 h-6 text-green-500 dark:text-green-400" />
+      color: 'var(--chart-quinary)',
+      icon: <Store className="w-6 h-6 text-[var(--chart-quinary)] dark:text-[var(--chart-quinary)]" />
     },
     {
       id: 'hybrid',
       name: 'Hybrid Explorer',
       description: 'Combines online research with offline validation',
-      color: '#F59E0B',
-      icon: <Users className="w-6 h-6 text-yellow-500 dark:text-yellow-400" />
+      color: 'var(--chart-tertiary)',
+      icon: <Users className="w-6 h-6 text-[var(--chart-tertiary)] dark:text-[var(--chart-tertiary)]" />
     },
     {
       id: 'premium',
       name: 'Premium Customer',
       description: 'High-value customer seeking personalized service',
-      color: '#8B5CF6',
-      icon: <Star className="w-6 h-6 text-purple-500 dark:text-purple-400" />
+      color: 'var(--chart-secondary)',
+      icon: <Star className="w-6 h-6 text-[var(--chart-secondary)] dark:text-[var(--chart-secondary)]" />
     }
   ];
 
   const touchpoints: Touchpoint[] = [
-    { id: 'samples', name: 'Samples', icon: <Pill className="w-8 h-8 text-blue-500 dark:text-cyan-400" />, color: '#06B6D4' },
-    { id: 'speaker-program', name: 'Speaker Program', icon: <Megaphone className="w-8 h-8 text-blue-500 dark:text-cyan-400" />, color: '#06B6D4' },
-    { id: 'tablet', name: 'Tablet', icon: <Smartphone className="w-8 h-8 text-blue-500 dark:text-cyan-400" />, color: '#06B6D4' },
-    { id: 'search', name: 'Search', icon: <Search className="w-8 h-8 text-blue-500 dark:text-cyan-400" />, color: '#06B6D4' }
+    { id: 'samples', name: 'Samples', icon: <Pill className="w-8 h-8 text-[var(--chart-primary)]" />, color: 'var(--chart-primary)' },
+    { id: 'speaker-program', name: 'Speaker Program', icon: <Megaphone className="w-8 h-8 text-[var(--chart-primary)]" />, color: 'var(--chart-primary)' },
+    { id: 'tablet', name: 'Tablet', icon: <Smartphone className="w-8 h-8 text-[var(--chart-primary)]" />, color: 'var(--chart-primary)' },
+    { id: 'search', name: 'Search', icon: <Search className="w-8 h-8 text-[var(--chart-primary)]" />, color: 'var(--chart-primary)' }
   ];
 
   const journeyPaths: JourneyPath[] = [
@@ -134,7 +134,7 @@ const SOJMContainer: React.FC = () => {
   }, []);
 
   const getPersonaColor = (personaId: string) => {
-    return personas.find(p => p.id === personaId)?.color || '#6B7280';
+    return personas.find(p => p.id === personaId)?.color || 'var(--chart-primary)';
   };
 
   const getActivePath = () => {
@@ -143,7 +143,7 @@ const SOJMContainer: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto w-full">
-      <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-6 transition-all">
+      <div className="backdrop-blur-[2px] bg-background/5 border border-border/10 rounded-2xl p-6 transition-all">
         {/* Header */}
         <motion.div 
           className="text-center mb-12"
@@ -151,10 +151,10 @@ const SOJMContainer: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h1 className="text-4xl font-bold text-slate-800 dark:text-white mb-4">
+          <h1 className="text-4xl font-bold text-foreground mb-4">
             Omnichannel Customer Journey Framework
           </h1>
-          <p className="text-lg text-slate-600 dark:text-white/70 max-w-3xl mx-auto">
+          <p className="text-lg text-muted max-w-3xl mx-auto">
             Comprehensive mapping of customer touchpoints across multiple channels and personas
           </p>
         </motion.div>

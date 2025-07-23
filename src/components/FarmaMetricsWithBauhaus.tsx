@@ -367,7 +367,7 @@ const FarmaMetricsWithBauhaus = () => {
             </TabsList>
 
             <TabsContent value="bauhaus" className="space-y-6">
-              <Card className="bg-gradient-card border-0 shadow-blue-lg hover:shadow-blue-xl transition-shadow duration-300">
+              <Card className="bg-gradient-card border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
                 <CardHeader>
                   <CardTitle className="text-primary flex items-center gap-2">
                     <Zap className="w-5 h-5" />
@@ -385,7 +385,7 @@ const FarmaMetricsWithBauhaus = () => {
             </TabsContent>
 
             <TabsContent value="traditional" className="space-y-6">
-              <Card className="bg-gradient-card border-0 shadow-blue-lg hover:shadow-blue-xl transition-shadow duration-300">
+              <Card className="bg-gradient-card border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
                 <CardHeader>
                   <CardTitle className="text-primary flex items-center gap-2">
                     <BarChart3 className="w-5 h-5" />
@@ -398,7 +398,7 @@ const FarmaMetricsWithBauhaus = () => {
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {keyMetrics.map((metric, index) => (
-                      <Card key={metric.id} className="bg-gradient-card border-0 shadow-blue-md hover:shadow-blue-lg transition-all duration-300">
+                      <Card key={metric.id} className="bg-gradient-card border-0 shadow-md hover:shadow-lg transition-all duration-300">
                         <CardHeader className="pb-3">
                           <div className="flex items-center justify-between">
                             <CardTitle className="text-sm font-medium text-foreground">
@@ -410,7 +410,7 @@ const FarmaMetricsWithBauhaus = () => {
                           </div>
                         </CardHeader>
                         <CardContent>
-                          <div className="text-2xl font-bold text-foreground mb-2">
+                          <div className={`text-2xl font-bold ${metric.value.includes('%') ? 'text-success-foreground' : 'text-foreground'} mb-2`}>
                             <AnimatedNumber 
                               value={parseValue(metric.value)} 
                               formatter={(value) => `${value.toFixed(1)}${metric.value.includes('%') ? '%' : ''}`}
