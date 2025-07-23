@@ -135,11 +135,7 @@ const SituationDetailModal: React.FC<SituationDetailModalProps> = ({
             <Button variant="ghost" size="icon" onClick={handleDownload} className="hover:bg-gray-100/80 dark:hover:bg-white/10">
               <Download className="w-4 h-4 text-gray-600 dark:text-white/80" />
             </Button>
-            <DialogClose asChild>
-              <Button variant="ghost" size="icon" className="hover:bg-gray-100/80 dark:hover:bg-white/10">
-                <X className="w-4 h-4 text-gray-600 dark:text-white/80" />
-              </Button>
-            </DialogClose>
+            {/* Кнопка закрытия убрана, используем встроенную в DialogContent */}
           </div>
         </div>
 

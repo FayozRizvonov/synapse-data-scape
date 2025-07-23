@@ -66,9 +66,11 @@ const ChatView: React.FC<ChatViewProps> = ({
   }, [messages]);
 
   const formatAIResponse = (content: string) => {
+    // Удаляем все последовательности из трёх и более звёздочек
+    const sanitizedContent = content.replace(/\*{3,}/g, "");
+
     // Разбиваем текст на строки
-    const lines = content.split('\n');
-    const formattedLines = lines.map((line, index) => {
+    const formattedLines = sanitizedContent.split('\n').map((line, index) => {
       // Обрабатываем эмодзи и заголовки
       if (line.includes('✅') || line.includes('🔍') || line.includes('📉') || line.includes('💡')) {
         return (
