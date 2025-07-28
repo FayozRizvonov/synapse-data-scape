@@ -73,7 +73,7 @@ const TailoredPresentation: React.FC = () => {
     <div className="space-y-8 mt-12 pb-24">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold text-foreground text-glow">
-          Tailored Presentation for clients and Business engagement
+          Diminishing return curves
         </h2>
         <Button
           variant="outline"
