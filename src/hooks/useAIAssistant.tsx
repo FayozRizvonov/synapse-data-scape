@@ -135,8 +135,14 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      // Clean text from JSON
-      const cleanText = responseText.replace(/\{"action":[^}]+\}/, '').trim();
+      // Clean text from JSON and formatting artifacts
+      const cleanText = responseText
+        .replace(/\{"action":[^}]+\}/g, '') // Remove all JSON action blocks
+        .replace(/\*\*/g, '') // Remove ** formatting
+        .replace(/\*([^*]+)\*/g, '$1') // Remove single * formatting but keep content
+        .replace(/^\*+\s*/gm, '• ') // Convert * bullets to proper bullets
+        .replace(/\n{3,}/g, '\n\n') // Reduce multiple newlines
+        .trim();
 
       const aiResponse: AIResponse = {
         text: cleanText,

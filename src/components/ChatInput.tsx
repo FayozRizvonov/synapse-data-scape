@@ -9,6 +9,7 @@ interface ChatInputProps {
   isSidebarCollapsed?: boolean;
   isLoading?: boolean;
   onNavigateToSection?: (section: string) => void;
+  onCloseChat?: () => void;
 }
 
 const PLACEHOLDERS = [
@@ -31,7 +32,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
   onSendMessage, 
   isSidebarCollapsed,
   isLoading,
-  onNavigateToSection
+  onNavigateToSection,
+  onCloseChat
 }) => {
   const [message, setMessage] = useState('');
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
@@ -82,6 +84,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   const handleOpenVoiceAssistant = () => {
+    // Закрываем чат перед открытием голосового ассистента
+    if (onCloseChat) {
+      onCloseChat();
+    }
     setShowVoiceAssistant(true);
   };
 

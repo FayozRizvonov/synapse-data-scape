@@ -281,6 +281,7 @@ const Index = () => {
         isSidebarCollapsed={isSidebarCollapsed} 
         isLoading={isLoading}
         onNavigateToSection={handleNavigateToSection}
+        onCloseChat={handleCloseChat}
       />
 
       {isChatOpen && (
