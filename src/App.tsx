@@ -12,34 +12,86 @@ import BauhausDemo from "@/pages/BauhausDemo";
 import TestBauhaus from "@/pages/TestBauhaus";
 import CampaignManagement from "@/components/CampaignManagement";
 import ClaireLandingModern from "@/pages/ClaireLandingModern";
+import { Auth } from "@/pages/Auth";
 import { GlobalLayout } from "@/components/GlobalLayout";
 import { AIAssistantProvider } from "@/hooks/useAIAssistant";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AIAssistantProvider>
-        <Toaster />
-        <Sonner />
-        <GlobalLayout>
+      <AuthProvider>
+        <AIAssistantProvider>
+          <Toaster />
+          <Sonner />
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/voice-demo" element={<VoiceAssistantDemo />} />
-              <Route path="/AIInsightsDemo" element={<AIInsightsDemo />} />
-              <Route path="/feature-cards-demo" element={<FeatureCardDemo />} />
-              <Route path="/bauhaus-demo" element={<BauhausDemo />} />
-              <Route path="/test-bauhaus" element={<TestBauhaus />} />
-              <Route path="/campaign-management" element={<CampaignManagement />} />
-              <Route path="/claire" element={<ClaireLandingModern />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <GlobalLayout>
+                    <Index />
+                  </GlobalLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/voice-demo" element={
+                <ProtectedRoute>
+                  <GlobalLayout>
+                    <VoiceAssistantDemo />
+                  </GlobalLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/AIInsightsDemo" element={
+                <ProtectedRoute>
+                  <GlobalLayout>
+                    <AIInsightsDemo />
+                  </GlobalLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/feature-cards-demo" element={
+                <ProtectedRoute>
+                  <GlobalLayout>
+                    <FeatureCardDemo />
+                  </GlobalLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/bauhaus-demo" element={
+                <ProtectedRoute>
+                  <GlobalLayout>
+                    <BauhausDemo />
+                  </GlobalLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/test-bauhaus" element={
+                <ProtectedRoute>
+                  <GlobalLayout>
+                    <TestBauhaus />
+                  </GlobalLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/campaign-management" element={
+                <ProtectedRoute>
+                  <GlobalLayout>
+                    <CampaignManagement />
+                  </GlobalLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/claire" element={
+                <ProtectedRoute>
+                  <GlobalLayout>
+                    <ClaireLandingModern />
+                  </GlobalLayout>
+                </ProtectedRoute>
+              } />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
-        </GlobalLayout>
-      </AIAssistantProvider>
+        </AIAssistantProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
