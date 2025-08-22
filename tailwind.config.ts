@@ -57,6 +57,13 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				brand: {
+					bg: 'var(--bg)',
+					card: 'var(--card)',
+					fg: 'var(--fg)',
+					neon: 'var(--neon)',
+					neonAlt: 'var(--neon-alt)',
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -131,6 +138,8 @@ export default {
 				// Глубокая карточная тень, совпадающая с прежним дизайном
 				card: 'var(--shadow-card, 1px 12px 25px rgba(0,0,0,0.78))',
 				holo: 'var(--shadow-holo, 0 0 20px var(--holo-shadow-strong))',
+				glow: '0 0 24px rgba(0, 255, 170, 0.35)',
+				glowBlue: '0 0 24px rgba(0, 170, 255, 0.35)',
 			},
 			backgroundImage: {
 				'gradient-cyan': 'var(--gradient-cyan)',

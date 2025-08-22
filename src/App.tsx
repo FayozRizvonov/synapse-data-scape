@@ -11,6 +11,7 @@ import FeatureCardDemo from "@/pages/FeatureCardDemo";
 import BauhausDemo from "@/pages/BauhausDemo";
 import TestBauhaus from "@/pages/TestBauhaus";
 import CampaignManagement from "@/components/CampaignManagement";
+import ClaireLandingModern from "@/pages/ClaireLandingModern";
 import { GlobalLayout } from "@/components/GlobalLayout";
 import { AIAssistantProvider } from "@/hooks/useAIAssistant";
 
@@ -32,6 +33,7 @@ const App = () => (
               <Route path="/bauhaus-demo" element={<BauhausDemo />} />
               <Route path="/test-bauhaus" element={<TestBauhaus />} />
               <Route path="/campaign-management" element={<CampaignManagement />} />
+              <Route path="/claire" element={<ClaireLandingModern />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

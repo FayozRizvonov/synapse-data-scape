@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, Settings, Stethoscope, Landmark, Truck, Server, Leaf, Shield, ChevronLeft, ChevronRight, LifeBuoy, Palette, Clock, MessageSquare } from 'lucide-react';
+import { Home, Settings, Stethoscope, Landmark, Truck, Server, Leaf, Shield, ChevronLeft, ChevronRight, LifeBuoy, Palette, Clock, MessageSquare, ChevronDown, Cloud, User } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 
 interface SidebarProps {
@@ -18,9 +18,10 @@ const Sidebar: React.FC<SidebarProps> = ({
   const { theme } = useTheme();
   const menuItems = [
     { icon: Home, label: 'AI Insights', id: 'ai-insights' },
-    { icon: Stethoscope, label: 'Pharma S&M', id: 'pharma-sm' },
   ];
+  const pharmaItem = { icon: Stethoscope, label: 'Pharma S&M', id: 'pharma-sm' };
   const historyItem = { icon: MessageSquare, label: 'History of chats', id: 'chat-history' };
+  const [isAdminOpen, setIsAdminOpen] = useState(true);
 
   const handleSettingsClick = () => {
     onSectionChange('settings');
@@ -74,9 +75,81 @@ const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => onSectionChange(item.id)}
           >
             {item.icon && <item.icon className="w-5 h-5" />}
-            {!isCollapsed && item.label}
+            {!isCollapsed && <span className="ml-2">{item.label}</span>}
           </button>
         ))}
+
+        {/* Admin Panel Group (now above Pharma S&M) */}
+        <div className="mt-2">
+          <button
+            className={`group flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              ['admin-overview','admin-brands','admin-community'].includes(activeSection)
+                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-cyan-300'
+                : 'text-gray-700 dark:text-white/70 hover:bg-blue-50 dark:hover:bg-blue-900/10 hover:text-blue-700 dark:hover:text-cyan-300'
+            }`}
+            onClick={() => setIsAdminOpen(!isAdminOpen)}
+            title={isCollapsed ? 'Admin Panel' : undefined}
+          >
+            <Shield className="w-5 h-5" />
+            {!isCollapsed && (
+              <div className="flex items-center justify-between w-full">
+                <span className="ml-2">Admin Panel</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${isAdminOpen ? 'rotate-180' : ''}`} />
+              </div>
+            )}
+          </button>
+
+          {!isCollapsed && isAdminOpen && (
+            <div className="mt-1 ml-7 space-y-1">
+              <button
+                className={`group flex items-center w-full px-3 py-2 rounded-md text-sm transition-colors ${
+                  activeSection === 'admin-overview'
+                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-cyan-300'
+                    : 'text-gray-700 dark:text-white/70 hover:bg-blue-50 dark:hover:bg-blue-900/10 hover:text-blue-700 dark:hover:text-cyan-300'
+                }`}
+                onClick={() => onSectionChange('admin-overview')}
+              >
+                <Landmark className="w-4 h-4" />
+                <span className="ml-2">Overview</span>
+              </button>
+              <button
+                className={`group flex items-center w-full px-3 py-2 rounded-md text-sm transition-colors ${
+                  activeSection === 'admin-brands'
+                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-cyan-300'
+                    : 'text-gray-700 dark:text-white/70 hover:bg-blue-50 dark:hover:bg-blue-900/10 hover:text-blue-700 dark:hover:text-cyan-300'
+                }`}
+                onClick={() => onSectionChange('admin-brands')}
+              >
+                <Server className="w-4 h-4" />
+                <span className="ml-2">Brands</span>
+              </button>
+              <button
+                className={`group flex items-center w-full px-3 py-2 rounded-md text-sm transition-colors ${
+                  activeSection === 'admin-clouds'
+                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-cyan-300'
+                    : 'text-gray-700 dark:text-white/70 hover:bg-blue-50 dark:hover:bg-blue-900/10 hover:text-blue-700 dark:hover:text-cyan-300'
+                }`}
+                onClick={() => onSectionChange('admin-clouds')}
+              >
+                <Cloud className="w-4 h-4" />
+                <span className="ml-2">Clouds</span>
+              </button>
+            </div>
+          )}
+        </div>
+        {/* Pharma S&M moved below Admin Panel */}
+        <button
+          key={pharmaItem.id}
+          className={`group flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            activeSection === pharmaItem.id
+              ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-cyan-300'
+              : 'text-gray-700 dark:text-white/70 hover:bg-blue-50 dark:hover:bg-blue-900/10 hover:text-blue-700 dark:hover:text-cyan-300'
+          }`}
+          onClick={() => onSectionChange(pharmaItem.id)}
+        >
+          {pharmaItem.icon && <pharmaItem.icon className="w-5 h-5" />}
+          {!isCollapsed && <span className="ml-2">{pharmaItem.label}</span>}
+        </button>
         {/* Разделитель */}
         <div className="my-4 border-t border-gray-200 dark:border-white/10" />
         {/* История чатов */}
@@ -90,7 +163,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           onClick={() => onSectionChange(historyItem.id)}
         >
           {historyItem.icon && <historyItem.icon className="w-5 h-5" />}
-          {!isCollapsed && historyItem.label}
+          {!isCollapsed && <span className="ml-2">{historyItem.label}</span>}
         </button>
       </nav>
 
@@ -99,6 +172,23 @@ const Sidebar: React.FC<SidebarProps> = ({
         {!isCollapsed && (
           <div className="text-xs text-gray-500 dark:text-white/40 mb-2">LEARNING & SUPPORT</div>
         )}
+        <button
+          onClick={() => onSectionChange('profile')}
+          className={`w-full flex items-center py-2 rounded-lg text-sm transition-all duration-300 group relative ${isCollapsed ? 'justify-center' : 'gap-3 px-3'} ${
+            activeSection === 'profile'
+              ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-gray-900 dark:text-white shadow-blue-lg'
+              : 'text-gray-700 dark:text-white/70 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/80 dark:hover:bg-white/10 hover:shadow-blue-sm'
+          }`}
+          title={isCollapsed ? 'Profile' : undefined}
+        >
+          <User className="w-5 h-5 flex-shrink-0" />
+          {!isCollapsed && <span>Profile</span>}
+          {isCollapsed && (
+            <div className="absolute left-full ml-2 px-2 py-1 backdrop-blur-[2px] bg-white/90 dark:bg-white/5 border border-gray-200/50 dark:border-white/10 rounded-md text-xs text-gray-900 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-20 shadow-blue-md">
+              Profile
+            </div>
+          )}
+        </button>
         <button
           onClick={handleSettingsClick}
           className={`w-full flex items-center py-2 rounded-lg text-sm transition-all duration-300 group relative ${isCollapsed ? 'justify-center' : 'gap-3 px-3'} ${

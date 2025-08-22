@@ -17,6 +17,11 @@ import {
 } from 'lucide-react';
 import FinanceMetrics from '@/components/FinanceMetrics';
 import { GlowCard } from '@/components/ui/spotlight-card';
+import AdminPanelOverview from '@/components/admin/AdminPanelOverview';
+import AdminCatalog from '@/components/admin/AdminCatalog';
+import AdminCommunity from '@/components/admin/AdminCommunity';
+import AdminClouds from '@/components/admin/AdminClouds';
+import Profile from '@/components/Profile';
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState('ai-insights');
@@ -244,10 +249,18 @@ const Index = () => {
     switch (activeSection) {
       case 'pharma-sm':
         return <FarmaMetricsWithAssistant />;
+      case 'admin-overview':
+        return <AdminPanelOverview />;
+      case 'admin-brands':
+        return <AdminCatalog />;
+      case 'admin-clouds':
+        return <AdminClouds />;
       case 'finance':
         return <FinanceMetrics />;
       case 'color-palette':
         return <Settings />;
+      case 'profile':
+        return <Profile />;
       case 'settings':
         return <Settings />;
       case 'ai-insights':
