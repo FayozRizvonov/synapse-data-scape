@@ -10,7 +10,7 @@ const financeMetrics = [
     title: 'Appliance Sales',
     value: '1,675 units',
     change: '+17%',
-    changeType: 'positive',
+    changeType: 'positive' as const,
     comparison: 'above the normal range',
     icon: BarChart3,
     description: 'Appliance Sales is seeing an unusual spike.'
