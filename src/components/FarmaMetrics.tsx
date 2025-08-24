@@ -39,16 +39,18 @@ interface MetricCard {
   change: string;
   changeType: 'positive' | 'negative';
   comparison: string;
+  description: string;
   icon: string;
   category: 'key' | 'situation';
   section: 'key-metrics' | 'situation' | 'scenario-comparison';
-  description?: string;
-  keywords?: string[];
+  keywords: string[];
   details?: {
     description: string;
     breakdown: Array<{ label: string; value: string; }>;
   };
 }
+
+import { fixedSituationMetrics } from '@/data/fixedMetrics';
 
 const FarmaMetrics = () => {
   const { theme } = useTheme();
@@ -197,10 +199,12 @@ const FarmaMetrics = () => {
       title: 'Base Sales',
       value: '$12.0M',
       change: '+93.14%',
-      changeType: 'positive',
+      changeType: 'positive' as const,
       comparison: 'Revenue Attribution',
+      description: 'This base sales component represents the baseline revenue that would occur without any marketing efforts',
+      keywords: ['base', 'sales', 'baseline', 'revenue'],
       icon: 'Activity',
-      category: 'situation',
+      category: 'situation' as const,
       section: 'situation',
       details: {
         description: 'This base sales component represents the baseline revenue that would occur without any marketing efforts in the marketing mix model.',
@@ -216,10 +220,12 @@ const FarmaMetrics = () => {
       title: 'Incremental',
       value: '$2.5M',
       change: '+18.2%',
-      changeType: 'positive',
+      changeType: 'positive' as const,
       comparison: 'Incremental Revenue',
+      description: 'Revenue generated above the baseline due to marketing activities',
+      keywords: ['incremental', 'marketing', 'revenue'],
       icon: 'BarChart3',
-      category: 'situation',
+      category: 'situation' as const,
       section: 'situation',
       details: {
         description: 'Revenue generated above the baseline due to marketing activities.',
@@ -255,6 +261,8 @@ const FarmaMetrics = () => {
       change: '+21.7%',
       changeType: 'positive',
       comparison: 'Return on Investment',
+      description: 'Overall return on investment for all marketing and sales activities',
+      keywords: ['roi', 'return', 'investment'],
       icon: 'TrendingUp',
       category: 'situation',
       section: 'situation',

@@ -37,16 +37,18 @@ interface MetricCard {
   change: string;
   changeType: 'positive' | 'negative';
   comparison: string;
+  description: string;
   icon: string;
   category: 'key' | 'situation';
   section: 'key-metrics' | 'situation' | 'scenario-comparison';
-  description?: string;
-  keywords?: string[];
+  keywords: string[];
   details?: {
     description: string;
     breakdown: Array<{ label: string; value: string; }>;
   };
 }
+
+import { metricsKnowledgeBase } from '@/data/metricsKnowledgeBase';
 
 const FarmaMetricsWithGlow = () => {
   const { theme } = useTheme();
@@ -170,7 +172,7 @@ const FarmaMetricsWithGlow = () => {
     }
   ];
 
-  const situationMetrics: MetricCard[] = [
+  const situationMetrics = metricsKnowledgeBase.filter(m => m.category === 'situation');
     {
       id: 'base-sales',
       title: 'Base Sales',

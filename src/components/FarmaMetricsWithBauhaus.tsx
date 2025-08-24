@@ -37,11 +37,11 @@ interface MetricCard {
   change: string;
   changeType: 'positive' | 'negative';
   comparison: string;
+  description: string;
   icon: string;
   category: 'key' | 'situation';
-  section: 'key-metrics' | 'situation' | 'scenario-comparison';
-  description?: string;
-  keywords?: string[];
+  section: string;
+  keywords: string[];
   details?: {
     description: string;
     breakdown: Array<{ label: string; value: string; }>;
