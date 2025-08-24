@@ -1,17 +1,23 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Camera, Mail, User as UserIcon, Lock, ShieldCheck, Smartphone, KeyRound, QrCode, Copy, Check } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const Profile: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const { user } = useAuth();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [displayName, setDisplayName] = useState('Jane Doe');
-  const [email, setEmail] = useState('jane.doe@company.com');
+  const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState('');
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordSaved, setPasswordSaved] = useState(false);
+
+  const [savingAccount, setSavingAccount] = useState(false);
+  const [accountMessage, setAccountMessage] = useState<string | null>(null);
 
   const [twoFAEnabled, setTwoFAEnabled] = useState(false);
   const [twoFASecret] = useState('JBSWY3DPEHPK3PXP');
@@ -32,17 +38,63 @@ const Profile: React.FC = () => {
     setAvatarUrl(url);
   };
 
-  const saveAccount = () => {
-    // Placeholder for persisting changes
+  useEffect(() => {
+    if (!user) return;
+    const initialName = (user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name)) || '';
+    setDisplayName(initialName);
+    setEmail(user.email || '');
+  }, [user]);
+
+  const saveAccount = async () => {
+    if (!user) return;
+    setSavingAccount(true);
+    setAccountMessage(null);
+    try {
+      // update name in user metadata
+      await supabase.auth.updateUser({ data: { full_name: displayName } });
+
+      // update email if changed
+      if (email && email !== (user.email || '')) {
+        const { error } = await supabase.auth.updateUser({ email });
+        if (error) throw error;
+        setAccountMessage('We sent a confirmation link to your new email.');
+      } else {
+        setAccountMessage('Profile updated');
+      }
+    } catch (e: any) {
+      setAccountMessage(e?.message || 'Failed to update profile');
+    } finally {
+      setSavingAccount(false);
+      setTimeout(() => setAccountMessage(null), 2500);
+    }
   };
 
-  const savePassword = () => {
-    if (!newPassword || newPassword !== confirmPassword) return;
-    setPasswordSaved(true);
-    setTimeout(() => setPasswordSaved(false), 1500);
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+
+  const savePassword = async () => {
+    setPasswordError(null);
+    if (!user || !email) return;
+    if (!newPassword || newPassword.length < 8) { setPasswordError('Минимум 8 символов'); return; }
+    if (newPassword !== confirmPassword) { setPasswordError('Пароли не совпадают'); return; }
+    setPasswordLoading(true);
+    try {
+      // Reauthenticate with current password to validate user input
+      const { error: signinError } = await supabase.auth.signInWithPassword({ email, password: currentPassword });
+      if (signinError) { throw new Error('Текущий пароль неверный'); }
+
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      setPasswordSaved(true);
+      setTimeout(() => setPasswordSaved(false), 1500);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (e: any) {
+      setPasswordError(e?.message || 'Не удалось обновить пароль');
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
   const toggle2FA = () => setTwoFAEnabled(v => !v);
@@ -110,10 +162,13 @@ const Profile: React.FC = () => {
           </div>
         </div>
         <div className="flex justify-end mt-4">
-          <button onClick={saveAccount} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-900 dark:text-white bg-gradient-to-r from-cyan-500/80 to-blue-500/80 hover:from-cyan-500 hover:to-blue-500 border border-cyan-500/40 shadow-blue-md transition-colors">
-            Save changes
+          <button onClick={saveAccount} disabled={savingAccount} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-900 dark:text-white bg-gradient-to-r from-cyan-500/80 to-blue-500/80 hover:from-cyan-500 hover:to-blue-500 border border-cyan-500/40 shadow-blue-md transition-colors disabled:opacity-70">
+            {savingAccount ? 'Saving…' : 'Save changes'}
           </button>
         </div>
+        {accountMessage && (
+          <div className="mt-2 text-xs text-gray-700 dark:text-white/70">{accountMessage}</div>
+        )}
       </div>
 
       {/* Password */}
@@ -159,9 +214,10 @@ const Profile: React.FC = () => {
             />
           </label>
         </div>
-        <div className="flex justify-end mt-4">
-          <button onClick={savePassword} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-900 dark:text-white bg-gradient-to-r from-cyan-500/80 to-blue-500/80 hover:from-cyan-500 hover:to-blue-500 border border-cyan-500/40 shadow-blue-md transition-colors">
-            {passwordSaved ? (<><Check className="w-4 h-4" /> Saved</>) : (<><KeyRound className="w-4 h-4" /> Update password</>)}
+        <div className="flex items-center justify-between mt-4">
+          {passwordError && <div className="text-xs text-red-400">{passwordError}</div>}
+          <button onClick={savePassword} disabled={passwordLoading} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-900 dark:text-white bg-gradient-to-r from-cyan-500/80 to-blue-500/80 hover:from-cyan-500 hover:to-blue-500 border border-cyan-500/40 shadow-blue-md transition-colors disabled:opacity-70">
+            {passwordSaved ? (<><Check className="w-4 h-4" /> Saved</>) : (<><KeyRound className="w-4 h-4" /> {passwordLoading ? 'Updating…' : 'Update password'}</>)}
           </button>
         </div>
       </div>

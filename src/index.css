@@ -786,3 +786,8 @@ html {
   border-color: rgba(0,0,0,0.12) !important;
 }
 
+/* Global responsive helpers */
+.container-responsive {
+  @apply px-2 sm:px-4 lg:px-8 mx-auto w-full;
+}
+

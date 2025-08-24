@@ -11,7 +11,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   requiredRole 
 }) => {
-  const { user, userRole, loading } = useAuth();
+  const { user, userRole, loading, memberStatus } = useAuth();
 
   // Show loading spinner while checking auth
   if (loading) {
@@ -27,15 +27,36 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/auth" replace />;
   }
 
+  // Show pending/declined states
+  if (memberStatus === 'pending') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-md p-6 rounded-xl border border-white/10 bg-white/5">
+          <h2 className="text-2xl font-semibold mb-2">Awaiting approval</h2>
+          <p className="text-sm text-muted-foreground">Please wait for your company administrator to approve your access.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (memberStatus === 'declined') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-md p-6 rounded-xl border border-white/10 bg-white/5">
+          <h2 className="text-2xl font-semibold mb-2">Access request declined</h2>
+          <p className="text-sm text-muted-foreground">Contact your company administrator if you believe this is a mistake.</p>
+        </div>
+      </div>
+    );
+  }
+
   // Check role requirement
   if (requiredRole && userRole !== requiredRole) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold mb-2">Доступ запрещен</h2>
-          <p className="text-muted-foreground">
-            У вас нет прав для просмотра этой страницы
-          </p>
+          <h2 className="text-2xl font-bold mb-2">Access denied</h2>
+          <p className="text-muted-foreground">You do not have permission to view this page.</p>
         </div>
       </div>
     );

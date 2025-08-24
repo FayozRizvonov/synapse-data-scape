@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -62,6 +63,7 @@ const convertToMetricCard = (localCard: LocalMetricCard) => {
 };
 
 const FarmaMetricsWithAssistant = () => {
+  const { permissions, isCompanyAdmin } = useAuth();
   const [keyMetricsExpanded, setKeyMetricsExpanded] = useState(false);
   const [situationMetricsExpanded, setSituationMetricsExpanded] = useState(false);
   const [selectedCard, setSelectedCard] = useState<LocalMetricCard | null>(null);
@@ -861,6 +863,7 @@ const FarmaMetricsWithAssistant = () => {
         </div>
 
         {/* Marketing Optimization Recommendations */}
+        {(isCompanyAdmin || permissions?.can_marketing_optimization_recommendations) && (
         <div className="space-y-4">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-glow">Marketing Optimization Recommendations</h2>
           <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
@@ -983,6 +986,7 @@ const FarmaMetricsWithAssistant = () => {
             </BauhausBorder>
           </div>
         </div>
+        )}
 
         {/* Key Metrics */}
         {renderMetricSection(keyMetrics, keyMetricsExpanded, setKeyMetricsExpanded, "Key Metrics", true)}
@@ -1399,15 +1403,15 @@ const FarmaMetricsWithAssistant = () => {
           )}
         </div>
 
-        <ScenarioComparison />
+        {(isCompanyAdmin || permissions?.can_scenario_comparison) && <ScenarioComparison />}
 
         <Simulation />
 
         <TailoredPresentation />
 
-        <CampaignManagement />
+        {(isCompanyAdmin || permissions?.can_campaign_management) && <CampaignManagement />}
 
-        <SOJMContainer />
+        {(isCompanyAdmin || permissions?.can_omnichannel_journey) && <SOJMContainer />}
 
         <SituationDetailModal
           card={selectedCard ? convertToMetricCard(selectedCard) : null}

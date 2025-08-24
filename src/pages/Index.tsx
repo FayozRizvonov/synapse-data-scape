@@ -13,7 +13,8 @@ import {
   Zap,
   Target,
   Activity,
-  Heart
+  Heart,
+  Menu
 } from 'lucide-react';
 import FinanceMetrics from '@/components/FinanceMetrics';
 import { GlowCard } from '@/components/ui/spotlight-card';
@@ -97,14 +98,14 @@ const Index = () => {
       </div>
 
       {/* Features Grid */}
-      <div className="relative z-10 grid grid-cols-3 gap-4 max-w-5xl mx-auto justify-center items-start">
+      <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr gap-4 max-w-5xl mx-auto justify-center items-stretch px-2 sm:px-0">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
           className="group"
         >
-          <GlowCard className="cursor-pointer" glowColor="blue">
+          <GlowCard className="cursor-pointer h-full" glowColor="blue" customSize>
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
                 <MessageSquare className="w-5 h-5 text-cyan-400" />
@@ -128,7 +129,7 @@ const Index = () => {
           transition={{ duration: 0.4, delay: 0.2 }}
           className="group"
         >
-          <GlowCard className="cursor-pointer" glowColor="blue">
+          <GlowCard className="cursor-pointer h-full" glowColor="blue" customSize>
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
                 <BarChart3 className="w-5 h-5 text-cyan-400" />
@@ -152,7 +153,7 @@ const Index = () => {
           transition={{ duration: 0.4, delay: 0.3 }}
           className="group"
         >
-          <GlowCard className="cursor-pointer" glowColor="blue">
+          <GlowCard className="cursor-pointer h-full" glowColor="blue" customSize>
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
                 <Zap className="w-5 h-5 text-cyan-400" />
@@ -176,7 +177,7 @@ const Index = () => {
           transition={{ duration: 0.4, delay: 0.4 }}
           className="group"
         >
-          <GlowCard className="cursor-pointer" glowColor="blue">
+          <GlowCard className="cursor-pointer h-full" glowColor="blue" customSize>
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
                 <Target className="w-5 h-5 text-cyan-400" />
@@ -200,7 +201,7 @@ const Index = () => {
           transition={{ duration: 0.4, delay: 0.5 }}
           className="group"
         >
-          <GlowCard className="cursor-pointer" glowColor="blue">
+          <GlowCard className="cursor-pointer h-full" glowColor="blue" customSize>
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
                 <Activity className="w-5 h-5 text-cyan-400" />
@@ -224,7 +225,7 @@ const Index = () => {
           transition={{ duration: 0.4, delay: 0.6 }}
           className="group"
         >
-          <GlowCard className="cursor-pointer" glowColor="blue">
+          <GlowCard className="cursor-pointer h-full" glowColor="blue" customSize>
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
                 <Heart className="w-5 h-5 text-cyan-400" />
@@ -281,10 +282,22 @@ const Index = () => {
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={handleToggleSidebar}
         />
+        {/* Mobile overlay when sidebar is expanded */}
+        {!isSidebarCollapsed && (
+          <div className="fixed inset-0 bg-black/40 md:hidden z-10" onClick={handleToggleSidebar} />
+        )}
         
         <main className={`flex-1 relative transition-all duration-300 ease-in-out ${
           isSidebarCollapsed ? 'ml-16' : 'ml-64'
         } ${isChatOpen ? 'blur-md' : ''}`}>
+          {/* Mobile sidebar toggle */}
+          <button
+            className="md:hidden fixed top-4 left-4 z-20 inline-flex items-center justify-center rounded-md bg-white/80 dark:bg-white/10 border border-gray-200/60 dark:border-white/10 w-10 h-10"
+            onClick={handleToggleSidebar}
+            aria-label="Toggle navigation"
+          >
+            <Menu className="w-5 h-5 text-gray-800 dark:text-white" />
+          </button>
           {renderContent()}
         </main>
       </div>
