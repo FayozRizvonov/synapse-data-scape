@@ -37,11 +37,9 @@ interface MetricCard {
   change: string;
   changeType: 'positive' | 'negative';
   comparison: string;
-  description: string;
   icon: string;
   category: 'key' | 'situation';
-  section: string;
-  keywords: string[];
+  section: 'key-metrics' | 'situation' | 'scenario-comparison';
   details?: {
     description: string;
     breakdown: Array<{ label: string; value: string; }>;
@@ -72,8 +70,6 @@ const FarmaMetricsWithBauhaus = () => {
       icon: 'TrendingUp',
       category: 'key',
       section: 'key-metrics',
-      description: 'Quarterly revenue growth showing strong upward trend',
-      keywords: ['revenue', 'growth', 'quarterly'],
       details: {
         description: 'Quarterly revenue growth showing strong upward trend',
         breakdown: [
@@ -93,8 +89,6 @@ const FarmaMetricsWithBauhaus = () => {
       icon: 'Users',
       category: 'key',
       section: 'key-metrics',
-      description: 'Market share of prescriptions and patient coverage',
-      keywords: ['prescriptions', 'patient', 'share'],
       details: {
         description: 'Market share of prescriptions and patient coverage',
         breakdown: [
@@ -114,8 +108,6 @@ const FarmaMetricsWithBauhaus = () => {
       icon: 'Pill',
       category: 'key',
       section: 'key-metrics',
-      description: 'Efficiency of sample distribution to prescription conversion',
-      keywords: ['sample', 'script', 'conversion'],
       details: {
         description: 'Efficiency of sample distribution to prescription conversion',
         breakdown: [
@@ -135,8 +127,6 @@ const FarmaMetricsWithBauhaus = () => {
       icon: 'DollarSign',
       category: 'key',
       section: 'key-metrics',
-      description: 'Return on investment for rebate spending programs',
-      keywords: ['roi', 'rebate', 'spend'],
       details: {
         description: 'Return on investment for rebate spending programs',
         breakdown: [
@@ -156,8 +146,6 @@ const FarmaMetricsWithBauhaus = () => {
       icon: 'Target',
       category: 'key',
       section: 'key-metrics',
-      description: 'Overall market accessibility and penetration score',
-      keywords: ['market', 'access', 'score'],
       details: {
         description: 'Overall market accessibility and penetration score',
         breakdown: [

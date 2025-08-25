@@ -28,7 +28,7 @@ const iconVariants = {
 const BentoGridItem = ({ title, description, icon, className, size = 'small' }: BentoGridItemProps) => {
 	const cardVariants = {
 		hidden: { opacity: 0, y: 20 },
-		visible: { opacity: 1, y: 0, transition: { type: 'spring', damping: 25 } } as any,
+		visible: { opacity: 1, y: 0, transition: { type: 'spring', damping: 25 } },
 	};
 
 	return (
