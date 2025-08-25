@@ -39,18 +39,14 @@ interface MetricCard {
   change: string;
   changeType: 'positive' | 'negative';
   comparison: string;
-  description: string;
   icon: string;
   category: 'key' | 'situation';
   section: 'key-metrics' | 'situation' | 'scenario-comparison';
-  keywords: string[];
   details?: {
     description: string;
     breakdown: Array<{ label: string; value: string; }>;
   };
 }
-
-import { fixedSituationMetrics } from '@/data/fixedMetrics';
 
 const FarmaMetrics = () => {
   const { theme } = useTheme();
@@ -77,8 +73,6 @@ const FarmaMetrics = () => {
       icon: 'TrendingUp',
       category: 'key',
       section: 'key-metrics',
-      description: 'Quarterly revenue growth showing strong upward trend',
-      keywords: ['revenue', 'growth', 'quarterly'],
       details: {
         description: 'Quarterly revenue growth showing strong upward trend',
         breakdown: [
@@ -98,8 +92,6 @@ const FarmaMetrics = () => {
       icon: 'Users',
       category: 'key',
       section: 'key-metrics',
-      description: 'Market share of prescriptions and patient coverage',
-      keywords: ['prescriptions', 'patient', 'share'],
       details: {
         description: 'Market share of prescriptions and patient coverage',
         breakdown: [
@@ -119,8 +111,6 @@ const FarmaMetrics = () => {
       icon: 'Pill',
       category: 'key',
       section: 'key-metrics',
-      description: 'Efficiency of sample distribution to prescription conversion',
-      keywords: ['sample', 'script', 'conversion'],
       details: {
         description: 'Efficiency of sample distribution to prescription conversion',
         breakdown: [
@@ -140,8 +130,6 @@ const FarmaMetrics = () => {
       icon: 'DollarSign',
       category: 'key',
       section: 'key-metrics',
-      description: 'Return on investment for rebate spending programs',
-      keywords: ['roi', 'rebate', 'spend'],
       details: {
         description: 'Return on investment for rebate spending programs',
         breakdown: [
@@ -161,8 +149,6 @@ const FarmaMetrics = () => {
       icon: 'Target',
       category: 'key',
       section: 'key-metrics',
-      description: 'Overall market accessibility and penetration score',
-      keywords: ['market', 'access', 'score'],
       details: {
         description: 'Overall market accessibility and penetration score',
         breakdown: [
@@ -199,12 +185,10 @@ const FarmaMetrics = () => {
       title: 'Base Sales',
       value: '$12.0M',
       change: '+93.14%',
-      changeType: 'positive' as const,
+      changeType: 'positive',
       comparison: 'Revenue Attribution',
-      description: 'This base sales component represents the baseline revenue that would occur without any marketing efforts',
-      keywords: ['base', 'sales', 'baseline', 'revenue'],
       icon: 'Activity',
-      category: 'situation' as const,
+      category: 'situation',
       section: 'situation',
       details: {
         description: 'This base sales component represents the baseline revenue that would occur without any marketing efforts in the marketing mix model.',
@@ -220,12 +204,10 @@ const FarmaMetrics = () => {
       title: 'Incremental',
       value: '$2.5M',
       change: '+18.2%',
-      changeType: 'positive' as const,
+      changeType: 'positive',
       comparison: 'Incremental Revenue',
-      description: 'Revenue generated above the baseline due to marketing activities',
-      keywords: ['incremental', 'marketing', 'revenue'],
       icon: 'BarChart3',
-      category: 'situation' as const,
+      category: 'situation',
       section: 'situation',
       details: {
         description: 'Revenue generated above the baseline due to marketing activities.',
@@ -261,8 +243,6 @@ const FarmaMetrics = () => {
       change: '+21.7%',
       changeType: 'positive',
       comparison: 'Return on Investment',
-      description: 'Overall return on investment for all marketing and sales activities',
-      keywords: ['roi', 'return', 'investment'],
       icon: 'TrendingUp',
       category: 'situation',
       section: 'situation',

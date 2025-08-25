@@ -37,18 +37,14 @@ interface MetricCard {
   change: string;
   changeType: 'positive' | 'negative';
   comparison: string;
-  description: string;
   icon: string;
   category: 'key' | 'situation';
   section: 'key-metrics' | 'situation' | 'scenario-comparison';
-  keywords: string[];
   details?: {
     description: string;
     breakdown: Array<{ label: string; value: string; }>;
   };
 }
-
-import { metricsKnowledgeBase } from '@/data/metricsKnowledgeBase';
 
 const FarmaMetricsWithGlow = () => {
   const { theme } = useTheme();
@@ -75,8 +71,6 @@ const FarmaMetricsWithGlow = () => {
       icon: 'TrendingUp',
       category: 'key',
       section: 'key-metrics',
-      description: 'Quarterly revenue growth showing strong upward trend',
-      keywords: ['revenue', 'growth', 'quarterly'],
       details: {
         description: 'Quarterly revenue growth showing strong upward trend',
         breakdown: [
@@ -96,8 +90,6 @@ const FarmaMetricsWithGlow = () => {
       icon: 'Users',
       category: 'key',
       section: 'key-metrics',
-      description: 'Market share of prescriptions and patient coverage',
-      keywords: ['prescriptions', 'patient', 'share'],
       details: {
         description: 'Market share of prescriptions and patient coverage',
         breakdown: [
@@ -117,8 +109,6 @@ const FarmaMetricsWithGlow = () => {
       icon: 'Pill',
       category: 'key',
       section: 'key-metrics',
-      description: 'Efficiency of sample distribution to prescription conversion',
-      keywords: ['sample', 'script', 'conversion'],
       details: {
         description: 'Efficiency of sample distribution to prescription conversion',
         breakdown: [
@@ -138,8 +128,6 @@ const FarmaMetricsWithGlow = () => {
       icon: 'DollarSign',
       category: 'key',
       section: 'key-metrics',
-      description: 'Return on investment for rebate spending programs',
-      keywords: ['roi', 'rebate', 'spend'],
       details: {
         description: 'Return on investment for rebate spending programs',
         breakdown: [
@@ -159,8 +147,6 @@ const FarmaMetricsWithGlow = () => {
       icon: 'Target',
       category: 'key',
       section: 'key-metrics',
-      description: 'Overall market accessibility and penetration score',
-      keywords: ['market', 'access', 'score'],
       details: {
         description: 'Overall market accessibility and penetration score',
         breakdown: [
@@ -172,7 +158,160 @@ const FarmaMetricsWithGlow = () => {
     }
   ];
 
-  const situationMetrics = metricsKnowledgeBase.filter(m => m.category === 'situation');
+  const situationMetrics: MetricCard[] = [
+    {
+      id: 'base-sales',
+      title: 'Base Sales',
+      value: '$12.0M',
+      change: '+93.14%',
+      changeType: 'positive',
+      comparison: 'Revenue Attribution',
+      icon: 'Activity',
+      category: 'situation',
+      section: 'situation',
+      details: {
+        description: 'This base sales component represents the baseline revenue that would occur without any promotional efforts',
+        breakdown: [
+          { label: 'Confidence Interval', value: '85%' },
+          { label: 'P-value', value: '0.01' },
+          { label: 'Historical Impact', value: '2019-2023' }
+        ]
+      }
+    },
+    {
+      id: 'roi',
+      title: 'ROI',
+      value: '6x',
+      change: '+21.7%',
+      changeType: 'positive',
+      comparison: 'Return on Investment',
+      icon: 'TrendingUp',
+      category: 'situation',
+      section: 'situation',
+      details: {
+        description: 'Overall return on investment for all marketing and sales activities.',
+        breakdown: [
+          { label: 'Total Revenue', value: '$19.5M' },
+          { label: 'Total Spend', value: '$3.7M' },
+          { label: 'ROI', value: '6x' }
+        ]
+      }
+    },
+    {
+      id: 'vrr',
+      title: 'VRR',
+      value: '3.6x',
+      change: '+18.2%',
+      changeType: 'positive',
+      comparison: 'Volume Response Rate',
+      icon: 'BarChart3',
+      category: 'situation',
+      section: 'situation',
+      details: {
+        description: 'Volume Response Rate measures the effectiveness of marketing activities in driving volume increases.',
+        breakdown: [
+          { label: 'Volume Impact', value: '+18.2%' },
+          { label: 'Response Rate', value: '3.6x' },
+          { label: 'Efficiency Score', value: '92%' }
+        ]
+      }
+    },
+    {
+      id: 'seasonality',
+      title: 'Seasonality',
+      value: '$1.2M',
+      change: '+6.86%',
+      changeType: 'positive',
+      comparison: 'Revenue Attribution',
+      icon: 'Calendar',
+      category: 'situation',
+      section: 'situation',
+      details: {
+        description: 'Seasonal revenue patterns and cyclical business variations',
+        breakdown: [
+          { label: 'Q1 Seasonal Impact', value: '$0.3M' },
+          { label: 'Q2 Seasonal Impact', value: '$0.4M' },
+          { label: 'Q3 Seasonal Impact', value: '$0.5M' }
+        ]
+      }
+    },
+    {
+      id: 'trend',
+      title: 'Trend',
+      value: '$0.8M',
+      change: '+2.1%',
+      changeType: 'positive',
+      comparison: 'Revenue Attribution',
+      icon: 'TrendingUp',
+      category: 'situation',
+      section: 'situation',
+      details: {
+        description: 'Long-term trend component showing gradual market growth',
+        breakdown: [
+          { label: 'Market Growth', value: '2.1%' },
+          { label: 'Product Adoption', value: '1.8%' },
+          { label: 'Market Expansion', value: '0.3%' }
+        ]
+      }
+    },
+    {
+      id: 'page-visit-exchange',
+      title: 'Page Visit Exchange',
+      value: '$2.1M',
+      change: '+15.2%',
+      changeType: 'positive',
+      comparison: 'Revenue Attribution',
+      icon: 'BarChart3',
+      category: 'situation',
+      section: 'situation',
+      details: {
+        description: 'Revenue attributed to page visit exchange marketing activities',
+        breakdown: [
+          { label: 'Page Visits', value: '2.4M' },
+          { label: 'Conversion Rate', value: '3.2%' },
+          { label: 'Avg. Order Value', value: '$275' }
+        ]
+      }
+    },
+    {
+      id: 'digital-display',
+      title: 'Digital Display',
+      value: '$1.8M',
+      change: '+22.4%',
+      changeType: 'positive',
+      comparison: 'Revenue Attribution',
+      icon: 'BarChart3',
+      category: 'situation',
+      section: 'situation',
+      details: {
+        description: 'Revenue generated from digital display advertising campaigns',
+        breakdown: [
+          { label: 'Impressions', value: '45.2M' },
+          { label: 'Click Rate', value: '1.8%' },
+          { label: 'CTR Impact', value: '+0.3%' }
+        ]
+      }
+    },
+    {
+      id: 'digital-video',
+      title: 'Digital Video',
+      value: '$1.5M',
+      change: '+18.7%',
+      changeType: 'positive',
+      comparison: 'Revenue Attribution',
+      icon: 'BarChart3',
+      category: 'situation',
+      section: 'situation',
+      details: {
+        description: 'Revenue attributed to digital video marketing campaigns',
+        breakdown: [
+          { label: 'Video Views', value: '8.7M' },
+          { label: 'Completion Rate', value: '67%' },
+          { label: 'Engagement Score', value: '8.9/10' }
+        ]
+      }
+    }
+  ];
 
   const handleExpand = (cardId: string) => {
     setExpandedCard(expandedCard === cardId ? null : cardId);

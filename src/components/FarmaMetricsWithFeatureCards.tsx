@@ -24,6 +24,7 @@ import CampaignManagement from './CampaignManagement';
 import SOJMContainer from './SOJMContainer';
 import { LineChart, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line, Area, ResponsiveContainer } from 'recharts';
 
+// Local interface for our component that extends the base MetricCard
 interface LocalMetricCard {
   id: string;
   title: string;
@@ -34,8 +35,7 @@ interface LocalMetricCard {
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   category: 'key' | 'situation';
   section: 'key-metrics' | 'situation' | 'scenario-comparison';
-  description?: string;
-  keywords?: string[];
+  description: string;
   details?: {
     description: string;
     breakdown: Array<{ label: string; value: string; }>;
@@ -47,8 +47,7 @@ const convertToMetricCard = (localCard: LocalMetricCard) => {
   return {
     ...localCard,
     icon: localCard.icon.name || 'Activity', // Convert React component to string
-    description: localCard.description || 'No description available',
-    keywords: localCard.keywords || []
+    description: localCard.description
   };
 };
 
@@ -71,7 +70,6 @@ const FarmaMetricsWithFeatureCards = () => {
       category: 'key',
       section: 'key-metrics',
       description: 'Quarterly revenue growth showing strong upward trend',
-      keywords: ['revenue', 'growth', 'quarterly'],
       details: {
         description: 'Quarterly revenue growth showing strong upward trend',
         breakdown: [
@@ -92,7 +90,6 @@ const FarmaMetricsWithFeatureCards = () => {
       category: 'key',
       section: 'key-metrics',
       description: 'Market share of prescriptions and patient coverage',
-      keywords: ['prescriptions', 'patient', 'share'],
       details: {
         description: 'Market share of prescriptions and patient coverage',
         breakdown: [
@@ -113,7 +110,6 @@ const FarmaMetricsWithFeatureCards = () => {
       category: 'key',
       section: 'key-metrics',
       description: 'Efficiency of sample distribution to prescription conversion',
-      keywords: ['sample', 'script', 'conversion'],
       details: {
         description: 'Efficiency of sample distribution to prescription conversion',
         breakdown: [
@@ -134,7 +130,6 @@ const FarmaMetricsWithFeatureCards = () => {
       category: 'key',
       section: 'key-metrics',
       description: 'Return on investment for rebate spending programs',
-      keywords: ['roi', 'rebate', 'spend'],
       details: {
         description: 'Return on investment for rebate spending programs',
         breakdown: [
@@ -155,7 +150,6 @@ const FarmaMetricsWithFeatureCards = () => {
       category: 'key',
       section: 'key-metrics',
       description: 'Overall market accessibility and penetration score',
-      keywords: ['market', 'access', 'score'],
       details: {
         description: 'Overall market accessibility and penetration score',
         breakdown: [
@@ -755,7 +749,7 @@ const FarmaMetricsWithFeatureCards = () => {
         {/* Situation Detail Modal */}
         {selectedCard && (
           <SituationDetailModal
-            card={convertToMetricCard(selectedCard)}
+            card={selectedCard}
             open={!!selectedCard}
             onOpenChange={(open) => {
               if (!open) {
