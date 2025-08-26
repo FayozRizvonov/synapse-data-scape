@@ -173,7 +173,7 @@ const FarmaMetricsWithBauhaus = () => {
   };
 
   const renderBauhausCards = () => {
-    // Определяем цвета в зависимости от темы
+    // Define colors based on theme
     const isDark = theme === 'dark';
     const cardBg = isDark ? '#151419' : '#f0f4fb';
     const separatorColor = isDark ? '#2F2B2A' : '#d3dce8';

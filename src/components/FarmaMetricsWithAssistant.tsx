@@ -72,7 +72,7 @@ const FarmaMetricsWithAssistant = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('2022-2024');
   const [selectedBreakdownPeriod, setSelectedBreakdownPeriod] = useState('2022-2024');
 
-  // Функция для получения данных в зависимости от выбранного периода
+  // Function to get data based on selected period
   const getSalesVolumeData = () => {
     const dataSet2022_2024 = [
       { date: '02/22', actual: 7029, predicted: 9471.55 },
@@ -167,7 +167,7 @@ const FarmaMetricsWithAssistant = () => {
     }
   };
 
-  // Функция для получения данных breakdown чарта в зависимости от выбранного периода
+  // Function to get breakdown chart data based on selected period
   const getSalesVolumeBreakdownData = () => {
     const breakdownData2022_2024 = [
       { date: '02/22', base: 6911.35, phoneWeb_ABC: 0, f2f_ABC: 0, phoneWeb_X: 0, f2f_X: 80.56, digitalDTC: 26.48, medscape: 0, outOfHome: 0, massEmail: 0, internalEmail: 1.46 },

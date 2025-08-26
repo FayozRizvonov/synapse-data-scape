@@ -1,62 +1,62 @@
-# 🎤 Voice Assistant - Автоматический режим
+# 🎤 Voice Assistant - Auto Mode
 
-## ✅ Что было реализовано:
+## ✅ What was implemented:
 
-### 1. **Автоматический старт при открытии**
-- Голосовой ассистент начинает слушать сразу после открытия окна
-- Небольшая задержка 500мс для плавного старта
-- Не нужно нажимать на микрофон
+### 1. **Auto start when opening**
+- Voice assistant starts listening immediately after opening window
+- Small 500ms delay for smooth start
+- No need to click microphone
 
-### 2. **Автоматическое определение конца речи**
-- Используется существующая система определения тишины (5 секунд)
-- После тишины автоматически начинается обработка
+### 2. **Automatic speech end detection**
+- Uses existing silence detection system (5 seconds)
+- After silence automatically starts processing
 
-### 3. **Непрерывный цикл диалога**
+### 3. **Continuous dialogue cycle**
 ```
-Слушание → Обработка → Ответ AI → Автоматический рестарт → Слушание
+Listening → Processing → AI Response → Auto Restart → Listening
 ```
-- После завершения ответа AI автоматически начинается новое прослушивание
-- Пауза 1 секунда между ответом и новым прослушиванием
+- After AI response completion automatically starts new listening
+- 1 second pause between response and new listening
 
-### 4. **Визуальные состояния**
-- **Listening...** - микрофон красный, анимация пульсации
-- **Analyzing your request...** - синий квадрат, анимация вращения
-- **AI is speaking...** - зеленая анимация при воспроизведении
-- **Ready for next question** - короткий статус перед рестартом
+### 4. **Visual states**
+- **Listening...** - red microphone, pulse animation
+- **Analyzing your request...** - blue square, rotation animation
+- **AI is speaking...** - green animation during playback
+- **Ready for next question** - short status before restart
 
-### 5. **Правильная остановка**
-- При закрытии окна все процессы останавливаются
-- Автоматический режим отключается
-- Прерывается даже если идет обработка
+### 5. **Proper shutdown**
+- When closing window all processes stop
+- Auto mode disabled
+- Interrupted even if processing is ongoing
 
-## 📝 Изменения в коде:
+## 📝 Code changes:
 
 ### `VoiceAssistantView.tsx`:
-- Добавлен автоматический старт через useEffect
-- Убраны кнопки управления записью
-- Обновлены статусы и инструкции
+- Added auto start via useEffect
+- Removed recording control buttons
+- Updated statuses and instructions
 
 ### `useVoiceAssistant.tsx`:
-- Добавлен ref для автоматического режима
-- Автоматический рестарт в audio.onended
-- Управление режимом при открытии/закрытии
+- Added ref for auto mode
+- Auto restart in audio.onended
+- Mode management when opening/closing
 
 ### `AIVoiceInput.tsx`:
-- Убрана функциональность клика
-- Кнопка превращена в индикатор состояния
-- Обновлены тексты статусов
+- Removed click functionality
+- Button turned into status indicator
+- Updated status texts
 
-## 🎯 Результат:
+## 🎯 Result:
 
-1. Открываете окно голосового ассистента
-2. AI автоматически начинает слушать
-3. Говорите свой вопрос
-4. AI обрабатывает и отвечает
-5. После ответа автоматически готов к следующему вопросу
-6. Диалог продолжается пока не закроете окно
+1. Open voice assistant window
+2. AI automatically starts listening
+3. Ask your question
+4. AI processes and responds
+5. After response automatically ready for next question
+6. Dialogue continues until you close window
 
-## ⚠️ Важно:
+## ⚠️ Important:
 
-- Микрофон запрашивается сразу при открытии
-- Убедитесь что дали разрешение на использование микрофона
-- Для остановки просто закройте окно 
+- Microphone requested immediately when opening
+- Ensure you gave permission to use microphone
+- To stop simply close window 

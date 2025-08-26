@@ -94,7 +94,7 @@ const ChatMetricCardEnhanced: React.FC<ChatMetricCardEnhancedProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  // Настройки для Key Metrics
+      // Settings for Key Metrics
   const isKeyMetric = metric.category === 'key';
   const borderWidth = isKeyMetric ? '4px' : '2px';
   const accentColor = isKeyMetric ? '#24d200' : '#156ef6';

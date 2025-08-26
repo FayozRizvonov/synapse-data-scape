@@ -189,7 +189,7 @@ const AdminCatalog: React.FC = () => {
         </div>
       </div>
 
-      {/* Тут позже можно вывести список брендов с применёнными фильтрами */}
+              {/* Here later you can display list of brands with applied filters */}
     </div>
   );
 };

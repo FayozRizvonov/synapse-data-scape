@@ -1,21 +1,21 @@
-# CLAIRE AI Assistant - Полное Обновление
+# CLAIRE AI Assistant - Complete Update
 
-## 🎯 Что было обновлено
+## 🎯 What was updated
 
-AI ассистент полностью переписан для предоставления структурированных, actionable insights в стиле примеров пользователя.
+AI assistant completely rewritten to provide structured, actionable insights in the user's example style.
 
-### 📊 Новые возможности
+### 📊 New capabilities
 
-1. **Структурированные ответы** с эмодзи и четкими секциями
-2. **Расширенная база данных** с insights, regional data, channel data
-3. **Marketing Optimization Recommendations** - новые карточки рекомендаций
-4. **Scenario Comparison** - анализ сценариев
-5. **Regional Performance** - детальный анализ по регионам
-6. **Channel Performance** - анализ каналов с ROI
+1. **Structured responses** with emojis and clear sections
+2. **Extended database** with insights, regional data, channel data
+3. **Marketing Optimization Recommendations** - new recommendation cards
+4. **Scenario Comparison** - scenario analysis
+5. **Regional Performance** - detailed regional analysis
+6. **Channel Performance** - channel analysis with ROI
 
-## 🚀 Новый формат ответов
+## 🚀 New response format
 
-### Пример 1: "What are the key insights for Q2?"
+### Example 1: "What are the key insights for Q2?"
 
 ```
 ✅ Sales Growth: Q2 revenue grew by 8.7% QoQ, primarily driven by higher uptake of the new respiratory product line and strong digital video performance.
@@ -27,7 +27,7 @@ AI ассистент полностью переписан для предос�
 💡 Recommendation: Reallocate 15% of digital spend to re-engage physicians in underperforming regions. Introduce hybrid rep-digital programs to improve HCP access in Central/North regions.
 ```
 
-### Пример 2: "Show me the best performing channels"
+### Example 2: "Show me the best performing channels"
 
 ```
 📊 Top Performing Channels – Current Performance:
@@ -40,7 +40,7 @@ AI ассистент полностью переписан для предос�
 🎯 Recommendation: Increase spend allocation to Phone Calls ABC and Digital Pharma Video. Optimize email automation for mid-funnel engagement.
 ```
 
-### Пример 3: "What's the regional performance?"
+### Example 3: "What's the regional performance?"
 
 ```
 🚶‍♂ F2F Rep Engagement – Regional Performance:
@@ -53,7 +53,7 @@ AI ассистент полностью переписан для предос�
 ✅ Recommendation: Prioritize digital co-detailing in low-coverage areas. Consider short-term rep reallocation to Central/North regions. Introduce hybrid rep-digital programs.
 ```
 
-### Пример 4: "Show me marketing recommendations"
+### Example 4: "Show me marketing recommendations"
 
 ```
 💡 Marketing Optimization Recommendations:
@@ -72,7 +72,7 @@ AI ассистент полностью переписан для предос�
 🎯 Priority Actions: Reallocate 15% of digital spend to re-engage physicians. Pause low-performing search campaigns. Expand video content in high-performing specialties.
 ```
 
-### Пример 5: "What are the scenario comparisons?"
+### Example 5: "What are the scenario comparisons?"
 
 ```
 📊 Scenario Comparison Analysis:
@@ -92,100 +92,100 @@ AI ассистент полностью переписан для предос�
 💡 Recommendation: Consider 15% spend increase for optimistic scenario. Avoid spend reductions to prevent pessimistic outcomes.
 ```
 
-## 📁 Обновленные файлы
+## 📁 Updated files
 
-### 1. База данных метрик
-- `src/data/metricsKnowledgeBase.ts` - расширена с новыми полями:
+### 1. Metrics database
+- `src/data/metricsKnowledgeBase.ts` - extended with new fields:
   - `insights` - performance, trend, recommendation, impact
-  - `regionalData` - данные по регионам
-  - `channelData` - данные по каналам
-  - Новые категории: `recommendation`, `scenario`
+  - `regionalData` - regional data
+  - `channelData` - channel data
+  - New categories: `recommendation`, `scenario`
 
 ### 2. AI Assistant Functions
-- `supabase/functions/ai-assistant/index.ts` - полностью переписан промпт
-- `supabase/functions/voice-assistant/index.ts` - обновлен для голосового взаимодействия
+- `supabase/functions/ai-assistant/index.ts` - completely rewritten prompt
+- `supabase/functions/voice-assistant/index.ts` - updated for voice interaction
 
 ### 3. Frontend Components
-- `src/hooks/useAIAssistant.tsx` - добавлены новые функции для работы с данными
-- `src/components/ChatView.tsx` - обновлен для отображения структурированных ответов
+- `src/hooks/useAIAssistant.tsx` - added new functions for data handling
+- `src/components/ChatView.tsx` - updated for structured response display
 
-## 🔧 Развертывание
+## 🔧 Deployment
 
-### 1. Установка зависимостей
+### 1. Install dependencies
 ```bash
 npm install
 ```
 
-### 2. Настройка Supabase
+### 2. Setup Supabase
 ```bash
-# Установка Supabase CLI
+# Install Supabase CLI
 npm install -g supabase
 
-# Логин в Supabase
+# Login to Supabase
 supabase login
 
-# Линк проекта
+# Link project
 supabase link --project-ref YOUR_PROJECT_REF
 ```
 
-### 3. Развертывание функций
+### 3. Deploy functions
 ```bash
-# Развертывание AI assistant
+# Deploy AI assistant
 supabase functions deploy ai-assistant
 
-# Развертывание voice assistant
+# Deploy voice assistant
 supabase functions deploy voice-assistant
 ```
 
-### 4. Настройка переменных окружения
+### 4. Setup environment variables
 ```bash
-# Установка OpenAI API ключа
+# Set OpenAI API key
 supabase secrets set OPENAI_API_KEY=your_openai_api_key_here
 ```
 
-## 🧪 Тестирование
+## 🧪 Testing
 
-### Тестовые запросы для проверки:
+### Test queries to verify:
 
 1. **"What are the key insights for Q2?"**
-   - Ожидается: структурированный ответ с эмодзи и рекомендациями
+   - Expected: structured response with emojis and recommendations
 
 2. **"Show me the best performing channels"**
-   - Ожидается: список каналов с ROI и рекомендациями
+   - Expected: channel list with ROI and recommendations
 
 3. **"What's the regional performance?"**
-   - Ожидается: данные по регионам с gap analysis
+   - Expected: regional data with gap analysis
 
 4. **"Show me marketing recommendations"**
-   - Ожидается: рекомендации по приоритетам (High/Medium/Low Impact)
+   - Expected: recommendations by priority (High/Medium/Low Impact)
 
 5. **"What are the scenario comparisons?"**
-   - Ожидается: сравнение Baseline/Optimistic/Pessimistic сценариев
+   - Expected: Baseline/Optimistic/Pessimistic scenario comparison
 
 6. **"Tell me about F2F calls performance"**
-   - Ожидается: детальный анализ F2F с региональными данными
+   - Expected: detailed F2F analysis with regional data
 
 7. **"Show me digital campaign insights"**
-   - Ожидается: анализ цифровых каналов с ROI
+   - Expected: digital channel analysis with ROI
 
-## 🎨 Новый UI
+## 🎨 New UI
 
-### ChatView обновлен с:
-- Структурированным отображением ответов
-- Эмодзи и цветовым кодированием
-- Карточками метрик с insights
-- Кнопками для показа карточек/чартов
-- Welcome screen с примерами запросов
+### ChatView updated with:
+- Structured response display
+- Emojis and color coding
+- Metric cards with insights
+- Buttons for showing cards/charts
+- Welcome screen with example queries
 
-### Форматирование ответов:
-- ✅ Успехи и положительные тренды (зеленый)
-- 🔍 Анализ и insights (синий)
-- 📉 Проблемы и вызовы (красный)
-- 💡 Рекомендации (оранжевый)
-- 🚨 Предупреждения (красный фон)
-- 🎯 Приоритетные действия (зеленый фон)
+### Response formatting:
+- ✅ Successes and positive trends (green)
+- 🔍 Analysis and insights (blue)
+- 📉 Problems and challenges (red)
+- 💡 Recommendations (orange)
+- 🚨 Warnings (red background)
+- 🎯 Priority actions (green background)
 
-## 📈 Новые данные
+## 📈 New data
 
 ### Marketing Optimization Recommendations:
 - Increase F2F Calls in East Region (High Impact)
@@ -207,27 +207,27 @@ supabase secrets set OPENAI_API_KEY=your_openai_api_key_here
 - Digital Pharma Video: 2.4x ROI ($1.2M revenue)
 - Web Virtual Calls ABC: 2.2x ROI ($1.1M revenue)
 
-## 🔄 Обратная совместимость
+## 🔄 Backward compatibility
 
-Все существующие функции сохранены:
-- Показ карточек метрик
-- Показ чартов
-- Навигация по секциям
-- Голосовое взаимодействие
-- Интеграция с существующими компонентами
+All existing functionality preserved:
+- Metric card display
+- Chart display
+- Section navigation
+- Voice interaction
+- Integration with existing components
 
-## 🚀 Следующие шаги
+## 🚀 Next steps
 
-1. Развернуть обновленные функции
-2. Протестировать все типы запросов
-3. Проверить отображение карточек и чартов
-4. Убедиться в корректной работе голосового ассистента
-5. Провести user testing с новым форматом ответов
+1. Deploy updated functions
+2. Test all query types
+3. Verify card and chart display
+4. Ensure voice assistant works correctly
+5. Conduct user testing with new response format
 
-## 📞 Поддержка
+## 📞 Support
 
-При возникновении проблем:
-1. Проверить логи Supabase функций
-2. Убедиться в корректности OpenAI API ключа
-3. Проверить развертывание функций
-4. Проверить консоль браузера на ошибки 
+If problems arise:
+1. Check Supabase function logs
+2. Ensure OpenAI API key is correct
+3. Verify function deployment
+4. Check browser console for errors 

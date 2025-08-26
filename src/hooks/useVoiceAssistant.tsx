@@ -69,14 +69,14 @@ export const useVoiceAssistant = () => {
 
   // Open/close voice modal
   const openVoiceModal = useCallback(() => {
-    // Включаем автоматический режим при открытии
+    // Enable auto mode when opening
     console.log('🔓 Opening voice modal, enabling auto mode');
     isAutoModeRef.current = true;
     setState(prev => ({ ...prev, isVoiceModalOpen: true }));
   }, []);
 
   const closeVoiceModal = useCallback(() => {
-    // Отключаем автоматический режим при закрытии
+    // Disable auto mode when closing
     console.log('🔒 Closing voice modal, disabling auto mode');
     isAutoModeRef.current = false;
     
@@ -89,7 +89,7 @@ export const useVoiceAssistant = () => {
       cardData: null,
       error: null
     }));
-    // stopListening будет вызван позже
+    // stopListening will be called later
   }, []);
 
   // Start voice recording
@@ -125,7 +125,7 @@ export const useVoiceAssistant = () => {
       audioContextRef.current = new AudioContextConstructor();
       console.log('🎙️ AudioContext state:', audioContextRef.current.state);
       
-      // Если браузер создал AudioContext в suspended состоянии, резюмируем его
+      // If browser created AudioContext in suspended state, resume it
       if (audioContextRef.current.state === 'suspended') {
         await audioContextRef.current.resume();
         console.log('🔊 AudioContext resumed, new state:', audioContextRef.current.state);
@@ -139,7 +139,7 @@ export const useVoiceAssistant = () => {
       
       console.log('🔗 Audio pipeline connected');
       
-      // Тестируем получение аудио данных
+      // Test audio data retrieval
       setTimeout(() => {
         if (analyserRef.current) {
           const testData = new Uint8Array(analyserRef.current.frequencyBinCount);
@@ -184,11 +184,11 @@ export const useVoiceAssistant = () => {
 
       // Start silence detection after small grace period
       graceTimeoutRef.current = setTimeout(() => {
-        // Убеждаемся что состояние обновилось
+        // Ensure state is updated
         if (mediaRecorderRef.current?.state === 'recording') {
           startSilenceDetection();
         }
-      }, 1000); // 1 second grace period для быстрого старта
+      }, 1000); // 1 second grace period for quick start
 
     } catch (error) {
       console.error('❌ Failed to start listening:', error);
@@ -201,7 +201,7 @@ export const useVoiceAssistant = () => {
     }
   }, []);
 
-  // Сохраняем ссылки на функции и состояние для использования в callback
+        // Save references to functions and state for use in callback
   useEffect(() => {
     startListeningRef.current = startListening;
   }, [startListening]);
@@ -255,12 +255,12 @@ export const useVoiceAssistant = () => {
     const bufferLength = analyserRef.current.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
     
-    // Сбрасываем состояние обнаружения звука
+    // Reset sound detection state
     hasDetectedSoundRef.current = false;
     silenceStartRef.current = Date.now();
 
     const checkSilence = () => {
-      // Проверяем MediaRecorder напрямую
+      // Check MediaRecorder directly
       if (!analyserRef.current || !mediaRecorderRef.current || mediaRecorderRef.current.state !== 'recording') {
         console.log('🛑 Stopping silence detection - recording stopped');
         if (soundLevelIntervalRef.current) {
@@ -273,8 +273,8 @@ export const useVoiceAssistant = () => {
       analyserRef.current.getByteFrequencyData(dataArray);
       const average = dataArray.reduce((a, b) => a + b) / bufferLength;
       
-      // Повышаем порог обнаружения звука для лучшего распознавания
-      const soundThreshold = 15; // Увеличиваем порог с 3 до 15
+      // Increase sound detection threshold for better recognition
+      const soundThreshold = 15; // Increase threshold from 3 to 15
       const isSound = average > soundThreshold;
       
       console.log('🎚️ Audio level:', average.toFixed(2), 'threshold:', soundThreshold, 'hasDetectedSound:', hasDetectedSoundRef.current, 'isSound:', isSound);
@@ -284,16 +284,16 @@ export const useVoiceAssistant = () => {
           console.log('🗣️ Speech detected! Starting silence timer...');
           hasDetectedSoundRef.current = true;
         }
-        silenceStartRef.current = Date.now(); // Сбрасываем таймер тишины
+        silenceStartRef.current = Date.now(); // Reset silence timer
         setState(prev => ({ ...prev, status: 'speaking' }));
       } else if (hasDetectedSoundRef.current) {
-        // Считаем тишину только после того как обнаружили звук
+        // Count silence only after we've detected sound
         const silenceDuration = Date.now() - silenceStartRef.current;
         console.log('🔇 Silence duration:', silenceDuration, 'ms');
         
         setState(prev => ({ ...prev, status: 'silence_detected' }));
         
-        // Останавливаем запись после 2 секунд тишины
+        // Stop recording after 2 seconds of silence
         if (silenceDuration > 2000) {
           console.log('🔇 Silence threshold reached, stopping recording');
           if (soundLevelIntervalRef.current) {
@@ -304,15 +304,15 @@ export const useVoiceAssistant = () => {
           return;
         }
       } else {
-        // Если еще не обнаружили речь, обновляем статус
+        // If we haven't detected speech yet, update status
         setState(prev => ({ ...prev, status: 'listening' }));
       }
     };
 
-    // Используем setInterval вместо requestAnimationFrame для более стабильной работы
-    soundLevelIntervalRef.current = setInterval(checkSilence, 100); // Проверяем каждые 100ms
+    // Use setInterval instead of requestAnimationFrame for more stable operation
+    soundLevelIntervalRef.current = setInterval(checkSilence, 100); // Check every 100ms
     
-    // Очищаем интервал при размонтировании
+    // Clear interval on unmount
     return () => {
       if (soundLevelIntervalRef.current) {
         clearInterval(soundLevelIntervalRef.current);
@@ -468,7 +468,7 @@ export const useVoiceAssistant = () => {
         URL.revokeObjectURL(audioUrl);
         currentAudioRef.current = null;
         
-        // Автоматически начинаем новое прослушивание после завершения ответа
+        // Automatically start new listening after response completion
         console.log('🔍 Checking auto mode:', isAutoModeRef.current);
         console.log('🔍 Start listening ref available:', !!startListeningRef.current);
         
@@ -477,13 +477,13 @@ export const useVoiceAssistant = () => {
             console.log('🔄 Auto-restarting listening...');
             console.log('🔍 Final check - auto mode:', isAutoModeRef.current);
             console.log('🔍 Final check - start function:', !!startListeningRef.current);
-            // Используем сохраненную функцию для рестарта
+            // Use saved function for restart
             if (startListeningRef.current) {
               startListeningRef.current();
             } else {
               console.error('❌ startListeningRef.current is null!');
             }
-          }, 1000); // Небольшая пауза перед новым прослушиванием
+          }, 1000); // Small pause before new listening
         } else {
           console.log('❌ Auto mode is disabled, not restarting');
         }

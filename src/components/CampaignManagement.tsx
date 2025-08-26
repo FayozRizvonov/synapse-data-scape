@@ -133,7 +133,7 @@ const ActiveCampaignsTable: React.FC<{
           const isExpanded = expanded.has(q.name);
           return (
             <React.Fragment key={q.name}>
-              {/* Родительская строка */}
+              {/* Parent row */}
               <tr style={{ background: q.color + '22', transition: 'background 0.3s' }}>
                 <td colSpan={months.length}
                   style={{
@@ -151,7 +151,7 @@ const ActiveCampaignsTable: React.FC<{
                   {q.name} campaign
                 </td>
               </tr>
-              {/* Дочерние строки */}
+              {/* Child rows */}
               {isExpanded && q.activities.map((act) => {
                 const isHovered = hoveredActivity && hoveredActivity.quarter === q.name && hoveredActivity.activity === act.name;
                 return (

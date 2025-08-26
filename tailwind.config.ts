@@ -103,9 +103,9 @@ export default {
 					500: 'hsl(var(--orange-500))',
 				},
 				/* -------------------------------------------------- */
-				/* Новые токены, ссылающиеся на CSS-переменные темы  */
+				/* New tokens referencing CSS theme variables  */
 				/* -------------------------------------------------- */
-				// Статусы
+				// Statuses
 				success: {
 					DEFAULT: 'hsl(var(--success))',
 					foreground: 'hsl(var(--success-light))',
@@ -123,7 +123,7 @@ export default {
 					foreground: 'hsl(var(--info-light))',
 				},
 
-				// Палитра графиков
+				// Chart palette
 				'chart-primary': 'hsl(var(--chart-primary))',
 				'chart-secondary': 'hsl(var(--chart-secondary))',
 				'chart-tertiary': 'hsl(var(--chart-tertiary))',
@@ -131,11 +131,11 @@ export default {
 				'chart-quinary': 'hsl(var(--chart-quinary))',
 				'chart-senary': 'hsl(var(--chart-senary))',
 
-				// Специальные
+				// Special
 				'metric-key': 'hsl(var(--metric-key))',
 			},
 			boxShadow: {
-				// Глубокая карточная тень, совпадающая с прежним дизайном
+				// Deep card shadow matching previous design
 				card: 'var(--shadow-card, 1px 12px 25px rgba(0,0,0,0.78))',
 				holo: 'var(--shadow-holo, 0 0 20px var(--holo-shadow-strong))',
 				glow: '0 0 24px rgba(0, 255, 170, 0.35)',

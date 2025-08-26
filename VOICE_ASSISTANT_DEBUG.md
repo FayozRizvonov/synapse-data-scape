@@ -1,54 +1,54 @@
-# 🐛 Voice Assistant - Отладка
+# 🐛 Voice Assistant - Debugging
 
-## Проблема с детектором тишины
+## Silence Detector Issue
 
-### 🔍 Что проверить в консоли:
+### 🔍 What to check in console:
 
-1. **AudioContext создается:**
+1. **AudioContext is created:**
    ```
    🎙️ AudioContext state: running
    🔗 Audio pipeline connected
    ```
 
-2. **Тест аудио работает:**
+2. **Audio test works:**
    ```
-   🧪 Test audio level: [число больше 0]
+   🧪 Test audio level: [number greater than 0]
    ```
 
-3. **Детектор тишины запускается:**
+3. **Silence detector starts:**
    ```
    🎙️ Starting silence detection...
    ```
 
-4. **Уровень звука показывается:**
+4. **Sound level is shown:**
    ```
-   🎚️ Audio level: [число] hasDetectedSound: [true/false]
+   🎚️ Audio level: [number] hasDetectedSound: [true/false]
    ```
 
-### 📋 Шаги для тестирования:
+### 📋 Testing steps:
 
-1. Откройте голосовой ассистент
-2. Проверьте логи в консоли (F12)
-3. Если видите "🧪 Test audio level: 0.00" - проблема с микрофоном
-4. Если видите нормальные уровни звука - говорите что-то
-5. Должно появиться "🗣️ Speech detected!"
-6. После остановки речи должно появиться "🔇 Silence duration: X ms"
-7. Через 2.5 секунды: "🔇 Silence threshold reached, stopping recording"
+1. Open voice assistant
+2. Check logs in console (F12)
+3. If you see "🧪 Test audio level: 0.00" - microphone problem
+4. If you see normal sound levels - say something
+5. Should see "🗣️ Speech detected!"
+6. After stopping speech should see "🔇 Silence duration: X ms"
+7. After 2.5 seconds: "🔇 Silence threshold reached, stopping recording"
 
-### 🔧 Временное решение:
+### 🔧 Temporary solution:
 
-Добавлена кнопка "Stop Recording (Test)" для ручной остановки записи.
+Added "Stop Recording (Test)" button for manual recording stop.
 
-### ⚙️ Текущие настройки:
+### ⚙️ Current settings:
 
-- **Порог звука:** 3 (очень низкий)
-- **Время тишины:** 2.5 секунды
-- **Grace period:** 1 секунда
+- **Sound threshold:** 3 (very low)
+- **Silence time:** 2.5 seconds
+- **Grace period:** 1 second
 - **Smoothing:** 0.8
 
-### 🚨 Возможные проблемы:
+### 🚨 Possible issues:
 
-1. **Микрофон заблокирован** - проверьте разрешения
-2. **AudioContext suspended** - должен автоматически resume
-3. **Слишком низкий уровень микрофона** - говорите громче
-4. **Замыкание в useCallback** - исправлено через ref 
+1. **Microphone blocked** - check permissions
+2. **AudioContext suspended** - should automatically resume
+3. **Microphone level too low** - speak louder
+4. **useCallback closure** - fixed via ref 

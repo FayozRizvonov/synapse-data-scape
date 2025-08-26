@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Message, useAIAssistant } from '@/hooks/useAIAssistant';
 
 import ChatMetricCardEnhanced from './ChatMetricCardEnhanced';
+import ChatReportSection from './ChatReportSection';
 import { 
   User, 
   Bot, 
@@ -22,7 +23,8 @@ import {
   ArrowRight,
   ExternalLink,
   X,
-  Mic
+  Mic,
+  Share2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -66,12 +68,30 @@ const ChatView: React.FC<ChatViewProps> = ({
   }, [messages]);
 
   const formatAIResponse = (content: string) => {
-    // Удаляем все последовательности из трёх и более звёздочек
+    // Check if content looks like JSON
+    const trimmedContent = content.trim();
+    if (trimmedContent.startsWith('{') && trimmedContent.endsWith('}')) {
+      try {
+        const parsed = JSON.parse(trimmedContent);
+        if (parsed.report && parsed.report.sections) {
+          // This is a structured report, return a simple message
+          return (
+            <div className="text-gray-700 dark:text-gray-300">
+              Analysis complete. Please review the detailed sections below.
+            </div>
+          );
+        }
+      } catch (e) {
+        // Not valid JSON, continue with text processing
+      }
+    }
+
+    // Remove all sequences of three or more asterisks
     const sanitizedContent = content.replace(/\*{3,}/g, "");
 
-    // Разбиваем текст на строки
+    // Split text into lines
     const formattedLines = sanitizedContent.split('\n').map((line, index) => {
-      // Обрабатываем эмодзи и заголовки
+              // Process emojis and headers
       if (line.includes('✅') || line.includes('🔍') || line.includes('📉') || line.includes('💡')) {
         return (
           <div key={index} className="flex items-start gap-2 mb-2">
@@ -83,7 +103,7 @@ const ChatView: React.FC<ChatViewProps> = ({
         );
       }
       
-      // Обрабатываем списки с эмодзи
+              // Process lists with emojis
       if (line.includes('📊') || line.includes('🚶‍♂') || line.includes('💡') || line.includes('🔥') || line.includes('⚡') || line.includes('📈')) {
         return (
           <div key={index} className="flex items-start gap-2 mb-3">
@@ -97,7 +117,7 @@ const ChatView: React.FC<ChatViewProps> = ({
         );
       }
       
-      // Обрабатываем элементы списка
+              // Process list items
       if (line.trim().startsWith('•')) {
         return (
           <div key={index} className="flex items-start gap-2 ml-4 mb-1">
@@ -107,12 +127,12 @@ const ChatView: React.FC<ChatViewProps> = ({
         );
       }
       
-      // Обрабатываем разделители
+              // Process separators
       if (line.includes('⸻')) {
         return <hr key={index} className="my-4 border-gray-200 dark:border-gray-700" />;
       }
       
-      // Обрабатываем предупреждения и рекомендации
+              // Process warnings and recommendations
       if (line.includes('🚨') || line.includes('❗') || line.includes('⚠')) {
         return (
           <div key={index} className="flex items-start gap-2 mb-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
@@ -140,7 +160,7 @@ const ChatView: React.FC<ChatViewProps> = ({
         );
       }
       
-      // Обычный текст
+              // Regular text
       if (line.trim()) {
         return (
           <div key={index} className="mb-2 text-gray-700 dark:text-gray-300">
@@ -178,111 +198,196 @@ const ChatView: React.FC<ChatViewProps> = ({
     });
   };
 
+  const handleShare = async (content: string, title: string = 'CLAIRE AI Analysis') => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title,
+          text: content,
+          url: window.location.href
+        });
+      } else {
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(content);
+        // You could add a toast notification here
+        console.log('Content copied to clipboard');
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
+  };
+
   const renderMessage = (message: Message) => {
     const isAI = message.sender === 'ai';
     
+    // Debug logging for message structure
+    console.log('Rendering message:', {
+      id: message.id,
+      sender: message.sender,
+      hasContent: !!message.content.trim(),
+      hasMetric: !!message.metric,
+      hasAction: !!message.action,
+      hasReport: !!message.report,
+      reportSections: message.report?.sections?.length || 0
+    });
+    
     // Don't render empty messages
-    if (!message.content.trim() && !message.metric && !message.action) {
+    if (!message.content.trim() && !message.metric && !message.action && !message.report) {
       return null;
     }
     
     return (
       <React.Fragment key={message.id}>
-      <div
-        className={cn(
-          "flex gap-3 mb-4",
-          isAI ? "justify-start" : "justify-end"
-        )}
-      >
-        {isAI && (
-          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center">
-            <Bot className="w-4 h-4 text-white" />
-          </div>
-        )}
-        
-        <div className={cn(
-          "flex-1 max-w-[80%]",
-          isAI ? "order-2" : "order-1"
-        )}>
-          <Card className={cn(
-            "backdrop-blur-[2px] bg-white/5 border border-white/10",
-            isAI 
-              ? "hover:bg-white/10 hover:border-white/20" 
-              : "hover:bg-white/10 hover:border-white/20"
+        <div
+          className={cn(
+            "flex gap-3 mb-4",
+            isAI ? "justify-start" : "justify-end"
+          )}
+        >
+          {isAI && (
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
+              <Bot className="w-5 h-5 text-white" />
+            </div>
+          )}
+          
+          <div className={cn(
+            "flex-1 max-w-[80%]",
+            isAI ? "order-2" : "order-1"
           )}>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  {isAI ? 'CLAIRE AI Assistant' : 'You'}
-                </span>
-                {isAI && (
-                  <Badge variant="outline" className="text-xs border-blue-300 text-blue-600 dark:border-blue-600 dark:text-blue-400">
-                    AI
-                  </Badge>
-                )}
-              </div>
-              
-              <div className="text-base leading-relaxed">
-                {isAI ? formatAIResponse(message.content) : message.content}
-              </div>
-              
-              {/* карточка удалена из этого контейнера */}
-              
-              {message.action && message.metricId && !(message.action === 'show_card' && message.metric) && (
-                <div className="mt-3 flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-xs border-blue-300 text-blue-600 hover:bg-blue-50 dark:border-blue-600 dark:text-blue-400 dark:hover:bg-blue-900/20"
-                    onClick={() => {
-                      if (onNavigateToSection && message.action === 'show_card') {
-                        onNavigateToSection('pharma-sm');
-                      }
-                      console.log(`Show ${message.action} for metric: ${message.metricId}`);
-                    }}
-                  >
-                    {message.action === 'show_card' ? (
-                      <>
-                        <Target className="w-3 h-3 mr-1" />
-                        Show Card
-                      </>
-                    ) : (
-                      <>
-                        <BarChart3 className="w-3 h-3 mr-1" />
-                        Show Chart
-                      </>
-                    )}
-                  </Button>
+            <Card className={cn(
+              "backdrop-blur-[2px] bg-white/10 border border-white/20 shadow-lg",
+              isAI 
+                ? "hover:bg-white/15 hover:border-white/30" 
+                : "hover:bg-white/15 hover:border-white/30"
+            )}>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    {isAI ? 'CLAIRE AI Assistant' : 'You'}
+                  </span>
+                  {isAI && (
+                    <Badge variant="outline" className="text-xs border-blue-400 text-blue-700 dark:border-blue-500 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20">
+                      AI
+                    </Badge>
+                  )}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+                
+                <div className="text-base leading-relaxed text-gray-800 dark:text-gray-200">
+                  {isAI ? formatAIResponse(message.content) : message.content}
+                </div>
+                
+                {/* Share button for AI responses */}
+                {isAI && (message.report || message.card) && (
+                  <div className="mt-3 flex justify-end">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        const shareContent = message.report 
+                          ? `CLAIRE AI Analysis:\n${message.content}\n\nDetailed sections available in the app.`
+                          : `CLAIRE AI Card Data:\n${message.content}`;
+                        handleShare(shareContent);
+                      }}
+                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    >
+                      <Share2 className="w-4 h-4 mr-1" />
+                      Share
+                    </Button>
+                  </div>
+                )}
+                
+                {/* Legacy action buttons for backward compatibility */}
+                {message.action && message.metricId && !(message.action === 'show_card' && message.metric) && (
+                  <div className="mt-3 flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs border-blue-400 text-blue-700 hover:bg-blue-50 dark:border-blue-500 dark:text-blue-300 dark:hover:bg-blue-900/20 shadow-sm"
+                      onClick={() => {
+                        if (onNavigateToSection && message.action === 'show_card') {
+                          onNavigateToSection('pharma-sm');
+                        }
+                        console.log(`Show ${message.action} for metric: ${message.metricId}`);
+                      }}
+                    >
+                      {message.action === 'show_card' ? (
+                        <>
+                          <Target className="w-3 h-3 mr-1" />
+                          Show Card
+                        </>
+                      ) : (
+                        <>
+                          <BarChart3 className="w-3 h-3 mr-1" />
+                          Show Chart
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+          
+          {!isAI && (
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-gray-500 to-slate-500 flex items-center justify-center shadow-lg">
+              <User className="w-5 h-5 text-white" />
+            </div>
+          )}
         </div>
-        
-        {!isAI && (
-          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-r from-gray-500 to-slate-500 flex items-center justify-center">
-            <User className="w-4 h-4 text-white" />
+
+        {/* Legacy metric card display for backward compatibility */}
+        {isAI && message.metric && (
+          <div className="flex gap-3 mb-4 justify-start">
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
+              <Bot className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1 max-w-[80%]">
+              <ChatMetricCardEnhanced
+                metric={message.metric}
+                onGoToCard={handleGoToCard}
+                onShowChart={handleShowChart}
+                isExpanded={expandedCards.has(message.metric.id)}
+                onToggleExpand={() => handleToggleExpand(message.metric.id)}
+              />
+            </div>
           </div>
         )}
-      </div>
 
-      {isAI && message.metric && (
-        <div className="flex gap-3 mb-4 justify-start">
-          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center">
-            <Bot className="w-4 h-4 text-white" />
+        {/* New report sections display */}
+        {isAI && message.report && (
+          <div className="flex gap-3 mb-4 justify-start">
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
+              <Bot className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1 max-w-[80%] space-y-4">
+              {message.report.sections.map((section, index) => (
+                <ChatReportSection
+                  key={index}
+                  section={section}
+                  index={index}
+                />
+              ))}
+            </div>
           </div>
-          <div className="flex-1 max-w-[80%]">
-            <ChatMetricCardEnhanced
-              metric={message.metric}
-              onGoToCard={handleGoToCard}
-              onShowChart={handleShowChart}
-              isExpanded={expandedCards.has(message.metric.id)}
-              onToggleExpand={() => handleToggleExpand(message.metric.id)}
-            />
-          </div>
-        </div>
-      )}
+        )}
 
+        {/* Card display */}
+        {isAI && message.card && (
+          <div className="flex gap-3 mb-4 justify-start">
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
+              <Bot className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1 max-w-[80%]">
+              <ChatMetricCardEnhanced
+                metric={message.card}
+                onGoToCard={handleGoToCard}
+                onShowChart={handleShowChart}
+                isExpanded={expandedCards.has(message.card.id)}
+                onToggleExpand={() => handleToggleExpand(message.card.id)}
+              />
+            </div>
+          </div>
+        )}
       </React.Fragment>
     );
   };
@@ -298,8 +403,8 @@ const ChatView: React.FC<ChatViewProps> = ({
       {/* Header with close button */}
       <div className="flex items-center justify-between p-4 border-b border-white/10 backdrop-blur-sm bg-white/5">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center">
-            <Bot className="w-4 h-4 text-white" />
+          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
+            <Bot className="w-5 h-5 text-white" />
           </div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             CLAIRE AI Assistant
@@ -323,8 +428,8 @@ const ChatView: React.FC<ChatViewProps> = ({
             <div className="space-y-4">
               {messages.length === 0 ? (
                 <div className="text-center py-8">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center">
-                    <Bot className="w-8 h-8 text-white" />
+                  <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
+                    <Bot className="w-10 h-10 text-white" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                     Welcome to CLAIRE AI Assistant
@@ -378,27 +483,27 @@ const ChatView: React.FC<ChatViewProps> = ({
               )}
               {isLoading && (
                 <div className="flex gap-3 mb-4">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center">
-                    <Bot className="w-4 h-4 text-white" />
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
+                    <Bot className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1 max-w-[80%]">
-                    <Card className="backdrop-blur-[2px] bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20">
+                    <Card className="backdrop-blur-[2px] bg-white/10 border border-white/20 shadow-lg">
                       <CardContent className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                             CLAIRE AI Assistant
                           </span>
-                          <Badge variant="outline" className="text-xs border-blue-300 text-blue-600 dark:border-blue-600 dark:text-blue-400">
+                          <Badge variant="outline" className="text-xs border-blue-400 text-blue-700 dark:border-blue-500 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20">
                             AI
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
                           <div className="flex space-x-1">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
-                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                            <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce"></div>
+                            <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                            <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                           </div>
-                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                          <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
                             Analyzing your data...
                           </span>
                         </div>

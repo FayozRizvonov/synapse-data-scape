@@ -1,120 +1,120 @@
-# 🎤 Voice Assistant - Исправлено!
+# 🎤 Voice Assistant - Fixed!
 
-## 🔧 Основные исправления
+## 🔧 Main fixes
 
-### 1. **Удалена локальная заглушка Whisper**
-- ❌ **Проблема**: В `useWhisperLocal.tsx` использовался массив с заранее определенными фразами
-- ✅ **Решение**: Полностью удалена локальная транскрибация, теперь используется только серверная через OpenAI Whisper API
+### 1. **Removed local Whisper stub**
+- ❌ **Problem**: `useWhisperLocal.tsx` used array with predefined phrases
+- ✅ **Solution**: Completely removed local transcription, now only uses server-side via OpenAI Whisper API
 
-### 2. **Обновлена архитектура хука useVoiceAssistant**
-- Удалены все ссылки на `whisperState` и локальную транскрибацию
-- Транскрипт теперь приходит с сервера вместе с ответом AI
-- Упрощена структура состояний
+### 2. **Updated useVoiceAssistant hook architecture**
+- Removed all references to `whisperState` and local transcription
+- Transcript now comes from server with AI response
+- Simplified state structure
 
-### 3. **Обновлены все компоненты**
-- `VoiceAssistant.tsx` - основной компонент
-- `VoiceAssistantView.tsx` - модальное окно
-- `VoiceAssistantDemo.tsx` - демо страница
+### 3. **Updated all components**
+- `VoiceAssistant.tsx` - main component
+- `VoiceAssistantView.tsx` - modal window
+- `VoiceAssistantDemo.tsx` - demo page
 
-## 📋 Как теперь работает голосовой ассистент
+## 📋 How voice assistant works now
 
-### Архитектура:
+### Architecture:
 ```
-1. Пользователь нажимает кнопку микрофона
+1. User clicks microphone button
    ↓
-2. Начинается запись через MediaRecorder API
+2. Recording starts via MediaRecorder API
    ↓
-3. После остановки записи, аудио конвертируется в base64
+3. After recording stops, audio converted to base64
    ↓
-4. Аудио отправляется на Supabase Edge Function
+4. Audio sent to Supabase Edge Function
    ↓
-5. На сервере:
-   - OpenAI Whisper API транскрибирует речь
-   - GPT-4o обрабатывает запрос
-   - OpenAI TTS генерирует аудио ответ
+5. On server:
+   - OpenAI Whisper API transcribes speech
+   - GPT-4o processes request
+   - OpenAI TTS generates audio response
    ↓
-6. Клиент получает:
-   - transcript (распознанный текст)
-   - answer (текст ответа AI)
-   - audio (base64 аудио для воспроизведения)
+6. Client receives:
+   - transcript (recognized text)
+   - answer (AI response text)
+   - audio (base64 audio for playback)
 ```
 
-## 🚀 Тестирование
+## 🚀 Testing
 
-### 1. Через тестовую HTML страницу:
+### 1. Via test HTML page:
 ```bash
-# Откройте в браузере
+# Open in browser
 test-voice-assistant-fix.html
 ```
 
-### 2. Через приложение:
+### 2. Via application:
 ```bash
 npm run dev
-# Перейдите на любую страницу с голосовым ассистентом
+# Go to any page with voice assistant
 ```
 
-## ✅ Что исправлено:
+## ✅ What was fixed:
 
-1. **Реальное распознавание речи** - больше никаких случайных фраз
-2. **Серверная обработка** - вся логика на сервере через OpenAI API
-3. **Правильная обработка ошибок** - показывает реальные ошибки, а не заглушки
-4. **Корректное воспроизведение аудио** - исправлена обработка base64 аудио
+1. **Real speech recognition** - no more random phrases
+2. **Server-side processing** - all logic on server via OpenAI API
+3. **Proper error handling** - shows real errors, not stubs
+4. **Correct audio playback** - fixed base64 audio processing
 
-## 🔍 Отладка
+## 🔍 Debugging
 
-Если возникают проблемы:
+If problems arise:
 
-1. **Проверьте консоль браузера** - там подробные логи
-2. **Проверьте логи Supabase функции**:
+1. **Check browser console** - detailed logs there
+2. **Check Supabase function logs**:
    ```bash
    supabase functions logs voice-assistant
    ```
-3. **Убедитесь, что OpenAI API ключ настроен** в Supabase
+3. **Ensure OpenAI API key is configured** in Supabase
 
-## 📝 Структура ответа сервера:
+## 📝 Server response structure:
 
 ```typescript
 {
-  transcript: string,    // Распознанный текст
-  answer: string,       // Ответ AI
-  audio: string,        // Base64 аудио (MP3)
-  card?: {              // Опциональная карточка метрики
+  transcript: string,    // Recognized text
+  answer: string,       // AI response
+  audio: string,        // Base64 audio (MP3)
+  card?: {              // Optional metric card
     action: "show_card",
     metric_id: string
   },
-  timestamp: string     // Время обработки
+  timestamp: string     // Processing time
 }
 ```
 
-## 🎯 Следующие шаги:
+## 🎯 Next steps:
 
-1. Добавить индикатор уровня громкости при записи
-2. Улучшить детекцию тишины
-3. Добавить возможность прерывания воспроизведения
-4. Реализовать стриминг аудио для больших ответов
+1. Add volume level indicator during recording
+2. Improve silence detection
+3. Add ability to interrupt playback
+4. Implement audio streaming for large responses
 
-## 🐛 Исправленные проблемы:
+## 🐛 Fixed issues:
 
-1. ✅ **Случайные фразы вместо распознавания** - удалена локальная заглушка с массивом фраз
-2. ✅ **Invalid base64 audio format** - исправлено кодирование base64 в серверной функции
-3. ✅ **Декодирование аудио** - правильная обработка больших аудио файлов
+1. ✅ **Random phrases instead of recognition** - removed local stub with phrase array
+2. ✅ **Invalid base64 audio format** - fixed base64 encoding in server function
+3. ✅ **Audio decoding** - proper handling of large audio files
 
-## ⚠️ Текущие ограничения:
+## ⚠️ Current limitations:
 
-1. **Минимальная длина записи** - нужно говорить минимум 2-3 секунды
-2. **Формат аудио** - поддерживается только WebM (Chrome/Edge)
-3. **Размер ответа** - TTS ограничен 4000 символами
+1. **Minimum recording length** - need to speak at least 2-3 seconds
+2. **Audio format** - only WebM supported (Chrome/Edge)
+3. **Response size** - TTS limited to 4000 characters
 
-## 🚀 Деплой обновлений:
+## 🚀 Deploy updates:
 
 ```bash
-# 1. Залогиньтесь в Supabase
+# 1. Login to Supabase
 npx supabase login
 
-# 2. Задеплойте функцию
+# 2. Deploy function
 npx supabase functions deploy voice-assistant
 ```
 
 ---
 
-**Теперь голосовой ассистент работает корректно и распознает реальную речь!** 🎉 
+**Now voice assistant works correctly and recognizes real speech!** 🎉 

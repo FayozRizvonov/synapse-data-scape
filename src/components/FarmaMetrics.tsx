@@ -444,7 +444,7 @@ const FarmaMetrics = () => {
 
     const IconComponent = iconMap[card.icon] || Activity;
 
-    // Цвет обводки для Key и Situation
+    // Border color for Key and Situation
     const accentColor = card.category === 'key' ? '#156ef6' : '#24d200';
     const borderRadius = '1.25em';
     const borderWidth = '2px';

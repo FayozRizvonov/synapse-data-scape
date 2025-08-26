@@ -75,13 +75,13 @@ const Profile: React.FC = () => {
   const savePassword = async () => {
     setPasswordError(null);
     if (!user || !email) return;
-    if (!newPassword || newPassword.length < 8) { setPasswordError('Минимум 8 символов'); return; }
-    if (newPassword !== confirmPassword) { setPasswordError('Пароли не совпадают'); return; }
+          if (!newPassword || newPassword.length < 8) { setPasswordError('Minimum 8 characters'); return; }
+          if (newPassword !== confirmPassword) { setPasswordError('Passwords do not match'); return; }
     setPasswordLoading(true);
     try {
       // Reauthenticate with current password to validate user input
       const { error: signinError } = await supabase.auth.signInWithPassword({ email, password: currentPassword });
-      if (signinError) { throw new Error('Текущий пароль неверный'); }
+              if (signinError) { throw new Error('Current password is incorrect'); }
 
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
@@ -91,7 +91,7 @@ const Profile: React.FC = () => {
       setNewPassword('');
       setConfirmPassword('');
     } catch (e: any) {
-      setPasswordError(e?.message || 'Не удалось обновить пароль');
+              setPasswordError(e?.message || 'Failed to update password');
     } finally {
       setPasswordLoading(false);
     }

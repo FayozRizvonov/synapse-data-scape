@@ -1,76 +1,76 @@
-# 🚀 Voice Assistant - Финальный деплой
+# 🚀 Voice Assistant - Final Deployment
 
-## ✅ Все исправления завершены!
+## ✅ All fixes completed!
 
-### 📋 Что было исправлено:
+### 📋 What was fixed:
 
-1. **Удалена локальная заглушка Whisper** ✅
-   - Файл `useWhisperLocal.tsx` удален
-   - Больше никаких случайных фраз
+1. **Removed local Whisper stub** ✅
+   - File `useWhisperLocal.tsx` deleted
+   - No more random phrases
 
-2. **Исправлено base64 кодирование** ✅
-   - Используется стандартная библиотека Deno
-   - Работает с файлами любого размера
-   - Корректная base64 строка
+2. **Fixed base64 encoding** ✅
+   - Using Deno standard library
+   - Works with files of any size
+   - Correct base64 string
 
-3. **Обновлены все компоненты** ✅
+3. **Updated all components** ✅
    - `useVoiceAssistant.tsx`
    - `VoiceAssistant.tsx`
    - `VoiceAssistantView.tsx`
    - `VoiceAssistantDemo.tsx`
 
-## 🔧 Деплой обновлений:
+## 🔧 Deploy updates:
 
-### Шаг 1: Откройте PowerShell
+### Step 1: Open PowerShell
 ```powershell
 cd "D:\PROJECTS\GSIS Platform\synapse-data-scape"
 ```
 
-### Шаг 2: Установите Supabase CLI (если не установлен)
+### Step 2: Install Supabase CLI (if not installed)
 ```powershell
 npm install -g supabase
 ```
 
-### Шаг 3: Залогиньтесь
+### Step 3: Login
 ```powershell
 supabase login
 ```
 
-### Шаг 4: Задеплойте функцию
+### Step 4: Deploy function
 ```powershell
 supabase functions deploy voice-assistant --no-verify-jwt
 ```
 
-### Шаг 5: Проверьте логи
+### Step 5: Check logs
 ```powershell
 supabase functions logs voice-assistant --tail
 ```
 
-## ✅ Проверка работы:
+## ✅ Testing:
 
-1. Откройте приложение в браузере
-2. Нажмите на микрофон
-3. Произнесите любую фразу
-4. Проверьте что:
-   - Показывается реальный транскрипт
-   - Приходит ответ от AI
-   - Аудио воспроизводится без ошибок
+1. Open application in browser
+2. Click microphone
+3. Say any phrase
+4. Check that:
+   - Real transcript is shown
+   - AI response is received
+   - Audio plays without errors
 
-## 🎯 Тестирование:
+## 🎯 Testing:
 
-Откройте `test-base64-audio.html` в браузере для тестирования base64 декодирования.
+Open `test-base64-audio.html` in browser to test base64 decoding.
 
-## 📝 Логи для проверки:
+## 📝 Logs to check:
 
-В логах Supabase должны быть:
-- ✅ Generated audio length: [число]
-- ✅ Audio base64 sample: [валидная base64 строка без спецсимволов]
+In Supabase logs should be:
+- ✅ Generated audio length: [number]
+- ✅ Audio base64 sample: [valid base64 string without special characters]
 
-## ⚠️ Важно:
+## ⚠️ Important:
 
-- Убедитесь что версия функции обновилась (должна быть 19 или выше)
-- OpenAI API key должен быть настроен в Supabase
+- Ensure function version updated (should be 19 or higher)
+- OpenAI API key must be configured in Supabase
 
 ---
 
-**После деплоя голосовой ассистент будет работать полностью корректно!** 🎉 
+**After deployment voice assistant will work completely correctly!** 🎉 

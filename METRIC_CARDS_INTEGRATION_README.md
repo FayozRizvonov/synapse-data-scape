@@ -1,38 +1,38 @@
-# Интеграция карточек метрик в чат AI ассистента
+# Integration of Metric Cards in AI Assistant Chat
 
-## 🎯 Задача выполнена
+## 🎯 Task Completed
 
-Карточки метрик теперь отображаются в чате точно так же, как они выглядят на сайте. Когда пользователь спрашивает о конкретной метрике (например, "покажи нам QoQ Revenue Growth"), AI ассистент:
+Metric cards now display in the chat exactly as they appear on the website. When a user asks about a specific metric (e.g., "show us QoQ Revenue Growth"), the AI assistant:
 
-1. ✅ Дает подробный комментарий о текущем состоянии метрики
-2. ✅ Показывает карточку метрики в том же стиле, что и на сайте
-3. ✅ Предоставляет actionable insights и рекомендации
+1. ✅ Provides detailed commentary on the current state of the metric
+2. ✅ Shows the metric card in the same style as on the website
+3. ✅ Provides actionable insights and recommendations
 
-## 🚀 Что было реализовано
+## 🚀 What Was Implemented
 
-### 1. Новый компонент ChatMetricCardEnhanced
-- **Файл:** `src/components/ChatMetricCardEnhanced.tsx`
-- **Функции:**
-  - Использует тот же дизайн, что и карточки на сайте (BauhausBorder)
-  - Поддерживает расширение для просмотра деталей
-  - Отображает чарты с данными
-  - Имеет кнопки для навигации и действий
+### 1. New ChatMetricCardEnhanced Component
+- **File:** `src/components/ChatMetricCardEnhanced.tsx`
+- **Features:**
+  - Uses the same design as cards on the website (BauhausBorder)
+  - Supports expansion for viewing details
+  - Displays charts with data
+  - Has buttons for navigation and actions
 
-### 2. Обновленный ChatView
-- **Файл:** `src/components/ChatView.tsx`
-- **Изменения:**
-  - Интегрирован новый компонент ChatMetricCardEnhanced
-  - Добавлена поддержка расширения карточек
-  - Улучшена обработка сообщений с метриками
+### 2. Updated ChatView
+- **File:** `src/components/ChatView.tsx`
+- **Changes:**
+  - Integrated new ChatMetricCardEnhanced component
+  - Added support for card expansion
+  - Improved message processing with metrics
 
-### 3. Обновленный AI ассистент
-- **Файл:** `supabase/functions/ai-assistant/index.ts`
-- **Улучшения:**
-  - Более подробные инструкции для AI
-  - Примеры ответов с карточками метрик
-  - Правильное форматирование JSON для отображения карточек
+### 3. Updated AI Assistant
+- **File:** `supabase/functions/ai-assistant/index.ts`
+- **Improvements:**
+  - More detailed instructions for AI
+  - Response examples with metric cards
+  - Proper JSON formatting for card display
 
-## 📊 Доступные метрики
+## 📊 Available Metrics
 
 ### Key Metrics
 - `revenue` - QoQ Revenue Growth
@@ -54,24 +54,24 @@
 - `digital-display` - Digital Pharma Display
 - `digital-video` - Digital Pharma Video
 
-## 🧪 Тестирование
+## 🧪 Testing
 
-### Тестовые запросы
-Попробуйте эти запросы в чате:
+### Test Queries
+Try these queries in the chat:
 
 1. **"Show me QoQ Revenue Growth"**
-   - Ожидаемый результат: Подробный анализ + карточка метрики
+   - Expected result: Detailed analysis + metric card
 
 2. **"Tell me about Total Sales"**
-   - Ожидаемый результат: Анализ продаж + карточка Total Sales
+   - Expected result: Sales analysis + Total Sales card
 
 3. **"Show me Digital Video performance"**
-   - Ожидаемый результат: Анализ цифрового видео + карточка метрики
+   - Expected result: Digital video analysis + metric card
 
 4. **"What is the Patient Share situation?"**
-   - Ожидаемый результат: Анализ доли пациентов + карточка метрики
+   - Expected result: Patient share analysis + metric card
 
-### Пример ответа AI ассистента
+### Example AI Assistant Response
 
 ```
 ✅ QoQ Revenue Growth Analysis: Our quarterly revenue growth stands at 8.7%, showing a strong 40.3% improvement compared to the previous quarter. This exceptional performance is primarily driven by the successful launch of our new respiratory product line, which has exceeded initial projections by 15%.
@@ -86,28 +86,28 @@
 • Consider expanding the respiratory product line to adjacent therapeutic areas
 • Regional performance indicates opportunity for further market penetration
 
-[Карточка QoQ Revenue Growth с BauhausBorder дизайном]
+[QoQ Revenue Growth card with BauhausBorder design]
 ```
 
-## 🎨 Дизайн карточек
+## 🎨 Card Design
 
-### Особенности дизайна
-- **BauhausBorder:** Тот же стиль, что и на сайте
-- **Цветовая схема:** 
-  - Key Metrics: Зеленая обводка (#24d200)
-  - Situation Metrics: Синяя обводка (#156ef6)
-- **Анимации:** Hover эффекты и плавные переходы
-- **Адаптивность:** Корректно отображается в чате
+### Design Features
+- **BauhausBorder:** Same style as on the website
+- **Color scheme:** 
+  - Key Metrics: Green border (#24d200)
+  - Situation Metrics: Blue border (#156ef6)
+- **Animations:** Hover effects and smooth transitions
+- **Responsiveness:** Displays correctly in chat
 
-### Функциональность
-- **Расширение:** Можно развернуть для просмотра деталей
-- **Чарты:** Отображение графиков при расширении
-- **Действия:** Кнопки для навигации, шаринга, скачивания
-- **Интерактивность:** Полная функциональность как на сайте
+### Functionality
+- **Expansion:** Can be expanded to view details
+- **Charts:** Chart display when expanded
+- **Actions:** Buttons for navigation, sharing, downloading
+- **Interactivity:** Full functionality as on the website
 
-## 🔧 Техническая реализация
+## 🔧 Technical Implementation
 
-### Компоненты
+### Components
 ```typescript
 // ChatMetricCardEnhanced.tsx
 interface ChatMetricCardEnhancedProps {
@@ -119,7 +119,7 @@ interface ChatMetricCardEnhancedProps {
 }
 ```
 
-### Интеграция в ChatView
+### Integration in ChatView
 ```typescript
 // ChatView.tsx
 {!message.content.trim() && message.metric && (
@@ -135,48 +135,48 @@ interface ChatMetricCardEnhancedProps {
 )}
 ```
 
-### AI ассистент
+### AI Assistant
 ```typescript
 // supabase/functions/ai-assistant/index.ts
-// JSON формат для отображения карточки
+// JSON format for card display
 {"action": "show_card", "metric_id": "revenue"}
 ```
 
-## 📱 Использование
+## 📱 Usage
 
-### Для пользователей
-1. Откройте чат AI ассистента
-2. Задайте вопрос о конкретной метрике
-3. Получите подробный анализ и карточку метрики
-4. Расширьте карточку для просмотра деталей и чартов
+### For Users
+1. Open the AI assistant chat
+2. Ask a question about a specific metric
+3. Get detailed analysis and metric card
+4. Expand the card to view details and charts
 
-### Для разработчиков
-1. Все метрики доступны в `src/data/metricsKnowledgeBase.ts`
-2. Новые метрики автоматически поддерживаются
-3. Дизайн карточек синхронизирован с сайтом
-4. Легко расширяемая архитектура
+### For Developers
+1. All metrics available in `src/data/metricsKnowledgeBase.ts`
+2. New metrics automatically supported
+3. Card design synchronized with website
+4. Easily extensible architecture
 
-## ✅ Статус
+## ✅ Status
 
-- ✅ Карточки метрик отображаются в чате
-- ✅ Дизайн идентичен карточкам на сайте
-- ✅ AI ассистент дает подробные комментарии
-- ✅ Поддержка расширения карточек
-- ✅ Отображение чартов
-- ✅ Интерактивные элементы
-- ✅ Адаптивный дизайн
+- ✅ Metric cards display in chat
+- ✅ Design identical to website cards
+- ✅ AI assistant provides detailed commentary
+- ✅ Support for card expansion
+- ✅ Chart display
+- ✅ Interactive elements
+- ✅ Responsive design
 
-## 🚀 Следующие шаги
+## 🚀 Next Steps
 
-1. Протестировать все типы запросов
-2. Проверить отображение на разных устройствах
-3. Убедиться в корректной работе навигации
-4. Провести user testing
+1. Test all types of queries
+2. Check display on different devices
+3. Ensure navigation works correctly
+4. Conduct user testing
 
-## 📞 Поддержка
+## 📞 Support
 
-При возникновении проблем:
-1. Проверьте консоль браузера на наличие ошибок
-2. Убедитесь, что Supabase Edge Function развернут
-3. Проверьте, что все метрики есть в базе знаний
-4. Обратитесь к документации компонентов 
+If problems arise:
+1. Check browser console for errors
+2. Ensure Supabase Edge Function is deployed
+3. Verify all metrics are in the knowledge base
+4. Refer to component documentation 

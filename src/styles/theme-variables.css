@@ -3,42 +3,42 @@
    ====================== */
 
 :root {
-  /* ============ БРЕНДОВЫЕ ЦВЕТА CLAIRE AI ============ */
+  /* ============ CLAIRE AI BRAND COLORS ============ */
   --bg: #0b0f12;
   --card: #11161b;
   --fg: #e8f2f6;
   --neon: #19ffa6;
   --neon-alt: #19b8ff;
   
-  /* ============ БАЗОВЫЕ ЦВЕТА ============ */
-  /* Текст */
-  --text-primary: #f0f0f1; /* основной текст дарк-мода */
-  --text-secondary: #a0a1b3; /* вторичный текст дарк-мода */
-  --text-muted: #6b7280; /* приглушённый текст */
-  --text-accent: #06b6d4; /* акцентный текст */
-  --text-inverse: #1f2937; /* противоположный для светлой темы */
+  /* ============ BASE COLORS ============ */
+/* Text */
+--text-primary: #f0f0f1; /* main text dark mode */
+--text-secondary: #a0a1b3; /* secondary text dark mode */
+--text-muted: #6b7280; /* muted text */
+--text-accent: #06b6d4; /* accent text */
+  --text-inverse: #1f2937; /* opposite for light theme */
+
+/* Backgrounds */
+--bg-primary: #151419; /* main background dark mode */
+--bg-secondary: #1e1e24; /* secondary background dark mode */
+--bg-tertiary: #2a2a2f; /* tertiary background */
+--bg-card: #151419; /* card background dark mode */
+  --bg-modal: #1e1e24; /* modal background */
+--bg-hover: #2a2a2f; /* hover background */
   
-  /* Фоны */
-  --bg-primary: #151419; /* основной фон дарк-мода */
-  --bg-secondary: #1e1e24; /* вторичный фон дарк-мода */
-  --bg-tertiary: #2a2a2f; /* третичный фон */
-  --bg-card: #151419; /* фон карточек дарк-мода */
-  --bg-modal: #1e1e24; /* фон модалок */
-  --bg-hover: #2a2a2f; /* фон при ховере */
+  /* Borders */
+  --border-primary: #2F2B2A; /* main borders dark mode */
+--border-secondary: #3a3a3f; /* secondary borders */
+  --border-accent: #156ef6; /* accent borders */
   
-  /* Границы */
-  --border-primary: #2F2B2A; /* основные границы дарк-мода */
-  --border-secondary: #3a3a3f; /* вторичные границы */
-  --border-accent: #156ef6; /* акцентные границы */
+  /* ============ SPECIALIZED ============ */
   
-  /* ============ СПЕЦИАЛИЗИРОВАННЫЕ ============ */
+  /* Scrollbars */
+  --scrollbar-bg: #18181b; /* from --scrollbar-bg dark mode */
+--scrollbar-thumb: rgba(6, 182, 212, 0.4); /* thumb color */
+  --scrollbar-thumb-hover: #06b6d4; /* thumb color on hover */
   
-  /* Скроллбары */
-  --scrollbar-bg: #18181b; /* из --scrollbar-bg дарк-мода */
-  --scrollbar-thumb: rgba(6, 182, 212, 0.4); /* цвет ползунка */
-  --scrollbar-thumb-hover: #06b6d4; /* цвет ползунка при ховере */
-  
-  /* Bauhaus карточки */
+  /* Bauhaus cards */
   --bauhaus-card-bg: #151419; /* из --bauhaus-card-bg дарк-мода */
   --bauhaus-card-separator: #2F2B2A; /* из --bauhaus-card-separator дарк-мода */
   --bauhaus-card-accent: #156ef6; /* оставляем как есть */

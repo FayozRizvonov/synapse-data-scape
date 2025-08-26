@@ -40,8 +40,8 @@ export const Auth: React.FC = () => {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-white/10">
               <img src="/images/claire_logo.png" alt="CLAIRE" className="h-8 w-8 object-contain" />
             </div>
-            <h1 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">CLAIRE AI</h1>
-            <p className="text-sm text-gray-700/70 dark:text-white/60">Commercial Life Science Intelligence</p>
+            <h1 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">CLAIRE AI AGENT</h1>
+            <p className="text-sm text-gray-700/70 dark:text-white/60">Commercial Life Science AI Recommendation Engine Agent</p>
           </div>
           <AuthForm onSuccess={() => navigate('/')} />
         </div>

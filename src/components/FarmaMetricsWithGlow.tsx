@@ -358,7 +358,7 @@ const FarmaMetricsWithGlow = () => {
     }
   };
 
-  // Функция для получения цвета акцента в зависимости от типа метрики
+  // Function to get accent color based on metric type
   const getAccentColor = (card: MetricCard) => {
     if (card.changeType === 'positive') {
       return card.category === 'key' ? '#156ef6' : '#24d200';

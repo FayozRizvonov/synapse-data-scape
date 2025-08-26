@@ -32,7 +32,7 @@ export function FeatureCard({ feature, className, onClick, id, ...props }: Featu
 	const { theme } = useTheme();
 	const backgroundColor = 'var(--bg-card)';
 
-	// Настройки для Key Metrics
+	  // Settings for Key Metrics
 	const isKeyMetric = feature.category === 'key';
 	const borderWidth = isKeyMetric ? '4px' : '2px';
 	const accentColor = isKeyMetric ? 'var(--metric-key)' : 'hsl(var(--accent))';

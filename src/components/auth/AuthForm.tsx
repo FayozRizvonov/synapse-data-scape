@@ -38,7 +38,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
         
         if (error) {
           if (error.message === 'Invalid login credentials') {
-            setError('Неверный email или пароль');
+            setError('Invalid email or password');
           } else {
             setError(error.message);
           }
@@ -47,7 +47,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
         }
       } else {
         if (!companyId) {
-          setError('Пожалуйста, выберите компанию');
+          setError('Please select a company');
           return;
         }
         const redirectUrl = `${window.location.origin}/`;
@@ -66,16 +66,16 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
         
         if (error) {
           if (error.message === 'User already registered') {
-            setError('Пользователь с таким email уже зарегистрирован');
+            setError('User with this email is already registered');
           } else {
             setError(error.message);
           }
         } else {
-          setMessage('Проверьте вашу почту для подтверждения регистрации');
+          setMessage('Check your email to confirm registration');
         }
       }
     } catch (err) {
-      setError('Произошла ошибка. Попробуйте еще раз.');
+      setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -98,12 +98,12 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
     <Card className="w-full max-w-md mx-auto bg-white/5 border-white/10 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-shadow px-3 sm:px-6">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl font-bold">
-          {isLogin ? 'Вход' : 'Регистрация'}
+          {isLogin ? 'Sign In' : 'Registration'}
         </CardTitle>
         <CardDescription>
           {isLogin 
-            ? 'Войдите в свой аккаунт' 
-            : 'Создайте новый аккаунт'
+            ? 'Sign in to your account' 
+            : 'Create a new account'
           }
         </CardDescription>
       </CardHeader>
@@ -124,7 +124,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
           <div className="space-y-2">
             <Input
               type="password"
-              placeholder="Пароль"
+              placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -137,10 +137,10 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
           {!isLogin && (
             <div className="grid gap-3 pt-2">
               <div className="grid gap-1">
-                <Label className="text-sm text-white/80">Роль</Label>
+                <Label className="text-sm text-white/80">Role</Label>
                 <Select value={role} onValueChange={(v) => setRole(v as any)}>
                   <SelectTrigger className="bg-white/5 border-white/20 text-white">
-                    <SelectValue placeholder="Выберите роль" />
+                    <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="commercial">commercial</SelectItem>
@@ -150,10 +150,10 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
                 </Select>
               </div>
               <div className="grid gap-1">
-                <Label className="text-sm text-white/80">Компания</Label>
+                <Label className="text-sm text-white/80">Company</Label>
                 <Select value={companyId} onValueChange={setCompanyId}>
                   <SelectTrigger className="bg-white/5 border-white/20 text-white">
-                    <SelectValue placeholder="Выберите компанию" />
+                    <SelectValue placeholder="Select company" />
                   </SelectTrigger>
                   <SelectContent>
                     {companies.map((c) => (
@@ -183,7 +183,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
             disabled={loading}
           >
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isLogin ? 'Войти' : 'Зарегистрироваться'}
+            {isLogin ? 'Sign In' : 'Register'}
           </Button>
         </form>
 
@@ -195,8 +195,8 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
             className="p-0 text-cyan-600 hover:text-cyan-500 dark:text-cyan-400"
           >
             {isLogin 
-              ? 'Нет аккаунта? Зарегистрироваться' 
-              : 'Уже есть аккаунт? Войти'
+              ? 'No account? Register' 
+              : 'Already have an account? Sign In'
             }
           </Button>
         </div>

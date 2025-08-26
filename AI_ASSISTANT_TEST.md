@@ -1,38 +1,38 @@
-# Тестирование AI Ассистента
+# AI Assistant Testing
 
-## Проверенные функции
+## Verified Functions
 
-### ✅ База знаний метрик
-- [x] Все метрики из компонентов добавлены в базу знаний
-- [x] Функция `findMetricByQuery` работает корректно
-- [x] Все метрики имеют уникальные ID
-- [x] Все метрики имеют данные для чартов
+### ✅ Metrics Knowledge Base
+- [x] All metrics from components added to knowledge base
+- [x] `findMetricByQuery` function works correctly
+- [x] All metrics have unique IDs
+- [x] All metrics have chart data
 
-### ✅ Отображение карточек
-- [x] Карточки в FarmaMetricsWithAssistant имеют ID
-- [x] Карточки в FarmaMetrics имеют ID
-- [x] Компонент FeatureCard поддерживает ID
-- [x] CSS стили для highlight-card настроены
+### ✅ Card Display
+- [x] Cards in FarmaMetricsWithAssistant have IDs
+- [x] Cards in FarmaMetrics have IDs
+- [x] FeatureCard component supports IDs
+- [x] CSS styles for highlight-card configured
 
-### ✅ Чарты
-- [x] Recharts установлен и настроен
-- [x] CSS переменные для чартов настроены для обеих тем
-- [x] ChatMetricCard отображает чарты при расширении
-- [x] Чарты используют правильные цвета и стили
+### ✅ Charts
+- [x] Recharts installed and configured
+- [x] CSS variables for charts configured for both themes
+- [x] ChatMetricCard displays charts when expanded
+- [x] Charts use correct colors and styles
 
-### ✅ Навигация
-- [x] Функция handleGoToCard работает корректно
-- [x] Навигация к секциям работает
-- [x] Выделение карточек работает
-- [x] Прокрутка к карточкам работает
+### ✅ Navigation
+- [x] handleGoToCard function works correctly
+- [x] Navigation to sections works
+- [x] Card highlighting works
+- [x] Scrolling to cards works
 
-### ✅ AI Ассистент
-- [x] Supabase Edge Function настроен
-- [x] Контекст AI обновлен с новыми метриками
-- [x] Парсинг JSON действий работает
-- [x] Отображение карточек в чате работает
+### ✅ AI Assistant
+- [x] Supabase Edge Function configured
+- [x] AI context updated with new metrics
+- [x] JSON action parsing works
+- [x] Card display in chat works
 
-## Список всех доступных метрик
+## List of All Available Metrics
 
 ### Key Metrics
 - `revenue` - QoQ Revenue Growth
@@ -62,7 +62,7 @@
 - `phone-calls` - Phone Calls ABC
 - `veeva-emails` - Veeva Emails
 
-## Тестовые запросы для проверки
+## Test Queries for Verification
 
 1. "Show me Total Sales"
 2. "Tell me about Base Sales performance"
@@ -75,20 +75,20 @@
 9. "Show me Digital Video chart"
 10. "What's the current situation with digital campaigns?"
 
-## Возможные проблемы и решения
+## Possible Issues and Solutions
 
-### Проблема: AI не находит карточки
-**Решение:** ✅ Исправлено - добавлены все метрики в базу знаний
+### Issue: AI can't find cards
+**Solution:** ✅ Fixed - added all metrics to knowledge base
 
-### Проблема: Карточки не выделяются при навигации
-**Решение:** ✅ Исправлено - добавлены ID к карточкам
+### Issue: Cards don't highlight during navigation
+**Solution:** ✅ Fixed - added IDs to cards
 
-### Проблема: Чарты не отображаются
-**Решение:** ✅ Проверено - Recharts настроен, CSS переменные корректны
+### Issue: Charts don't display
+**Solution:** ✅ Verified - Recharts configured, CSS variables correct
 
-### Проблема: Навигация не работает
-**Решение:** ✅ Проверено - функции навигации работают корректно
+### Issue: Navigation doesn't work
+**Solution:** ✅ Verified - navigation functions work correctly
 
-## Статус: ✅ ГОТОВО К ТЕСТИРОВАНИЮ
+## Status: ✅ READY FOR TESTING
 
-AI ассистент полностью настроен и готов к работе. Все метрики синхронизированы между компонентами и базой знаний, карточки имеют ID для навигации, чарты настроены корректно. 
+AI assistant is fully configured and ready to work. All metrics are synchronized between components and knowledge base, cards have IDs for navigation, charts are configured correctly. 

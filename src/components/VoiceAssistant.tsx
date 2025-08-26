@@ -38,7 +38,7 @@ export const VoiceAssistant: React.FC<VoiceAssistantProps> = ({
 
   const { lastAIResponse } = useAIAssistant();
 
-  // Cleanup при размонтировании компонента
+  // Cleanup on component unmount
   useEffect(() => {
     return () => {
       // При размонтировании компонента полностью отключаем голосовой ассистент

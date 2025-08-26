@@ -110,7 +110,7 @@ serve(async (req) => {
     console.log('🎵 Audio data length:', audioData.length);
     console.log('🎵 Audio format:', audioFormat);
 
-    // 1. Транскрипция аудио через OpenAI Whisper
+    // 1. Audio transcription via OpenAI Whisper
     console.log('🎤 Step 1: Transcribing audio with Whisper...');
     
     // Validate and decode base64 audio data
@@ -240,7 +240,7 @@ serve(async (req) => {
       if (fallbackTtsResponse.ok) {
         const fallbackAudioBuffer = await fallbackTtsResponse.arrayBuffer();
         
-        // Используем Deno base64 encoding
+        // Use Deno base64 encoding
         const fallbackAudioArray = new Uint8Array(fallbackAudioBuffer);
         const fallbackAudioBase64 = base64Encode(fallbackAudioArray);
         
@@ -266,7 +266,7 @@ serve(async (req) => {
 
     console.log('🎤 Transcript:', transcript);
 
-    // 2. Обработка через GPT-4o
+    // 2. Processing via GPT-4o
     console.log('🤖 Step 2: Processing with GPT-4o...');
     const chatResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -305,7 +305,7 @@ serve(async (req) => {
     
     const aiResponse = chatData.choices[0].message.content;
     
-    // 3. Парсинг ответа AI
+    // 3. Parsing AI response
     console.log('📝 Step 3: Parsing AI response...');
     const answerMatch = aiResponse.match(/answer:\s*(.*?)(?=card:|$)/s);
     const cardMatch = aiResponse.match(/card:\s*(.*?)$/s);
@@ -326,10 +326,10 @@ serve(async (req) => {
       }
     }
 
-    // 4. Генерация аудио через TTS
+    // 4. Audio generation via TTS
     console.log('🔊 Step 4: Generating audio with TTS...');
     
-    // Ограничиваем длину текста для TTS (4096 символов - лимит OpenAI)
+    // Limit text length for TTS (4096 characters - OpenAI limit)
     const maxTtsLength = 4000;
     const ttsText = answerText.length > maxTtsLength 
       ? answerText.substring(0, maxTtsLength) + '...'
@@ -361,7 +361,7 @@ serve(async (req) => {
 
     const audioBuffer = await ttsResponse.arrayBuffer();
     
-    // Используем встроенные функции Deno для base64 кодирования
+            // Use built-in Deno functions for base64 encoding
     const audioArray = new Uint8Array(audioBuffer);
     const audioBase64 = base64Encode(audioArray);
     
@@ -374,7 +374,7 @@ serve(async (req) => {
       throw new Error('Failed to generate audio');
     }
 
-    // 5. Формирование финального ответа
+    // 5. Forming final response
     const result = {
       transcript,
       answer: answerText,

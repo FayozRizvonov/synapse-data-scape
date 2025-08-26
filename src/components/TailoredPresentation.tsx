@@ -54,7 +54,7 @@ const generateBudgetShareData = () => {
 const { data: diminishingData, channels: diminishingChannels } = generateDiminishingData();
 const budgetShareData = generateBudgetShareData();
 
-// Цвета каналов — в стиле Sales Volume Breakdown
+    // Channel colors — in Sales Volume Breakdown style
 const CHANNEL_TOKENS: Record<string, string> = {
   sf_calls: 'var(--chart-primary)',
   digital: 'var(--chart-quaternary)',

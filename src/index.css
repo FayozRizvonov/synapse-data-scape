@@ -109,41 +109,41 @@
   }
 }
 
-/* ============ УЛУЧШЕННЫЕ ТЕНИ ДЛЯ LIGHT MODE ============ */
+/* ============ ENHANCED SHADOWS FOR LIGHT MODE ============ */
 [data-theme="light"] {
-  /* Мягкие тени для карточек */
+      /* Soft shadows for cards */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.09), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.12);
   
-  /* Нейтральные тени вместо синих */
+      /* Neutral shadows instead of blue */
   --shadow-blue-sm: var(--shadow-sm);
   --shadow-blue-md: var(--shadow-md);
   --shadow-blue-lg: var(--shadow-lg);
   --shadow-blue-xl: var(--shadow-xl);
    
-  /* Тени для ховера */
+  /* Hover shadows */
   --shadow-hover: 0 8px 25px -5px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
   --shadow-blue-hover: var(--shadow-hover);
    
-  /* Тени для модалок и попапов */
+  /* Modal and popup shadows */
   --shadow-modal: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
   --shadow-dropdown: 0 10px 15px -3px rgba(15, 23, 42, 0.15), 0 4px 6px -2px rgba(15, 23, 42, 0.08);
    
-  /* Тени для кнопок */
+  /* Button shadows */
   --shadow-button: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-button-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.12), 0 2px 4px -1px rgba(0, 0, 0, 0.08);
   --shadow-button-blue: var(--shadow-button);
   --shadow-button-blue-hover: var(--shadow-button-hover);
  
-  /* Обновлённое свечение */
+  /* Updated glow */
   --pulse-glow: rgba(0, 0, 0, 0.1);
   --pulse-glow-hover: rgba(0, 0, 0, 0.25);
 }
 
-/* Применение улучшенных теней для light mode */
+/* Apply enhanced shadows for light mode */
 [data-theme="light"] .shadow-sm {
   box-shadow: var(--shadow-sm);
 }
@@ -164,7 +164,7 @@
   box-shadow: var(--shadow-2xl);
 }
 
-/* Специальные классы для цветных теней */
+/* Special classes for colored shadows */
 [data-theme="light"] .shadow-blue-sm {
   box-shadow: var(--shadow-blue-sm);
 }
@@ -181,7 +181,7 @@
   box-shadow: var(--shadow-blue-xl);
 }
 
-/* Тени для ховера */
+/* Hover shadows */
 [data-theme="light"] .shadow-hover {
   transition: box-shadow 0.3s ease;
 }
@@ -481,7 +481,7 @@
   text-shadow: 0 0 10px var(--pulse-glow);
 }
 
-/* В светлой теме убираем свечение текста */
+/* Remove text glow in light theme */
 [data-theme="light"] .text-glow {
   text-shadow: none;
 }
@@ -755,7 +755,7 @@ html {
   box-sizing: border-box;
 }
 
-/* Отключение hover для ROI Focus в темной теме */
+/* Disable hover for ROI Focus in dark theme */
 @media (prefers-color-scheme: dark) {
   .no-hover-dark:hover {
     background: inherit !important;
@@ -768,11 +768,11 @@ html {
 }
 
 /* --------------------------- */
-/* Улучшение светлой темы       */
+/* Light theme improvements       */
 /* --------------------------- */
 
-/* Карточки с классом bg-white/5 делают интерфейс блеклым в white theme.
-   Заменяем фон на #f9fafb и чуть заметную границу */
+/* Cards with bg-white/5 class make interface dull in white theme.
+        Replace background with #f9fafb and slightly visible border */
 [data-theme="light"] .bg-white\/5 {
   background-color: #f9fafb !important; /* gray-50 */
 }

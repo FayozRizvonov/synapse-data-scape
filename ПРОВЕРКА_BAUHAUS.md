@@ -1,222 +1,222 @@
-# Проверка работы Bauhaus карточек
+# Bauhaus Cards Testing
 
-## 🚀 Как проверить, что дизайн работает
+## 🚀 How to verify that the design works
 
-### 1. Запустите сервер разработки
+### 1. Start development server
 ```bash
 npm run dev
 ```
 
-### 2. Откройте браузер и перейдите по адресам:
+### 2. Open browser and navigate to:
 
-#### Тестовая страница (простая проверка):
+#### Test page (simple check):
 **http://localhost:5173/test-bauhaus**
 
-Здесь вы должны увидеть:
-- 2 простые Bauhaus карточки
-- Анимированные границы при наведении мыши
-- Прогресс-бары
-- Анимированные кнопки
+Here you should see:
+- 2 simple Bauhaus cards
+- Animated borders on mouse hover
+- Progress bars
+- Animated buttons
 
-#### Полная демо страница:
+#### Full demo page:
 **http://localhost:5173/bauhaus-demo**
 
-Здесь вы увидите:
-- Полный showcase с 6 карточками
-- Различные конфигурации
-- Фармацевтические примеры
-- Документацию по использованию
+Here you will see:
+- Full showcase with 6 cards
+- Various configurations
+- Pharmaceutical examples
+- Usage documentation
 
-### 3. Что должно работать:
+### 3. What should work:
 
-✅ **Анимированные границы** - при наведении мыши границы карточек должны поворачиваться
-✅ **Прогресс-бары** - цветные полоски показывающие прогресс
-✅ **Кнопки** - анимированные кнопки с hover эффектами
-✅ **Темы** - поддержка светлой и темной темы
-✅ **Адаптивность** - карточки должны адаптироваться под размер экрана
+✅ **Animated borders** - card borders should rotate on mouse hover
+✅ **Progress bars** - colored bars showing progress
+✅ **Buttons** - animated buttons with hover effects
+✅ **Themes** - support for light and dark themes
+✅ **Responsiveness** - cards should adapt to screen size
 
-### 4. Если карточки не отображаются:
+### 4. If cards don't display:
 
-#### Проверьте консоль браузера (F12):
-- Нет ли ошибок JavaScript
-- Нет ли ошибок импорта компонентов
+#### Check browser console (F12):
+- No JavaScript errors
+- No component import errors
 
-#### Проверьте файлы:
-- `src/components/ui/bauhaus-card.tsx` - должен существовать
-- `src/components/ui/chronicle-button.tsx` - должен существовать
-- `src/index.css` - должны быть CSS переменные
+#### Check files:
+- `src/components/ui/bauhaus-card.tsx` - should exist
+- `src/components/ui/chronicle-button.tsx` - should exist
+- `src/index.css` - CSS variables should be present
 
-#### Проверьте импорты:
-- В `src/App.tsx` должен быть роут `/test-bauhaus`
-- В `src/App.tsx` должен быть роут `/bauhaus-demo`
+#### Check imports:
+- Route `/test-bauhaus` should be in `src/App.tsx`
+- Route `/bauhaus-demo` should be in `src/App.tsx`
 
-### 5. Возможные проблемы и решения:
+### 5. Possible issues and solutions:
 
-#### Проблема: Карточки не отображаются
-**Решение:** Проверьте, что все файлы созданы и нет ошибок в консоли
+#### Issue: Cards don't display
+**Solution:** Check that all files are created and no console errors
 
-#### Проблема: Нет анимации границ
-**Решение:** Убедитесь, что CSS стили загружены и нет конфликтов
+#### Issue: No border animation
+**Solution:** Ensure CSS styles are loaded and no conflicts
 
-#### Проблема: Неправильные цвета
-**Решение:** Проверьте CSS переменные в `src/index.css`
+#### Issue: Wrong colors
+**Solution:** Check CSS variables in `src/index.css`
 
-#### Проблема: Кнопки не работают
-**Решение:** Проверьте, что ChronicleButton компонент импортирован правильно
+#### Issue: Buttons don't work
+**Solution:** Check that ChronicleButton component is imported correctly
 
-### 6. Структура файлов:
+### 6. File structure:
 
 ```
 src/
 ├── components/
 │   ├── ui/
-│   │   ├── bauhaus-card.tsx      ✅ Основной компонент
-│   │   └── chronicle-button.tsx  ✅ Кнопка компонент
-│   ├── BauhausCardDemo.tsx       ✅ Демо компонент
-│   └── FarmaMetricsWithBauhaus.tsx ✅ Интеграция
+│   │   ├── bauhaus-card.tsx      ✅ Main component
+│   │   └── chronicle-button.tsx  ✅ Button component
+│   ├── BauhausCardDemo.tsx       ✅ Demo component
+│   └── FarmaMetricsWithBauhaus.tsx ✅ Integration
 ├── pages/
-│   ├── BauhausDemo.tsx           ✅ Полная демо страница
-│   └── TestBauhaus.tsx           ✅ Простая тестовая страница
-├── App.tsx                       ✅ Роуты добавлены
-└── index.css                     ✅ CSS переменные добавлены
+│   ├── BauhausDemo.tsx           ✅ Full demo page
+│   └── TestBauhaus.tsx           ✅ Simple test page
+├── App.tsx                       ✅ Routes added
+└── index.css                     ✅ CSS variables added
 ```
 
-### 7. Команды для проверки:
+### 7. Commands for testing:
 
 ```bash
-# Проверить, что сервер запущен
+# Check that server is running
 npm run dev
 
-# Проверить, что нет ошибок TypeScript
+# Check that no TypeScript errors
 npm run build
 
-# Проверить линтер
+# Check linter
 npm run lint
 ```
 
-### 8. Ожидаемый результат:
+### 8. Expected result:
 
-При переходе на `/test-bauhaus` вы должны увидеть:
-- Красивые карточки с градиентными границами
-- Анимацию при наведении мыши
-- Прогресс-бары с процентами
-- Анимированные кнопки
-- Адаптивный дизайн
+When navigating to `/test-bauhaus` you should see:
+- Beautiful cards with gradient borders
+- Animation on mouse hover
+- Progress bars with percentages
+- Animated buttons
+- Responsive design
 
-Если все работает - интеграция успешна! 🎉
+If everything works - integration successful! 🎉
 
-### 9. Следующие шаги:
+### 9. Next steps:
 
-1. Проверьте `/bauhaus-demo` для полного showcase
-2. Интегрируйте карточки в существующие разделы
-3. Настройте цвета под ваш бренд
-4. Добавьте реальные данные из API
+1. Check `/bauhaus-demo` for full showcase
+2. Integrate cards into existing sections
+3. Configure colors for your brand
+4. Add real data from API
 
 ---
 
-**Если что-то не работает, проверьте консоль браузера и убедитесь, что все файлы созданы правильно!**
+**If something doesn't work, check browser console and ensure all files are created correctly!**
 
-# Проверка улучшений Light Mode
+# Light Mode Improvements Testing
 
-## ✅ Выполненные улучшения
+## ✅ Completed improvements
 
-### 🎨 Улучшенные цвета для Light Mode
+### 🎨 Enhanced colors for Light Mode
 
-#### Основные цвета:
-- **Primary Text**: `#0F172A` (slate-900) - более глубокий и читаемый
-- **Secondary Text**: `#475569` (slate-600) - лучший контраст
-- **Muted Text**: `#64748B` (slate-500) - более мягкий
-- **Primary Accent**: `#2563EB` (blue-600) - более насыщенный синий
+#### Primary colors:
+- **Primary Text**: `#0F172A` (slate-900) - deeper and more readable
+- **Secondary Text**: `#475569` (slate-600) - better contrast
+- **Muted Text**: `#64748B` (slate-500) - softer
+- **Primary Accent**: `#2563EB` (blue-600) - more saturated blue
 
-#### Фоны:
-- **Primary Background**: `#FFFFFF` - чистый белый
-- **Secondary Background**: `#F8FAFC` (slate-50) - очень светлый серый
-- **Tertiary Background**: `#F1F5F9` (slate-100) - мягкий серый
-- **Hover Background**: `#EFF6FF` (blue-50) - очень светлый синий
+#### Backgrounds:
+- **Primary Background**: `#FFFFFF` - pure white
+- **Secondary Background**: `#F8FAFC` (slate-50) - very light gray
+- **Tertiary Background**: `#F1F5F9` (slate-100) - soft gray
+- **Hover Background**: `#EFF6FF` (blue-50) - very light blue
 
-#### Границы:
-- **Primary Border**: `#E2E8F0` (slate-200) - мягкая граница
-- **Secondary Border**: `#CBD5E1` (slate-300) - более заметная
-- **Accent Border**: `#2563EB` (blue-600) - насыщенный синий
+#### Borders:
+- **Primary Border**: `#E2E8F0` (slate-200) - soft border
+- **Secondary Border**: `#CBD5E1` (slate-300) - more noticeable
+- **Accent Border**: `#2563EB` (blue-600) - saturated blue
 
-### 🌟 Улучшенные тени для Light Mode
+### 🌟 Enhanced shadows for Light Mode
 
-#### Стандартные тени:
+#### Standard shadows:
 - **Shadow SM**: `0 1px 2px 0 rgba(15, 23, 42, 0.05)`
 - **Shadow MD**: `0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -1px rgba(15, 23, 42, 0.04)`
 - **Shadow LG**: `0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -2px rgba(15, 23, 42, 0.05)`
 - **Shadow XL**: `0 20px 25px -5px rgba(15, 23, 42, 0.12), 0 10px 10px -5px rgba(15, 23, 42, 0.04)`
 - **Shadow 2XL**: `0 25px 50px -12px rgba(15, 23, 42, 0.15)`
 
-#### Цветные тени с синим оттенком:
+#### Colored shadows with blue tint:
 - **Shadow Blue SM**: `0 1px 2px 0 rgba(37, 99, 235, 0.08)`
 - **Shadow Blue MD**: `0 4px 6px -1px rgba(37, 99, 235, 0.12), 0 2px 4px -1px rgba(37, 99, 235, 0.06)`
 - **Shadow Blue LG**: `0 10px 15px -3px rgba(37, 99, 235, 0.15), 0 4px 6px -2px rgba(37, 99, 235, 0.08)`
 - **Shadow Blue XL**: `0 20px 25px -5px rgba(37, 99, 235, 0.18), 0 10px 10px -5px rgba(37, 99, 235, 0.06)`
 
-#### Тени для ховера:
+#### Hover shadows:
 - **Shadow Hover**: `0 8px 25px -5px rgba(15, 23, 42, 0.15), 0 4px 6px -2px rgba(15, 23, 42, 0.08)`
 - **Shadow Blue Hover**: `0 8px 25px -5px rgba(37, 99, 235, 0.2), 0 4px 6px -2px rgba(37, 99, 235, 0.1)`
 
-### 🔧 Обновленные компоненты
+### 🔧 Updated components
 
 #### 1. ThemeToggle
-- Добавлены улучшенные тени: `shadow-blue-sm hover:shadow-blue-md`
-- Для основного варианта: `shadow-blue-lg hover:shadow-blue-xl`
+- Added enhanced shadows: `shadow-blue-sm hover:shadow-blue-md`
+- For primary variant: `shadow-blue-lg hover:shadow-blue-xl`
 
 #### 2. Sidebar
-- Основная тень: `shadow-blue-sm`
-- Кнопка переключения: `shadow-blue-md hover:shadow-blue-lg`
-- Активные элементы: `shadow-blue-lg`
-- Ховер эффекты: `hover:shadow-blue-sm`
-- Тултипы: `shadow-blue-md`
+- Main shadow: `shadow-blue-sm`
+- Toggle button: `shadow-blue-md hover:shadow-blue-lg`
+- Active elements: `shadow-blue-lg`
+- Hover effects: `hover:shadow-blue-sm`
+- Tooltips: `shadow-blue-md`
 
 #### 3. FarmaMetricsWithBauhaus
-- Основные карточки: `shadow-blue-lg hover:shadow-blue-xl`
-- Метрики: `shadow-blue-md hover:shadow-blue-lg`
+- Main cards: `shadow-blue-lg hover:shadow-blue-xl`
+- Metrics: `shadow-blue-md hover:shadow-blue-lg`
 
 #### 4. BauhausDemo
-- Все карточки: `shadow-blue-lg hover:shadow-blue-xl`
+- All cards: `shadow-blue-lg hover:shadow-blue-xl`
 
 #### 5. Card Component
-- Добавлен `transition-shadow duration-200` для плавных переходов
+- Added `transition-shadow duration-200` for smooth transitions
 
-### 📁 Обновленные файлы
+### 📁 Updated files
 
-1. **`src/styles/theme-variables.css`** - улучшенные цвета для light mode
-2. **`src/index.css`** - добавлены улучшенные тени и их применение
-3. **`src/components/ThemeToggle.tsx`** - обновлены классы теней
-4. **`src/components/Sidebar.tsx`** - обновлены классы теней
-5. **`src/components/FarmaMetricsWithBauhaus.tsx`** - обновлены классы теней
-6. **`src/pages/BauhausDemo.tsx`** - обновлены классы теней
-7. **`src/components/ui/card.tsx`** - добавлены переходы для теней
-8. **`src/pages/TestBauhaus.tsx`** - создана тестовая страница
-9. **`lightmode.json`** - обновлен для соответствия улучшениям
+1. **`src/styles/theme-variables.css`** - enhanced colors for light mode
+2. **`src/index.css`** - added enhanced shadows and their application
+3. **`src/components/ThemeToggle.tsx`** - updated shadow classes
+4. **`src/components/Sidebar.tsx`** - updated shadow classes
+5. **`src/components/FarmaMetricsWithBauhaus.tsx`** - updated shadow classes
+6. **`src/pages/BauhausDemo.tsx`** - updated shadow classes
+7. **`src/components/ui/card.tsx`** - added shadow transitions
+8. **`src/pages/TestBauhaus.tsx`** - created test page
+9. **`lightmode.json`** - updated to match improvements
 
-### 🎯 Ключевые улучшения
+### 🎯 Key improvements
 
-1. **Лучший контраст** - более глубокие цвета текста для лучшей читаемости
-2. **Мягкие тени** - естественные тени без резких краев
-3. **Цветные тени** - синий оттенок для акцентов и интерактивных элементов
-4. **Плавные переходы** - все тени имеют плавные анимации
-5. **Консистентность** - единый подход к теням во всем приложении
-6. **Dark Mode не затронут** - все изменения только для light mode
+1. **Better contrast** - deeper text colors for better readability
+2. **Soft shadows** - natural shadows without sharp edges
+3. **Colored shadows** - blue tint for accents and interactive elements
+4. **Smooth transitions** - all shadows have smooth animations
+5. **Consistency** - unified approach to shadows throughout the app
+6. **Dark Mode unaffected** - all changes only for light mode
 
-### 🧪 Тестирование
+### 🧪 Testing
 
-Создана тестовая страница `/test-bauhaus` для проверки:
-- Всех типов теней (SM, MD, LG, XL, 2XL)
-- Цветных теней с синим оттенком
-- Улучшенных цветов
-- Кнопок с тенями
-- Иерархии текста
+Created test page `/test-bauhaus` to check:
+- All shadow types (SM, MD, LG, XL, 2XL)
+- Colored shadows with blue tint
+- Enhanced colors
+- Buttons with shadows
+- Text hierarchy
 
-### 🚀 Результат
+### 🚀 Result
 
-Light mode теперь имеет:
-- ✅ Более сбалансированные и современные цвета
-- ✅ Мягкие и естественные тени
-- ✅ Лучший контраст и читаемость
-- ✅ Плавные анимации и переходы
-- ✅ Консистентный дизайн
-- ✅ Dark mode остается неизменным 
+Light mode now has:
+- ✅ More balanced and modern colors
+- ✅ Soft and natural shadows
+- ✅ Better contrast and readability
+- ✅ Smooth animations and transitions
+- ✅ Consistent design
+- ✅ Dark mode remains unchanged 

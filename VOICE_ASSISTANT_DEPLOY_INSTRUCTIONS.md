@@ -1,65 +1,65 @@
-# 🚀 Инструкции по деплою Voice Assistant
+# 🚀 Voice Assistant Deployment Instructions
 
-## ✅ Что было исправлено:
+## ✅ What was fixed:
 
-1. **Удалена локальная заглушка** - Больше никаких случайных фраз
-2. **Исправлено base64 кодирование** - Теперь аудио корректно кодируется на сервере
-3. **Обновлена архитектура** - Вся транскрипция происходит на сервере через OpenAI Whisper
+1. **Removed local stub** - No more random phrases
+2. **Fixed base64 encoding** - Audio now correctly encoded on server
+3. **Updated architecture** - All transcription happens on server via OpenAI Whisper
 
-## 📋 Шаги для деплоя:
+## 📋 Deployment steps:
 
-### 1. Откройте PowerShell в папке проекта:
+### 1. Open PowerShell in project folder:
 ```powershell
 cd "D:\PROJECTS\GSIS Platform\synapse-data-scape"
 ```
 
-### 2. Установите Supabase CLI (если еще не установлен):
+### 2. Install Supabase CLI (if not already installed):
 ```powershell
 npm install -g supabase
 ```
 
-### 3. Залогиньтесь в Supabase:
+### 3. Login to Supabase:
 ```powershell
 supabase login
 ```
-Откроется браузер для авторизации.
+Browser will open for authorization.
 
-### 4. Задеплойте обновленную функцию:
+### 4. Deploy updated function:
 ```powershell
 supabase functions deploy voice-assistant
 ```
 
-### 5. Проверьте логи (опционально):
+### 5. Check logs (optional):
 ```powershell
 supabase functions logs voice-assistant
 ```
 
-## ✅ Проверка работы:
+## ✅ Testing:
 
-1. Откройте приложение в браузере
-2. Нажмите на кнопку микрофона
-3. Произнесите любой вопрос
-4. Убедитесь что:
-   - Показывается реальный транскрипт вашей речи
-   - Приходит осмысленный ответ от AI
-   - Воспроизводится аудио ответ
+1. Open application in browser
+2. Click microphone button
+3. Ask any question
+4. Verify that:
+   - Real transcript of your speech is shown
+   - Meaningful response from AI is received
+   - Audio response is played
 
-## 🔍 Если что-то не работает:
+## 🔍 If something doesn't work:
 
-1. Проверьте консоль браузера (F12)
-2. Проверьте логи функции:
+1. Check browser console (F12)
+2. Check function logs:
    ```powershell
    supabase functions logs voice-assistant --tail
    ```
-3. Убедитесь что OpenAI API key настроен в Supabase
+3. Ensure OpenAI API key is configured in Supabase
 
-## 📝 Изменения в коде:
+## 📝 Code changes:
 
-- `src/hooks/useVoiceAssistant.tsx` - убрана локальная транскрипция
-- `src/hooks/useWhisperLocal.tsx` - файл удален
-- `supabase/functions/voice-assistant/index.ts` - исправлено base64 кодирование
-- Все компоненты обновлены для работы с новой архитектурой
+- `src/hooks/useVoiceAssistant.tsx` - removed local transcription
+- `src/hooks/useWhisperLocal.tsx` - file deleted
+- `supabase/functions/voice-assistant/index.ts` - fixed base64 encoding
+- All components updated for new architecture
 
 ---
 
-**После деплоя голосовой ассистент будет работать корректно!** 🎉 
+**After deployment, voice assistant will work correctly!** 🎉 

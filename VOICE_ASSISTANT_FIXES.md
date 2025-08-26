@@ -3,7 +3,7 @@
 ## 🔧 Server-side fixes (voice-assistant/index.ts):
 
 ### 1. **Fixed Russian text in error response**
-- Changed: `'Извините, произошла ошибка. Пожалуйста, попробуйте еще раз.'`
+- Changed: `'Sorry, an error occurred. Please try again.'`
 - To: `'Sorry, an error occurred. Please try again.'`
 
 ### 2. **Improved Whisper settings**

@@ -84,7 +84,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   const handleOpenVoiceAssistant = () => {
-    // Закрываем чат перед открытием голосового ассистента
+    // Close chat before opening voice assistant
     if (onCloseChat) {
       onCloseChat();
     }
@@ -156,7 +156,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
         >
           <div className="flex flex-col items-stretch w-full h-full">
             {/* Input Row */}
-            {/* Адаптивный стиль контейнера ввода */}
+            {/* Adaptive input container style */}
             <div
               className={`flex items-center gap-2 p-3 rounded-full backdrop-blur-[2px] max-w-2xl w-full ${
                 isDark
@@ -262,7 +262,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
               </button>
             </div>
 
-            {/* Quick Suggestions Row - показывается только когда активен */}
+            {/* Quick Suggestions Row - shown only when active */}
             <AnimatePresence>
               {(isActive || message) && (
                 <motion.div
