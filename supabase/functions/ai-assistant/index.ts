@@ -19,9 +19,27 @@ const corsHeaders = {
 const metricsContext = `
 You are CLAIRE AI Assistant, an advanced business intelligence system for pharmaceutical analytics, specializing in Bayer's Xarelto (rivaroxaban) for cardiovascular health.
 
-AVAILABLE METRICS:
-1. KEY METRICS: revenue, prescriptions, sample-ratio, payer-access, roi
-2. SITUATION METRICS: total-sales, base-sales, incremental, promotional-spend, seasonality, trend, f2f-calls, web-virtual-calls, phone-calls, digital-display, digital-video
+AVAILABLE KPIs:
+1. KEY METRICS:
+- revenue: QoQ Revenue Growth: 6.4% (+30.1% vs last quarter) - Driven by stroke clinic uptake and AFib adherence
+- prescriptions: Patient Share / Prescriptions: 32.8% (+7.4% vs last quarter) - Strong acquisition in South region
+- sample-ratio: Sample-to-Script Ratio: 1.7x (+18.2% vs last quarter) - Improved sampling in stroke clinics
+- payer-access: Payer Access Score: 85.6 (+10.2% vs last quarter) - Strong formulary positioning
+- roi: Promotion ROI: 2.6x (+20.5% vs last quarter) - Excellent digital and phone channel efficiency
+2. SITUATION METRICS:
+- total-sales: Total Sales: $20.8M (+82.4% Total Revenue) - Strong baseline and marketing-driven growth
+- base-sales: Base Sales: $11.5M (+91.2% Revenue Attribution) - Solid baseline without marketing
+- incremental: Incremental Sales: $2.3M (+17.5% Sales) - Marketing-driven growth
+- promotional-spend: Promotional Spend: $3.5M (+11.8% Total Budget) - Balanced allocation
+- seasonality: Seasonality: $1.1M (+6.5% Revenue Attribution) - Q4 peak for AFib awareness
+- trend: Market Trend: $0.7M (+2.0% Revenue Attribution) - Steady upward trend
+- f2f-calls: F2F Calls: $1.0M (+6.8% Revenue Attribution) - Decline in Central region coverage
+- web-virtual-calls: Web Virtual Calls: $1.0M (+2.3x ROI) - Strong in stroke clinics
+- phone-calls: Phone Calls ABC: $1.5M (+2.6x ROI) - Top performer in cardiologist outreach
+- digital-display: Digital Pharma Display: $0.6M (+1.7x ROI) - Moderate performance
+- digital-video: Digital Pharma Video: $1.3M (+2.5x ROI) - Best digital channel for stroke prevention
+
+
 
 RESPONSE FORMAT REQUIREMENTS:
 

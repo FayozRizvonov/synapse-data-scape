@@ -254,78 +254,81 @@ const ChatView: React.FC<ChatViewProps> = ({
             "flex-1 max-w-[80%]",
             isAI ? "order-2" : "order-1"
           )}>
-            <Card className={cn(
-              "backdrop-blur-[2px] bg-white/10 border border-white/20 shadow-lg",
-              isAI 
-                ? "hover:bg-white/15 hover:border-white/30" 
-                : "hover:bg-white/15 hover:border-white/30"
-            )}>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    {isAI ? 'CLAIRE AI Assistant' : 'You'}
-                  </span>
-                  {isAI && (
-                    <Badge variant="outline" className="text-xs border-blue-400 text-blue-700 dark:border-blue-500 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20">
-                      AI
-                    </Badge>
+            {/* Render the top message card only when there's no structured content */}
+            {!(isAI && (message.report || message.card)) && (
+              <Card className={cn(
+                "backdrop-blur-[2px] bg-white/10 border border-white/20 shadow-lg",
+                isAI 
+                  ? "hover:bg-white/15 hover:border-white/30" 
+                  : "hover:bg-white/15 hover:border-white/30"
+              )}>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      {isAI ? 'CLAIRE AI Assistant' : 'You'}
+                    </span>
+                    {isAI && (
+                      <Badge variant="outline" className="text-xs border-blue-400 text-blue-700 dark:border-blue-500 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20">
+                        AI
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  <div className="text-base leading-relaxed text-gray-800 dark:text-gray-200">
+                    {isAI ? formatAIResponse(message.content) : message.content}
+                  </div>
+                  
+                  {/* Share button for AI responses */}
+                  {isAI && (message.report || message.card) && (
+                    <div className="mt-3 flex justify-end">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          const shareContent = message.report 
+                            ? `CLAIRE AI Analysis:\n${message.content}\n\nDetailed sections available in the app.`
+                            : `CLAIRE AI Card Data:\n${message.content}`;
+                          handleShare(shareContent);
+                        }}
+                        className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                      >
+                        <Share2 className="w-4 h-4 mr-1" />
+                        Share
+                      </Button>
+                    </div>
                   )}
-                </div>
-                
-                <div className="text-base leading-relaxed text-gray-800 dark:text-gray-200">
-                  {isAI ? formatAIResponse(message.content) : message.content}
-                </div>
-                
-                {/* Share button for AI responses */}
-                {isAI && (message.report || message.card) && (
-                  <div className="mt-3 flex justify-end">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        const shareContent = message.report 
-                          ? `CLAIRE AI Analysis:\n${message.content}\n\nDetailed sections available in the app.`
-                          : `CLAIRE AI Card Data:\n${message.content}`;
-                        handleShare(shareContent);
-                      }}
-                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                    >
-                      <Share2 className="w-4 h-4 mr-1" />
-                      Share
-                    </Button>
-                  </div>
-                )}
-                
-                {/* Legacy action buttons for backward compatibility */}
-                {message.action && message.metricId && !(message.action === 'show_card' && message.metric) && (
-                  <div className="mt-3 flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-xs border-blue-400 text-blue-700 hover:bg-blue-50 dark:border-blue-500 dark:text-blue-300 dark:hover:bg-blue-900/20 shadow-sm"
-                      onClick={() => {
-                        if (onNavigateToSection && message.action === 'show_card') {
-                          onNavigateToSection('pharma-sm');
-                        }
-                        console.log(`Show ${message.action} for metric: ${message.metricId}`);
-                      }}
-                    >
-                      {message.action === 'show_card' ? (
-                        <>
-                          <Target className="w-3 h-3 mr-1" />
-                          Show Card
-                        </>
-                      ) : (
-                        <>
-                          <BarChart3 className="w-3 h-3 mr-1" />
-                          Show Chart
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  
+                  {/* Legacy action buttons for backward compatibility */}
+                  {message.action && message.metricId && !(message.action === 'show_card' && message.metric) && (
+                    <div className="mt-3 flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs border-blue-400 text-blue-700 hover:bg-blue-50 dark:border-blue-500 dark:text-blue-300 dark:hover:bg-blue-900/20 shadow-sm"
+                        onClick={() => {
+                          if (onNavigateToSection && message.action === 'show_card') {
+                            onNavigateToSection('pharma-sm');
+                          }
+                          console.log(`Show ${message.action} for metric: ${message.metricId}`);
+                        }}
+                      >
+                        {message.action === 'show_card' ? (
+                          <>
+                            <Target className="w-3 h-3 mr-1" />
+                            Show Card
+                          </>
+                        ) : (
+                          <>
+                            <BarChart3 className="w-3 h-3 mr-1" />
+                            Show Chart
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
           
           {!isAI && (
@@ -335,31 +338,30 @@ const ChatView: React.FC<ChatViewProps> = ({
           )}
         </div>
 
-        {/* Legacy metric card display for backward compatibility */}
-        {isAI && message.metric && (
-          <div className="flex gap-3 mb-4 justify-start">
-            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
-              <Bot className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1 max-w-[80%]">
-              <ChatMetricCardEnhanced
-                metric={message.metric}
-                onGoToCard={handleGoToCard}
-                onShowChart={handleShowChart}
-                isExpanded={expandedCards.has(message.metric.id)}
-                onToggleExpand={() => handleToggleExpand(message.metric.id)}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* New report sections display */}
+        {/* New report sections display (merged header + sections) */}
         {isAI && message.report && (
           <div className="flex gap-3 mb-4 justify-start">
             <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
               <Bot className="w-5 h-5 text-white" />
             </div>
-            <div className="flex-1 max-w-[80%] space-y-4">
+            <div className="flex-1 max-w-[80%] space-y-3">
+              {/* Compact header text and share */}
+              {message.content && (
+                <div className="flex items-start justify-between">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 pr-3">
+                    {message.content}
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleShare(`CLAIRE AI Analysis:\n${message.content}`)}
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  >
+                    <Share2 className="w-4 h-4 mr-1" />
+                    Share
+                  </Button>
+                </div>
+              )}
               {message.report.sections.map((section, index) => (
                 <ChatReportSection
                   key={index}

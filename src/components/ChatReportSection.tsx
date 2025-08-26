@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, ChevronUp, BarChart3, TrendingUp, Lightbulb, Target } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { BarChart3, TrendingUp, Lightbulb, Target } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface ReportSectionProps {
@@ -26,12 +25,6 @@ interface ReportSectionProps {
 }
 
 const ChatReportSection: React.FC<ReportSectionProps> = ({ section, index }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  const toggleExpand = () => {
-    setIsExpanded(!isExpanded);
-  };
-
   const renderChart = () => {
     const { chart } = section.full;
     const maxValue = Math.max(...chart.series[0]?.data || [1]);
@@ -49,12 +42,10 @@ const ChatReportSection: React.FC<ReportSectionProps> = ({ section, index }) => 
         </div>
         
         <div className="space-y-4">
-          {chart.series.map((series, idx) => (
+          {chart.series.map((series) => (
             <div key={series.name} className="space-y-3">
               <div className="flex items-center gap-3">
-                <div 
-                  className="w-4 h-4 rounded-full flex-shrink-0 shadow-sm bg-gray-500 dark:bg-gray-400" 
-                />
+                <div className="w-4 h-4 rounded-full flex-shrink-0 shadow-sm bg-gray-500 dark:bg-gray-400" />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[80px]">
                   {series.name}
                 </span>
@@ -136,93 +127,76 @@ const ChatReportSection: React.FC<ReportSectionProps> = ({ section, index }) => 
                 </p>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleExpand}
-              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex-shrink-0 hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              {isExpanded ? (
-                <ChevronUp className="w-5 h-5" />
-              ) : (
-                <ChevronDown className="w-5 h-5" />
-              )}
-            </Button>
           </div>
         </CardHeader>
 
-        <AnimatePresence>
-          {isExpanded && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="overflow-hidden"
-            >
-              <CardContent className="pt-0 space-y-4">
-                {/* Snapshot Section */}
-                <div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-8 h-8 rounded-full bg-white/20 dark:bg-gray-700/50 flex items-center justify-center">
-                      <TrendingUp className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                    </div>
-                    <h4 className="text-base font-semibold text-gray-800 dark:text-gray-200">
-                      Key Insights
-                    </h4>
-                  </div>
-                  <div className="space-y-3">
-                    {section.full.snapshot.map((point, idx) => (
-                      <div key={idx} className="flex items-start gap-3 p-4 bg-white/10 dark:bg-gray-800/20 backdrop-blur-sm rounded-lg border border-white/20 dark:border-gray-700/50 shadow-sm">
-                        <div className="w-3 h-3 bg-gray-500 dark:bg-gray-400 rounded-full mt-1 flex-shrink-0 shadow-sm" />
-                        <p className="text-sm text-gray-700 dark:text-gray-300 break-words leading-relaxed">
-                          {point}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="overflow-hidden"
+        >
+          <CardContent className="pt-0 space-y-4">
+            {/* Snapshot Section */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-full bg-white/20 dark:bg-gray-700/50 flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                 </div>
+                <h4 className="text-base font-semibold text-gray-800 dark:text-gray-200">
+                  Key Insights
+                </h4>
+              </div>
+              <div className="space-y-3">
+                {section.full.snapshot.map((point, idx) => (
+                  <div key={idx} className="flex items-start gap-3 p-4 bg-white/10 dark:bg-gray-800/20 backdrop-blur-sm rounded-lg border border-white/20 dark:border-gray-700/50 shadow-sm">
+                    <div className="w-3 h-3 bg-gray-500 dark:bg-gray-400 rounded-full mt-1 flex-shrink-0 shadow-sm" />
+                    <p className="text-sm text-gray-700 dark:text-gray-300 break-words leading-relaxed">
+                      {point}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-                {/* Chart Section */}
-                <div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-8 h-8 rounded-full bg-white/20 dark:bg-gray-700/50 flex items-center justify-center">
-                      <BarChart3 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                    </div>
-                    <h4 className="text-base font-semibold text-gray-800 dark:text-gray-200">
-                      Data Visualization
-                    </h4>
-                  </div>
-                  <div className="overflow-x-auto">
-                    {renderChart()}
-                  </div>
+            {/* Chart Section */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-full bg-white/20 dark:bg-gray-700/50 flex items-center justify-center">
+                  <BarChart3 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                 </div>
+                <h4 className="text-base font-semibold text-gray-800 dark:text-gray-200">
+                  Data Visualization
+                </h4>
+              </div>
+              <div className="overflow-x-auto">
+                {renderChart()}
+              </div>
+            </div>
 
-                {/* Recommendations Section */}
-                <div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-8 h-8 rounded-full bg-white/20 dark:bg-gray-700/50 flex items-center justify-center">
-                      <Lightbulb className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                    </div>
-                    <h4 className="text-base font-semibold text-gray-800 dark:text-gray-200">
-                      Recommendations
-                    </h4>
-                  </div>
-                  <div className="space-y-3">
-                    {section.full.recommendations.map((recommendation, idx) => (
-                      <div key={idx} className="flex items-start gap-3 p-4 bg-white/10 dark:bg-gray-800/20 backdrop-blur-sm rounded-lg border border-white/20 dark:border-gray-700/50 shadow-sm">
-                        <div className="w-3 h-3 bg-gray-500 dark:bg-gray-400 rounded-full mt-1 flex-shrink-0 shadow-sm" />
-                        <p className="text-sm text-gray-700 dark:text-gray-300 break-words leading-relaxed">
-                          {recommendation}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+            {/* Recommendations Section */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-full bg-white/20 dark:bg-gray-700/50 flex items-center justify-center">
+                  <Lightbulb className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                 </div>
-              </CardContent>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                <h4 className="text-base font-semibold text-gray-800 dark:text-gray-200">
+                  Recommendations
+                </h4>
+              </div>
+              <div className="space-y-3">
+                {section.full.recommendations.map((recommendation, idx) => (
+                  <div key={idx} className="flex items-start gap-3 p-4 bg-white/10 dark:bg-gray-800/20 backdrop-blur-sm rounded-lg border border-white/20 dark:border-gray-700/50 shadow-sm">
+                    <div className="w-3 h-3 bg-gray-500 dark:bg-gray-400 rounded-full mt-1 flex-shrink-0 shadow-sm" />
+                    <p className="text-sm text-gray-700 dark:text-gray-300 break-words leading-relaxed">
+                      {recommendation}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </motion.div>
       </Card>
     </motion.div>
   );
