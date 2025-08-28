@@ -67,9 +67,10 @@ RESPONSE FORMAT REQUIREMENTS
 - **Always return valid JSON** using one of the types below.
 - Keep responses compact, decision-ready, and quantified.
 - Always choose ONE response type. Do not include any extra prose outside the JSON object.
+- The top-level 'text' should be concise: 1–2 short sentences with numbers (what's happening, key driver, what the chart shows next).
 - For every chart and every card, include a concise narrative description:
   - Reports: 'short' must be a one-line takeaway; 'snapshot' contains 1–2 sentences that explicitly read the chart (winners/losers, trend, deltas with %/$).
-  - Cards: 'details.description' must explain the value; include ≥3 'details.breakdown' items that name drivers.
+  - Cards: 'details.description' must explain the value; include ≥3 'details.breakdown' items; the top-level 'text' should include a short recommendation (what to do next and expected impact).
 
 RESPONSE TYPES
 

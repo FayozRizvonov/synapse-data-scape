@@ -385,31 +385,48 @@ const ChatView: React.FC<ChatViewProps> = ({
             <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
               <Bot className="w-5 h-5 text-white" />
             </div>
-            <div className="flex-1 max-w-[80%] space-y-3">
-              {/* Compact header text and share */}
-              {message.content && (
-                <div className="flex items-start justify-between">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 pr-3">
-                    {addFriendlyEmoji(message.content)}
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleShare(`CLAIRE AI Analysis:\n${message.content}`)}
-                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                  >
-                    <Share2 className="w-4 h-4 mr-1" />
-                    Share
-                  </Button>
-                </div>
-              )}
-              {message.report.sections.map((section, index) => (
-                <ChatReportSection
-                  key={index}
-                  section={section}
-                  index={index}
-                />
-              ))}
+            <div className="w-full sm:max-w-[760px]">
+              <Card className="relative backdrop-blur-[2px] bg-white/10 dark:bg-white/5 border border-white/15 shadow-xl rounded-xl">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[12px] font-semibold text-gray-700 dark:text-gray-300">CLAIRE AI Assistant</span>
+                      <Badge variant="outline" className="h-5 px-1.5 text-[10px] border-blue-400 text-blue-700 dark:border-blue-500 dark:text-blue-300 bg-blue-50/40 dark:bg-blue-900/20">AI</Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-500 dark:text-gray-400">{new Date(Number(message.id)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleShare(`CLAIRE AI Analysis:\n${message.content}`)}
+                        className="h-7 px-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                      >
+                        <Share2 className="w-3.5 h-3.5 mr-1" />
+                        Share
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Intro text (short) */}
+                  {message.content && (
+                    <div className="text-[13px] leading-relaxed text-gray-800 dark:text-gray-200">
+                      {formatAIResponse(addFriendlyEmoji(message.content))}
+                    </div>
+                  )}
+
+                  {/* Sections */}
+                  <div className="space-y-3">
+                    {message.report.sections.map((section, index) => (
+                      <ChatReportSection
+                        key={index}
+                        section={section}
+                        index={index}
+                      />
+                    ))}
+                  </div>
+                </CardContent>
+                <div className="absolute -left-2 top-6 h-3 w-3 rotate-45 bg-white/10 dark:bg-white/5 border-l border-t border-white/15" />
+              </Card>
             </div>
           </div>
         )}
@@ -420,31 +437,46 @@ const ChatView: React.FC<ChatViewProps> = ({
             <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
               <Bot className="w-5 h-5 text-white" />
             </div>
-            <div className="flex-1 max-w-[80%] space-y-3">
-              {/* Header description before the card */}
-              {message.content && (
-                <div className="flex items-start justify-between">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 pr-3">
-                    {addFriendlyEmoji(message.content)}
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleShare(`CLAIRE AI Card:\n${message.content}`)}
-                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                  >
-                    <Share2 className="w-4 h-4 mr-1" />
-                    Share
-                  </Button>
-                </div>
-              )}
-              <ChatMetricCardEnhanced
-                metric={message.card}
-                onGoToCard={handleGoToCard}
-                onShowChart={handleShowChart}
-                isExpanded={expandedCards.has(message.card.id)}
-                onToggleExpand={() => handleToggleExpand(message.card.id)}
-              />
+            <div className="w-full sm:max-w-[760px]">
+              <Card className="relative backdrop-blur-[2px] bg-white/10 dark:bg-white/5 border border-white/15 shadow-xl rounded-xl">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[12px] font-semibold text-gray-700 dark:text-gray-300">CLAIRE AI Assistant</span>
+                      <Badge variant="outline" className="h-5 px-1.5 text-[10px] border-blue-400 text-blue-700 dark:border-blue-500 dark:text-blue-300 bg-blue-50/40 dark:bg-blue-900/20">AI</Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-500 dark:text-gray-400">{new Date(Number(message.id)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleShare(`CLAIRE AI Card:\n${message.content}`)}
+                        className="h-7 px-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                      >
+                        <Share2 className="w-3.5 h-3.5 mr-1" />
+                        Share
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Intro text */}
+                  {message.content && (
+                    <div className="text-[13px] leading-relaxed text-gray-800 dark:text-gray-200">
+                      {formatAIResponse(addFriendlyEmoji(message.content))}
+                    </div>
+                  )}
+
+                  {/* Card itself */}
+                  <ChatMetricCardEnhanced
+                    metric={message.card}
+                    onGoToCard={handleGoToCard}
+                    onShowChart={handleShowChart}
+                    isExpanded={expandedCards.has(message.card.id)}
+                    onToggleExpand={() => handleToggleExpand(message.card.id)}
+                  />
+                </CardContent>
+                <div className="absolute -left-2 top-6 h-3 w-3 rotate-45 bg-white/10 dark:bg-white/5 border-l border-t border-white/15" />
+              </Card>
             </div>
           </div>
         )}
