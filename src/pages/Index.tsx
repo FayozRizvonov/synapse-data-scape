@@ -36,6 +36,20 @@ const Index = () => {
     }
   }, [lastAIResponse]);
 
+  // Prevent background scrolling when chat is open
+  useEffect(() => {
+    if (isChatOpen) {
+      document.body.classList.add('chat-open');
+    } else {
+      document.body.classList.remove('chat-open');
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.classList.remove('chat-open');
+    };
+  }, [isChatOpen]);
+
   const handleSendMessage = async (message: string) => {
     await sendMessage(message);
   };

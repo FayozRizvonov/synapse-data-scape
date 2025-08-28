@@ -139,7 +139,23 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
             console.log('✅ Parsed text response:', cleanText);
           } else if (parsed.type === 'card' && parsed.card) {
             responseType = 'card';
-            card = parsed.card;
+            // Prefer AI-provided card fields but merge with KB defaults for styling and metadata
+            try {
+              const candidateId: string | undefined = parsed.card.id || parsed.card.metricId;
+              const kbMetric = candidateId ? metricsKnowledgeBase.find(m => m.id === candidateId) : undefined;
+              if (kbMetric) {
+                card = {
+                  ...kbMetric,
+                  ...parsed.card,
+                  // Prefer AI chartData if provided; fall back to KB
+                  chartData: parsed.card.chartData || kbMetric.chartData
+                } as MetricCard;
+              } else {
+                card = parsed.card as MetricCard;
+              }
+            } catch (_) {
+              card = parsed.card as MetricCard;
+            }
             cleanText = parsed.text || 'Here is the detailed information:';
           } else if (parsed.type === 'report' && parsed.report && parsed.report.sections) {
             responseType = 'report';

@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { BarChart3, TrendingUp, Lightbulb, Target } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import ChartRenderer, { inferChartType } from '@/components/ChartRenderer';
 
 interface ReportSectionProps {
   section: {
@@ -25,11 +26,58 @@ interface ReportSectionProps {
 }
 
 const ChatReportSection: React.FC<ReportSectionProps> = ({ section, index }) => {
+  const formatNumericBold = (text: string) => {
+    const parts = text.split(/(\$?\d+(?:\.\d+)?\s?(?:M|B|K|%|x)?)/g);
+    return (
+      <>
+        {parts.map((p, i) => {
+          const isNumber = /\$?\d+(?:\.\d+)?\s?(?:M|B|K|%|x)?/.test(p);
+          return isNumber ? <strong key={i} className="font-semibold text-gray-900 dark:text-white">{p}</strong> : <span key={i}>{p}</span>;
+        })}
+      </>
+    );
+  };
   const renderChart = () => {
     const { chart } = section.full;
-    const maxValue = Math.max(...chart.series[0]?.data || [1]);
-    const minValue = Math.min(...chart.series[0]?.data || [0]);
-    
+    const maxLen = Math.max(...chart.series.map(s => s.data.length));
+    const seriesKeys = chart.series.map((s, idx) => ({ name: s.name, key: `s${idx}` }));
+
+    let data: Array<Record<string, number | string>> = [];
+    if (chart.type === 'pie' && chart.series.length === 1) {
+      // For pie: convert single series into name/value pairs
+      // Prefer explicit categories if provided by the model
+      const categories: string[] | undefined =
+        // @ts-expect-error - optional fields may exist in AI payload
+        chart.x?.categories || chart.categories;
+      // Fallback: infer by semantics from title
+      const inferredCats = /channel/i.test(section.title)
+        ? ['Phone Calls', 'Digital Video', 'Email', 'Field Reps', 'Events', 'Social']
+        : undefined;
+      data = chart.series[0].data.map((value, i) => ({
+        name: (categories && categories[i]) || (inferredCats && inferredCats[i]) || `Item ${i + 1}`,
+        value,
+      }));
+    } else {
+      // For bar/line: combine into comparable dataset
+      data = Array.from({ length: maxLen }).map((_, i) => {
+        const row: Record<string, number | string> = { name: `Q${i + 1}` };
+        chart.series.forEach((s, idx) => {
+          row[`s${idx}`] = s.data[i] ?? 0;
+        });
+        return row;
+      });
+    }
+
+    const height = Math.min(Math.max(chart.style?.height ?? 220, 180), 260);
+
+    const inferredType = inferChartType({
+      seriesCount: chart.series.length,
+      pointsPerSeries: maxLen,
+      hasCategories: true,
+      isShareOrComposition: chart.type === 'pie' || /share|mix|composition|distribution/i.test(section.title),
+      isCorrelation: /vs|correlation|scatter/i.test(section.title),
+    });
+
     return (
       <div className="mt-4 p-4 bg-white/10 dark:bg-gray-800/20 backdrop-blur-sm rounded-lg border border-white/20 dark:border-gray-700/50">
         <div className="flex items-center justify-between mb-4">
@@ -37,69 +85,21 @@ const ChatReportSection: React.FC<ReportSectionProps> = ({ section, index }) => 
             {chart.x.label} vs {chart.y.label}
           </h4>
           <Badge variant="outline" className="text-xs flex-shrink-0 bg-white/20 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 border-white/30 dark:border-gray-600/50">
-            {chart.type.toUpperCase()} CHART
+            {(inferredType || chart.type).toUpperCase()} CHART
           </Badge>
         </div>
-        
-        <div className="space-y-4">
-          {chart.series.map((series) => (
-            <div key={series.name} className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-4 h-4 rounded-full flex-shrink-0 shadow-sm bg-gray-500 dark:bg-gray-400" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[80px]">
-                  {series.name}
-                </span>
-              </div>
-              
-              <div className="relative">
-                <div className="flex items-end gap-2 h-32">
-                  {series.data.map((value, dataIdx) => {
-                    const percentage = maxValue > 0 ? (value / maxValue) * 100 : 0;
-                    const height = Math.max(8, percentage);
-                    
-                    return (
-                      <div key={dataIdx} className="flex-1 flex flex-col items-center h-full">
-                        <div className="relative group h-full flex items-end w-full">
-                          <div
-                            className="w-full rounded-t-sm transition-all duration-300 hover:opacity-80 cursor-pointer"
-                            style={{
-                              height: `${height}%`,
-                              backgroundColor: '#6B7280',
-                              minHeight: '8px'
-                            }}
-                            title={`${value}`}
-                          />
-                          <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                            {value}
-                          </div>
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-                          Q{dataIdx + 1}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                
-                {/* Y-axis labels */}
-                <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-gray-500 dark:text-gray-400">
-                  <span>{Math.round(maxValue)}</span>
-                  <span>{Math.round(maxValue * 0.75)}</span>
-                  <span>{Math.round(maxValue * 0.5)}</span>
-                  <span>{Math.round(maxValue * 0.25)}</span>
-                  <span>{Math.round(minValue)}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-        
-        <div className="mt-4 pt-3 border-t border-white/20 dark:border-gray-700/50">
-          <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
-            <span>Data range: {minValue.toFixed(1)} - {maxValue.toFixed(1)}</span>
-            <span>Points: {chart.series[0]?.data.length || 0}</span>
-          </div>
-        </div>
+        <ChartRenderer
+          type={chart.type === 'pie' && chart.series.length === 1 ? 'pie' : inferredType}
+          data={data}
+          xKey="name"
+          series={
+            chart.type === 'pie' && chart.series.length === 1
+              ? [{ name: chart.series[0].name || 'Value', dataKey: 'value' }]
+              : seriesKeys.map((s, idx) => ({ name: s.name, dataKey: s.key }))
+          }
+          height={height}
+          compact
+        />
       </div>
     );
   };
@@ -152,7 +152,7 @@ const ChatReportSection: React.FC<ReportSectionProps> = ({ section, index }) => 
                   <div key={idx} className="flex items-start gap-3 p-4 bg-white/10 dark:bg-gray-800/20 backdrop-blur-sm rounded-lg border border-white/20 dark:border-gray-700/50 shadow-sm">
                     <div className="w-3 h-3 bg-gray-500 dark:bg-gray-400 rounded-full mt-1 flex-shrink-0 shadow-sm" />
                     <p className="text-sm text-gray-700 dark:text-gray-300 break-words leading-relaxed">
-                      {point}
+                      {formatNumericBold(point)}
                     </p>
                   </div>
                 ))}
@@ -189,7 +189,7 @@ const ChatReportSection: React.FC<ReportSectionProps> = ({ section, index }) => 
                   <div key={idx} className="flex items-start gap-3 p-4 bg-white/10 dark:bg-gray-800/20 backdrop-blur-sm rounded-lg border border-white/20 dark:border-gray-700/50 shadow-sm">
                     <div className="w-3 h-3 bg-gray-500 dark:bg-gray-400 rounded-full mt-1 flex-shrink-0 shadow-sm" />
                     <p className="text-sm text-gray-700 dark:text-gray-300 break-words leading-relaxed">
-                      {recommendation}
+                      {formatNumericBold(recommendation)}
                     </p>
                   </div>
                 ))}

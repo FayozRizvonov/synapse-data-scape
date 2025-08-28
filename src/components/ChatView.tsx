@@ -61,6 +61,37 @@ const ChatView: React.FC<ChatViewProps> = ({
     }
   }, [messages]);
 
+  // Improved auto-scroll logic
+  useEffect(() => {
+    const scrollToBottom = () => {
+      if (scrollRef.current) {
+        const scrollElement = scrollRef.current;
+        // Use setTimeout to ensure DOM is updated
+        setTimeout(() => {
+          scrollElement.scrollTop = scrollElement.scrollHeight;
+        }, 100);
+      }
+    };
+
+    // Scroll when messages change or loading state changes
+    scrollToBottom();
+  }, [messages, isLoading]);
+
+  // Scroll to bottom when new AI response arrives
+  useEffect(() => {
+    if (lastAIResponse) {
+      const scrollToBottom = () => {
+        if (scrollRef.current) {
+          const scrollElement = scrollRef.current;
+          setTimeout(() => {
+            scrollElement.scrollTop = scrollElement.scrollHeight;
+          }, 200);
+        }
+      };
+      scrollToBottom();
+    }
+  }, [lastAIResponse]);
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -423,11 +454,10 @@ const ChatView: React.FC<ChatViewProps> = ({
           </Button>
         )}
       </div>
-      {/* Chat container with scroll */}
-      <div className={cn("flex-1 flex flex-col", className)} style={{ height: '85vh', maxHeight: '85vh', minHeight: '450px' }}>
-        <div className="flex-1 overflow-y-auto">
-          <ScrollArea className="flex-1 p-4" ref={scrollRef} style={{ height: '100%' }}>
-            <div className="space-y-4">
+      {/* Chat container with scroll - adjusted height to account for ChatInput */}
+      <div className={cn("flex-1 flex flex-col", className)} style={{ height: 'calc(100vh - 80px - 100px)', maxHeight: 'calc(100vh - 80px - 100px)' }}>
+        <div className="flex-1 overflow-y-auto p-4" ref={scrollRef}>
+          <div className="space-y-4">
               {messages.length === 0 ? (
                 <div className="text-center py-8">
                   <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
@@ -515,7 +545,6 @@ const ChatView: React.FC<ChatViewProps> = ({
                 </div>
               )}
             </div>
-          </ScrollArea>
         </div>
       </div>
     </div>

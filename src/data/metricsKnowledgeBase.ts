@@ -29,7 +29,8 @@ export interface MetricCard {
   };
   chartData?: {
     type: 'bar' | 'line' | 'pie';
-    data: Array<{ name: string; revenue: number; [key: string]: any }>;
+    valueKey?: string; // defaults to 'revenue'
+    data: Array<{ name: string; [key: string]: number }>; 
   };
 }
 
@@ -57,12 +58,13 @@ export const metricsKnowledgeBase: MetricCard[] = [
       ]
     },
     chartData: {
-      type: 'bar',
+      type: 'line',
+      valueKey: 'value',
       data: [
-        { name: 'Q1', revenue: 62 },
-        { name: 'Q2', revenue: 87 },
-        { name: 'Q3', revenue: 75 },
-        { name: 'Q4', revenue: 95 }
+        { name: 'Q1', value: 62 },
+        { name: 'Q2', value: 87 },
+        { name: 'Q3', value: 75 },
+        { name: 'Q4', value: 95 }
       ]
     }
   },
@@ -300,12 +302,13 @@ export const metricsKnowledgeBase: MetricCard[] = [
       ]
     },
     chartData: {
-      type: 'bar',
+      type: 'pie',
+      valueKey: 'amount',
       data: [
-        { name: 'Digital', revenue: 15 },
-        { name: 'Field', revenue: 12 },
-        { name: 'Events', revenue: 7 },
-        { name: 'Media', revenue: 3 }
+        { name: 'Digital', amount: 1500 },
+        { name: 'Field', amount: 1200 },
+        { name: 'Events', amount: 700 },
+        { name: 'Media', amount: 300 }
       ]
     }
   },
@@ -331,12 +334,13 @@ export const metricsKnowledgeBase: MetricCard[] = [
       ]
     },
     chartData: {
-      type: 'bar',
+      type: 'line',
+      valueKey: 'value',
       data: [
-        { name: 'Q1', revenue: 8 },
-        { name: 'Q2', revenue: 12 },
-        { name: 'Q3', revenue: 15 },
-        { name: 'Q4', revenue: 9 }
+        { name: 'Q1', value: 8 },
+        { name: 'Q2', value: 12 },
+        { name: 'Q3', value: 15 },
+        { name: 'Q4', value: 9 }
       ]
     }
   },
@@ -362,12 +366,13 @@ export const metricsKnowledgeBase: MetricCard[] = [
       ]
     },
     chartData: {
-      type: 'bar',
+      type: 'line',
+      valueKey: 'value',
       data: [
-        { name: 'Jan', revenue: 6 },
-        { name: 'Feb', revenue: 7 },
-        { name: 'Mar', revenue: 8 },
-        { name: 'Apr', revenue: 8 }
+        { name: 'Jan', value: 6 },
+        { name: 'Feb', value: 7 },
+        { name: 'Mar', value: 8 },
+        { name: 'Apr', value: 8 }
       ]
     }
   },

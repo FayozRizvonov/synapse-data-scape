@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import AnimatedNumber from './AnimatedNumber';
 import { MetricCard } from '@/data/metricsKnowledgeBase';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import ChartRenderer, { inferChartType } from '@/components/ChartRenderer';
 import { cn } from '@/lib/utils';
 
 interface ChatMetricCardEnhancedProps {
@@ -213,26 +213,19 @@ const ChatMetricCardEnhanced: React.FC<ChatMetricCardEnhancedProps> = ({
           {isExpanded && metric.chartData && (
             <div className="mt-4 animate-fade-in-up">
               <div className="text-sm font-medium mb-2 text-gray-900 dark:text-white">Data Chart</div>
-              <div className="h-32">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={metric.chartData.data}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
-                    <XAxis dataKey="name" tick={{ fill: 'var(--chart-axis)', fontSize: 10 }} />
-                    <YAxis tick={{ fill: 'var(--chart-axis)', fontSize: 10 }} />
-                    <Tooltip
-                      contentStyle={{
-                        background: 'var(--chart-tooltip-bg)',
-                        borderColor: 'var(--chart-primary)',
-                        color: 'var(--chart-tooltip-text)',
-                        fontSize: 12,
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)'
-                      }}
-                    />
-                    <Bar dataKey="revenue" fill="var(--chart-primary)" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              <ChartRenderer
+                type={inferChartType({
+                  seriesCount: 1,
+                  pointsPerSeries: metric.chartData.data.length,
+                  hasCategories: true,
+                  isShareOrComposition: /share|mix|composition|distribution/i.test(metric.title),
+                })}
+                data={metric.chartData.data}
+                xKey={metric.chartData.categoryKey || 'name'}
+                series={[{ name: metric.title, dataKey: metric.chartData.valueKey || 'value' }]}
+                height={160}
+                compact
+              />
             </div>
           )}
 

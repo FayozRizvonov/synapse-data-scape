@@ -8,6 +8,11 @@
     font-family: 'Inter', system-ui, sans-serif;
   }
   
+  /* Prevent body scrolling when chat modal is open */
+  body.chat-open {
+    overflow: hidden;
+  }
+  
   :root {
     /* Light Mode - Bright and Energetic Pharmaceutical Analytics */
     --background: 210 100% 97%;

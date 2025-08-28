@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import AnimatedNumber from './AnimatedNumber';
 import { MetricCard } from '@/data/metricsKnowledgeBase';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line, PieChart, Pie } from 'recharts';
 
 interface ChatMetricCardProps {
   metric: MetricCard;
@@ -183,22 +183,38 @@ const ChatMetricCard: React.FC<ChatMetricCardProps> = ({
             <div className="text-sm font-medium mb-2 text-white">Data Chart</div>
             <div className="h-32">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={metric.chartData.data}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
-                  <XAxis dataKey="name" tick={{ fill: 'var(--chart-axis)', fontSize: 10 }} />
-                  <YAxis tick={{ fill: 'var(--chart-axis)', fontSize: 10 }} />
-                  <Tooltip
-                    contentStyle={{
-                      background: 'var(--chart-tooltip-bg)',
-                      borderColor: 'var(--chart-primary)',
-                      color: 'var(--chart-tooltip-text)',
-                      fontSize: 12,
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)'
-                    }}
-                  />
-                  <Bar dataKey="revenue" fill="var(--chart-primary)" />
-                </BarChart>
+                {(() => {
+                  const valueKey = metric.chartData?.valueKey ?? 'revenue';
+                  switch (metric.chartData.type) {
+                    case 'line':
+                      return (
+                        <LineChart data={metric.chartData.data}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
+                          <XAxis dataKey="name" tick={{ fill: 'var(--chart-axis)', fontSize: 10 }} />
+                          <YAxis tick={{ fill: 'var(--chart-axis)', fontSize: 10 }} />
+                          <Tooltip />
+                          <Line type="monotone" dataKey={valueKey} stroke="var(--chart-primary)" strokeWidth={2} dot={false} />
+                        </LineChart>
+                      );
+                    case 'pie':
+                      return (
+                        <PieChart>
+                          <Tooltip />
+                          <Pie data={metric.chartData.data} dataKey={valueKey} nameKey="name" outerRadius="80%" fill="var(--chart-primary)" />
+                        </PieChart>
+                      );
+                    default:
+                      return (
+                        <BarChart data={metric.chartData.data}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
+                          <XAxis dataKey="name" tick={{ fill: 'var(--chart-axis)', fontSize: 10 }} />
+                          <YAxis tick={{ fill: 'var(--chart-axis)', fontSize: 10 }} />
+                          <Tooltip />
+                          <Bar dataKey={valueKey} fill="var(--chart-primary)" />
+                        </BarChart>
+                      );
+                  }
+                })()}
               </ResponsiveContainer>
             </div>
           </div>
