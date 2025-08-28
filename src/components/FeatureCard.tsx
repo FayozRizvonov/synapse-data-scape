@@ -82,12 +82,12 @@ export function FeatureCard({ feature, className, onClick, id, ...props }: Featu
 					<p className="relative z-20 mt-2 text-xs font-light text-muted-foreground">{feature.description}</p>
 					{/* Three dots menu in the top right corner */}
 					<div className="absolute top-3 right-3 z-30">
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<button className="p-1 rounded-full hover:bg-muted/20 transition-colors">
-									<MoreVertical className="w-5 h-5 text-muted" />
-								</button>
-							</DropdownMenuTrigger>
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<button aria-label="Open menu" className="p-1 rounded-full transition-colors hover:bg-white/30 dark:hover:bg-white/10">
+										<MoreVertical className="w-5 h-5 text-gray-700 dark:text-white/80 opacity-80 hover:opacity-100" />
+									</button>
+								</DropdownMenuTrigger>
 							<DropdownMenuContent align="end" className="backdrop-blur-md border shadow-xl p-1 bg-white/90 dark:bg-black/30 dark:backdrop-blur-md dark:border-white/10 dark:shadow-none">
 								<DropdownMenuItem onClick={e => { e.stopPropagation(); alert('Share'); }}>
 									<Share2 className="w-4 h-4 mr-2" /> Share

@@ -82,8 +82,13 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log('Sending message to AI assistant:', message);
       
+      // Prepare a compact Pharma SM KB: only fields needed by the model
+      const compactKb = metricsKnowledgeBase.map(({ id, title, value, change, changeType, comparison, chartData, keywords, category }) => ({
+        id, title, value, change, changeType, comparison, chartData, keywords, category
+      }));
+      
       const { data, error: supabaseError } = await supabase.functions.invoke('ai-assistant', {
-        body: { message }
+        body: { message, kb: compactKb }
       });
 
       if (supabaseError) {
@@ -176,11 +181,9 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
               
               if (isValidStructure) {
                 report = parsed.report;
-                // Remove JSON from text to get clean response
-                cleanText = responseText.replace(jsonString, '').trim();
-                if (!cleanText) {
-                  cleanText = 'Analysis complete. Please review the detailed sections below.';
-                }
+                // Prefer the explicit summary text from the JSON; otherwise try to strip JSON from response
+                const stripped = responseText.replace(jsonString, '').trim();
+                cleanText = parsed.text || stripped || 'Analysis complete. Please review the detailed sections below.';
                 console.log('✅ Successfully parsed report with', parsed.report.sections.length, 'sections');
               } else {
                 console.warn('Invalid report structure received from AI');
@@ -280,8 +283,8 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
           const jsonBlockMatch = responseText.match(/\{[\s\S]*?\}/);
           if (jsonBlockMatch) {
             const jsonString = jsonBlockMatch[0]
-              .replace(/\n/g, ' ')   // remove line breaks for correct JSON
-              .replace(/'/g, '"');   // replace single quotes with double quotes
+              .replace(/\n/g, ' ')
+              .replace(/'/g, '"');
 
             try {
               const parsed = JSON.parse(jsonString);

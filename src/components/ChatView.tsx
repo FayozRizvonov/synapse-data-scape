@@ -98,6 +98,16 @@ const ChatView: React.FC<ChatViewProps> = ({
     }
   }, [messages]);
 
+  // Inject friendly emoji for plain AI text if none present
+  const addFriendlyEmoji = (text: string) => {
+    const hasEmoji = /[\u{1F300}-\u{1FAFF}]/u.test(text);
+    if (hasEmoji) return text;
+    // Keep it subtle and not overused
+    const starters = ['🙂', '🤖', '📊', '💡'];
+    const chosen = starters[Math.floor(Math.random() * starters.length)];
+    return `${chosen} ${text}`;
+  };
+
   const formatAIResponse = (content: string) => {
     // Check if content looks like JSON
     const trimmedContent = content.trim();
@@ -306,7 +316,7 @@ const ChatView: React.FC<ChatViewProps> = ({
                   </div>
                   
                   <div className="text-base leading-relaxed text-gray-800 dark:text-gray-200">
-                    {isAI ? formatAIResponse(message.content) : message.content}
+                    {isAI ? formatAIResponse(addFriendlyEmoji(message.content)) : message.content}
                   </div>
                   
                   {/* Share button for AI responses */}
@@ -380,7 +390,7 @@ const ChatView: React.FC<ChatViewProps> = ({
               {message.content && (
                 <div className="flex items-start justify-between">
                   <p className="text-sm text-gray-600 dark:text-gray-400 pr-3">
-                    {message.content}
+                    {addFriendlyEmoji(message.content)}
                   </p>
                   <Button
                     size="sm"
@@ -410,7 +420,24 @@ const ChatView: React.FC<ChatViewProps> = ({
             <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
               <Bot className="w-5 h-5 text-white" />
             </div>
-            <div className="flex-1 max-w-[80%]">
+            <div className="flex-1 max-w-[80%] space-y-3">
+              {/* Header description before the card */}
+              {message.content && (
+                <div className="flex items-start justify-between">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 pr-3">
+                    {addFriendlyEmoji(message.content)}
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleShare(`CLAIRE AI Card:\n${message.content}`)}
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  >
+                    <Share2 className="w-4 h-4 mr-1" />
+                    Share
+                  </Button>
+                </div>
+              )}
               <ChatMetricCardEnhanced
                 metric={message.card}
                 onGoToCard={handleGoToCard}

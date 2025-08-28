@@ -39,6 +39,8 @@ const ChatReportSection: React.FC<ReportSectionProps> = ({ section, index }) => 
   };
   const renderChart = () => {
     const { chart } = section.full;
+
+    // Build data matrix
     const maxLen = Math.max(...chart.series.map(s => s.data.length));
     const seriesKeys = chart.series.map((s, idx) => ({ name: s.name, key: `s${idx}` }));
 
@@ -48,7 +50,7 @@ const ChatReportSection: React.FC<ReportSectionProps> = ({ section, index }) => 
       // Prefer explicit categories if provided by the model
       const categories: string[] | undefined =
         // @ts-expect-error - optional fields may exist in AI payload
-        chart.x?.categories || chart.categories;
+        chart.x?.categories || (chart as any).categories;
       // Fallback: infer by semantics from title
       const inferredCats = /channel/i.test(section.title)
         ? ['Phone Calls', 'Digital Video', 'Email', 'Field Reps', 'Events', 'Social']
@@ -58,9 +60,13 @@ const ChatReportSection: React.FC<ReportSectionProps> = ({ section, index }) => 
         value,
       }));
     } else {
-      // For bar/line: combine into comparable dataset
+      // For bar/line: combine into comparable dataset using optional categories
+      // Prefer explicit categories if provided in AI payload
+      const categories: string[] | undefined =
+        // @ts-expect-error - optional fields may exist in AI payload
+        chart.x?.categories || (chart as any).categories;
       data = Array.from({ length: maxLen }).map((_, i) => {
-        const row: Record<string, number | string> = { name: `Q${i + 1}` };
+        const row: Record<string, number | string> = { name: categories?.[i] || `Q${i + 1}` };
         chart.series.forEach((s, idx) => {
           row[`s${idx}`] = s.data[i] ?? 0;
         });
@@ -78,6 +84,9 @@ const ChatReportSection: React.FC<ReportSectionProps> = ({ section, index }) => 
       isCorrelation: /vs|correlation|scatter/i.test(section.title),
     });
 
+    // Respect the explicit type from AI when provided; fall back to inference
+    const finalType = (chart.type as any) || inferredType;
+
     return (
       <div className="mt-4 p-4 bg-white/10 dark:bg-gray-800/20 backdrop-blur-sm rounded-lg border border-white/20 dark:border-gray-700/50">
         <div className="flex items-center justify-between mb-4">
@@ -85,11 +94,11 @@ const ChatReportSection: React.FC<ReportSectionProps> = ({ section, index }) => 
             {chart.x.label} vs {chart.y.label}
           </h4>
           <Badge variant="outline" className="text-xs flex-shrink-0 bg-white/20 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 border-white/30 dark:border-gray-600/50">
-            {(inferredType || chart.type).toUpperCase()} CHART
+            {String(finalType).toUpperCase()} CHART
           </Badge>
         </div>
         <ChartRenderer
-          type={chart.type === 'pie' && chart.series.length === 1 ? 'pie' : inferredType}
+          type={finalType}
           data={data}
           xKey="name"
           series={

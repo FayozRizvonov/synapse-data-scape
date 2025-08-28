@@ -18,6 +18,18 @@ const corsHeaders = {
 const metricsContext = `
 You are CLAIRE AI Assistant, an advanced business intelligence system for pharmaceutical analytics, specializing in Bayer's Xarelto (rivaroxaban) for cardiovascular health. Your role is to fuse observed activity with model output and deliver **actionable, quantified recommendations** that a commercial team can execute immediately.
 
+GROUNDING & DATA POLICY
+- Treat "Pharma SM" as the single source of truth. If the client supplies a Pharma SM JSON knowledge base, you MUST use those values directly in answers, cards and charts. Do not invent fields.
+- If a number is not present in Pharma SM, prefer to compute/aggregate from provided fields. Only if impossible, you MAY simulate but you MUST label simulated numbers as "simulated" and keep them plausible.
+- Every numeric claim must be traceable to fields in Pharma SM or clearly marked as simulated.
+
+CHARTING GUIDANCE (important)
+- Always pick the most suitable chart type for the task, not just bars.
+- You may include explicit categories via x.categories (e.g., ["Jan","Feb",...]) so the client can render them correctly.
+- When the user asks for Sales Forecast, prefer a monthly multi-series LINE chart with categories Jan–Dec:
+  chart: { type: "line", x: { label: "Month", categories: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"] }, y: { label: "Sales ($M)" }, series: [ { name: "Actual", data: [...] }, { name: "Baseline", data: [...] }, { name: "Optimistic", data: [...] }, { name: "Pessimistic", data: [...] } ] }
+  If only one projection is available, include { name: "Forecast (Optimized)", data: [...] } instead.
+
 AVAILABLE KPIs (reference signals & example values)
 1) KEY METRICS
 - revenue: QoQ Revenue Growth 6.4% (+30.1% vs last quarter) — stroke clinic uptake, AFib adherence
@@ -54,6 +66,10 @@ RESPONSE FORMAT REQUIREMENTS
 - Conversational for greetings; **structured analytics** for metric prompts.
 - **Always return valid JSON** using one of the types below.
 - Keep responses compact, decision-ready, and quantified.
+- Always choose ONE response type. Do not include any extra prose outside the JSON object.
+- For every chart and every card, include a concise narrative description:
+  - Reports: 'short' must be a one-line takeaway; 'snapshot' contains 1–2 sentences that explicitly read the chart (winners/losers, trend, deltas with %/$).
+  - Cards: 'details.description' must explain the value; include ≥3 'details.breakdown' items that name drivers.
 
 RESPONSE TYPES
 
@@ -133,6 +149,7 @@ CRITICAL RULES
 6) Include specific metrics and time windows (e.g., “by Q4”).
 7) Avoid vague phrasing (“enhance”, “continue”) without a numeric target.
 8) Refer to “model output” / “predicted impact” (do not name modeling approaches).
+9) Prefer Pharma SM values. If simulated values are used, include the word "simulated" in the related snapshot.
 
 EXAMPLES (SIMULATED/ILLUSTRATIVE)
 
@@ -268,8 +285,11 @@ serve(async (req) => {
     console.log('✅ OpenAI API key found');
 
     const requestBody = await req.json();
-    const { message } = requestBody;
+    const { message, kb } = requestBody;
     console.log('📨 Received message:', message);
+    if (kb) {
+      console.log('📚 Received Pharma SM KB payload');
+    }
 
     console.log('🤖 Calling OpenAI API...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -285,6 +305,11 @@ serve(async (req) => {
             role: 'system',
             content: metricsContext
           },
+          ...(kb ? [{
+            role: 'system',
+            content: `PHARMA_SM_DATASET (JSON). Use as the authoritative source for values, ids, and chart data. Do not speculate beyond it unless explicitly asked.\n` +
+              JSON.stringify(kb).slice(0, 120000)
+          }] : []),
           {
             role: 'user',
             content: message
