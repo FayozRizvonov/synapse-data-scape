@@ -24,9 +24,11 @@ import {
   ExternalLink,
   X,
   Mic,
-  Share2
+  Share2,
+  Download
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { downloadClosestCard } from '@/lib/exportImage';
 
 interface ChatViewProps {
   className?: string;
@@ -302,7 +304,7 @@ const ChatView: React.FC<ChatViewProps> = ({
                 isAI 
                   ? "hover:bg-white/15 hover:border-white/30" 
                   : "hover:bg-white/15 hover:border-white/30"
-              )}>
+              , 'ai-message-card')}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -318,6 +320,22 @@ const ChatView: React.FC<ChatViewProps> = ({
                   <div className="text-base leading-relaxed text-gray-800 dark:text-gray-200">
                     {isAI ? formatAIResponse(addFriendlyEmoji(message.content)) : message.content}
                   </div>
+
+                  {isAI && (
+                    <div className="mt-3 flex justify-end">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          downloadClosestCard(e.currentTarget as HTMLElement, 'CLAIRE_AI_Response');
+                        }}
+                        className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                      >
+                        <Download className="w-4 h-4 mr-1" />
+                        Download PNG
+                      </Button>
+                    </div>
+                  )}
                   
                   {/* Share button for AI responses */}
                   {isAI && (message.report || message.card) && (
@@ -386,7 +404,7 @@ const ChatView: React.FC<ChatViewProps> = ({
               <Bot className="w-5 h-5 text-white" />
             </div>
             <div className="w-full sm:max-w-[760px]">
-              <Card className="relative backdrop-blur-[2px] bg-white/10 dark:bg-white/5 border border-white/15 shadow-xl rounded-xl">
+              <Card className="relative backdrop-blur-[2px] bg-white/10 dark:bg-white/5 border border-white/15 shadow-xl rounded-xl ai-structured-card">
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -395,6 +413,15 @@ const ChatView: React.FC<ChatViewProps> = ({
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] text-gray-500 dark:text-gray-400">{new Date(Number(message.id)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => downloadClosestCard(e.currentTarget as HTMLElement, 'CLAIRE_AI_Analysis')}
+                        className="h-7 px-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                      >
+                        <Download className="w-3.5 h-3.5 mr-1" />
+                        PNG
+                      </Button>
                       <Button
                         size="sm"
                         variant="ghost"
@@ -438,7 +465,7 @@ const ChatView: React.FC<ChatViewProps> = ({
               <Bot className="w-5 h-5 text-white" />
             </div>
             <div className="w-full sm:max-w-[760px]">
-              <Card className="relative backdrop-blur-[2px] bg-white/10 dark:bg-white/5 border border-white/15 shadow-xl rounded-xl">
+              <Card className="relative backdrop-blur-[2px] bg-white/10 dark:bg-white/5 border border-white/15 shadow-xl rounded-xl ai-structured-card">
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -447,6 +474,15 @@ const ChatView: React.FC<ChatViewProps> = ({
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] text-gray-500 dark:text-gray-400">{new Date(Number(message.id)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => downloadClosestCard(e.currentTarget as HTMLElement, 'CLAIRE_AI_Card')}
+                        className="h-7 px-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                      >
+                        <Download className="w-3.5 h-3.5 mr-1" />
+                        PNG
+                      </Button>
                       <Button
                         size="sm"
                         variant="ghost"

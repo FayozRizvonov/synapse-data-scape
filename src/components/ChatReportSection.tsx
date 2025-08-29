@@ -106,6 +106,7 @@ const ChatReportSection: React.FC<ReportSectionProps> = ({ section, index }) => 
               ? [{ name: chart.series[0].name || 'Value', dataKey: 'value' }]
               : seriesKeys.map((s, idx) => ({ name: s.name, dataKey: s.key }))
           }
+          colors={(chart.style && Array.isArray(chart.style.colors) ? chart.style.colors : undefined) as string[] | undefined}
           height={height}
           compact
         />

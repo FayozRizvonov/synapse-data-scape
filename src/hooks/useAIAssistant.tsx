@@ -82,13 +82,19 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log('Sending message to AI assistant:', message);
       
-      // Prepare a compact Pharma SM KB: only fields needed by the model
-      const compactKb = metricsKnowledgeBase.map(({ id, title, value, change, changeType, comparison, chartData, keywords, category }) => ({
-        id, title, value, change, changeType, comparison, chartData, keywords, category
+      // Prepare a richer Pharma SM KB payload: include description and details for grounding
+      const compactKb = metricsKnowledgeBase.map(({ id, title, value, change, changeType, comparison, description, details, chartData, keywords, category }) => ({
+        id, title, value, change, changeType, comparison, description, details, chartData, keywords, category
+      }));
+
+      // Include recent chat history to reduce repetition and improve relevance
+      const historyPayload = messages.slice(-8).map(m => ({
+        role: m.sender === 'ai' ? 'assistant' : 'user',
+        content: m.content
       }));
       
       const { data, error: supabaseError } = await supabase.functions.invoke('ai-assistant', {
-        body: { message, kb: compactKb }
+        body: { message, kb: compactKb, history: historyPayload }
       });
 
       if (supabaseError) {
@@ -387,7 +393,7 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [messages]);
 
   const clearChat = useCallback(() => {
     setMessages([]);

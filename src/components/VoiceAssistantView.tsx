@@ -1,12 +1,13 @@
 import React, { useEffect, useCallback, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { X, Mic, Volume2, VolumeX, Target, BarChart3 } from 'lucide-react';
+import { X, Mic, Volume2, VolumeX, Target, BarChart3, Download } from 'lucide-react';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { AIVoiceInput } from './AIVoiceInput';
 import ChatMetricCardEnhanced from './ChatMetricCardEnhanced';
 import { getMetricById } from '@/data/metricsKnowledgeBase';
 import { cn } from '@/lib/utils';
+import { downloadClosestCard } from '@/lib/exportImage';
 
 interface VoiceAssistantViewProps {
   className?: string;
@@ -218,9 +219,20 @@ const VoiceAssistantView: React.FC<VoiceAssistantViewProps> = ({
 
               {/* AI Response */}
               {response && (
-                <div className="p-4 backdrop-blur-[2px] bg-cyan-50/10 dark:bg-cyan-500/10 border border-cyan-300/30 dark:border-cyan-400/30 rounded-lg hover:bg-cyan-50/20 hover:border-cyan-300/50 transition-all duration-300 shadow-md">
-                  <div className="text-sm font-medium text-cyan-700 dark:text-cyan-300 mb-2">
-                    Assistant response:
+                <div className="p-4 backdrop-blur-[2px] bg-cyan-50/10 dark:bg-cyan-500/10 border border-cyan-300/30 dark:border-cyan-400/30 rounded-lg hover:bg-cyan-50/20 hover:border-cyan-300/50 transition-all duration-300 shadow-md voice-response-card">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm font-medium text-cyan-700 dark:text-cyan-300">
+                      Assistant response:
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => downloadClosestCard(e.currentTarget as HTMLElement, 'CLAIRE_Voice_Response')}
+                      className="h-7 px-2 text-cyan-700 hover:text-cyan-900 dark:text-cyan-300 dark:hover:text-cyan-100"
+                    >
+                      <Download className="w-3.5 h-3.5 mr-1" />
+                      PNG
+                    </Button>
                   </div>
                   <p className="text-cyan-800 dark:text-cyan-100">
                     {response}

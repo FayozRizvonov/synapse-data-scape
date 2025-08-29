@@ -37,11 +37,13 @@ export interface ChartRendererProps {
 }
 
 const DEFAULT_COLORS = [
-  'hsl(var(--primary))',
-  '#22d3ee',
-  '#a855f7',
-  '#f59e0b',
-  '#ef4444',
+  '#3B82F6', // blue
+  '#10B981', // green
+  '#F59E0B', // amber
+  '#8B5CF6', // violet
+  '#EF4444', // red
+  '#14B8A6', // teal
+  '#F472B6', // pink
 ];
 
 export const ChartRenderer: React.FC<ChartRendererProps> = ({
