@@ -241,7 +241,7 @@ EXAMPLES (SIMULATED/ILLUSTRATIVE)
 IMPORTANT
 - Be friendly in tone, concise, and executive-ready.
 - Prefer **one focused section** unless the user asks for multiple views.
-- Always include a forecast series that visualizes the upside if actions are taken.
+- If there is an upside from implementing recommendation, include a forecast series visualization.
 - Recommendations must specify **lever + %/$ + target + expected lift**.
 `;
 serve(async (req) => {
