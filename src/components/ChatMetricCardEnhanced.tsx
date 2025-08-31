@@ -101,7 +101,7 @@ const ChatMetricCardEnhanced: React.FC<ChatMetricCardEnhancedProps> = ({
   const backgroundColor = theme === 'dark' ? '#151419' : '#fff';
 
   return (
-    <div className="p-1 max-w-sm backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl">
+    <div className="p-1 w-full sm:max-w-[720px] backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl">
       <BauhausBorder
         borderRadius="1.25em"
         borderWidth={borderWidth}

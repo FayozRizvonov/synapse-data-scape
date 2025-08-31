@@ -39,6 +39,8 @@ const ChatReportSection: React.FC<ReportSectionProps> = ({ section, index }) => 
   };
   const renderChart = () => {
     const { chart } = section.full;
+
+    // Build data matrix
     const maxLen = Math.max(...chart.series.map(s => s.data.length));
     const seriesKeys = chart.series.map((s, idx) => ({ name: s.name, key: `s${idx}` }));
 
@@ -48,7 +50,7 @@ const ChatReportSection: React.FC<ReportSectionProps> = ({ section, index }) => 
       // Prefer explicit categories if provided by the model
       const categories: string[] | undefined =
         // @ts-expect-error - optional fields may exist in AI payload
-        chart.x?.categories || chart.categories;
+        chart.x?.categories || (chart as any).categories;
       // Fallback: infer by semantics from title
       const inferredCats = /channel/i.test(section.title)
         ? ['Phone Calls', 'Digital Video', 'Email', 'Field Reps', 'Events', 'Social']
@@ -58,9 +60,13 @@ const ChatReportSection: React.FC<ReportSectionProps> = ({ section, index }) => 
         value,
       }));
     } else {
-      // For bar/line: combine into comparable dataset
+      // For bar/line: combine into comparable dataset using optional categories
+      // Prefer explicit categories if provided in AI payload
+      const categories: string[] | undefined =
+        // @ts-expect-error - optional fields may exist in AI payload
+        chart.x?.categories || (chart as any).categories;
       data = Array.from({ length: maxLen }).map((_, i) => {
-        const row: Record<string, number | string> = { name: `Q${i + 1}` };
+        const row: Record<string, number | string> = { name: categories?.[i] || `Q${i + 1}` };
         chart.series.forEach((s, idx) => {
           row[`s${idx}`] = s.data[i] ?? 0;
         });
@@ -78,18 +84,21 @@ const ChatReportSection: React.FC<ReportSectionProps> = ({ section, index }) => 
       isCorrelation: /vs|correlation|scatter/i.test(section.title),
     });
 
+    // Respect the explicit type from AI when provided; fall back to inference
+    const finalType = (chart.type as any) || inferredType;
+
     return (
-      <div className="mt-4 p-4 bg-white/10 dark:bg-gray-800/20 backdrop-blur-sm rounded-lg border border-white/20 dark:border-gray-700/50">
+      <div className="mt-4 p-4 bg-white/10 dark:bg-white/5 backdrop-blur-md rounded-lg border border-white/20 dark:border-white/15 shadow-lg">
         <div className="flex items-center justify-between mb-4">
-          <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+          <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
             {chart.x.label} vs {chart.y.label}
           </h4>
-          <Badge variant="outline" className="text-xs flex-shrink-0 bg-white/20 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 border-white/30 dark:border-gray-600/50">
-            {(inferredType || chart.type).toUpperCase()} CHART
+          <Badge variant="outline" className="text-xs flex-shrink-0 bg-white/30 dark:bg-white/10 text-gray-700 dark:text-gray-200 border-white/40 dark:border-white/20">
+            {String(finalType).toUpperCase()} CHART
           </Badge>
         </div>
         <ChartRenderer
-          type={chart.type === 'pie' && chart.series.length === 1 ? 'pie' : inferredType}
+          type={finalType}
           data={data}
           xKey="name"
           series={
@@ -97,6 +106,7 @@ const ChatReportSection: React.FC<ReportSectionProps> = ({ section, index }) => 
               ? [{ name: chart.series[0].name || 'Value', dataKey: 'value' }]
               : seriesKeys.map((s, idx) => ({ name: s.name, dataKey: s.key }))
           }
+          colors={(chart.style && Array.isArray(chart.style.colors) ? chart.style.colors : undefined) as string[] | undefined}
           height={height}
           compact
         />
@@ -111,24 +121,24 @@ const ChatReportSection: React.FC<ReportSectionProps> = ({ section, index }) => 
       transition={{ delay: index * 0.1 }}
       className="mb-4"
     >
-      <Card className="backdrop-blur-[2px] bg-white/10 border border-white/20 hover:bg-white/15 hover:border-white/30 transition-all duration-300 shadow-lg">
-        <CardHeader className="pb-3">
+      <div>
+        <div className="pb-3">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-3 flex-1 min-w-0">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0 shadow-lg">
-                <Target className="w-5 h-5 text-white" />
-              </div>
               <div className="flex-1 min-w-0">
-                <CardTitle className="text-lg font-bold text-gray-900 dark:text-white break-words">
-                  {section.title}
-                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <Target className="w-4 h-4 text-gray-500 dark:text-gray-300" />
+                  <CardTitle className="text-lg font-bold text-gray-900 dark:text-white break-words">
+                    {section.title}
+                  </CardTitle>
+                </div>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 break-words leading-relaxed">
                   {section.short}
                 </p>
               </div>
             </div>
           </div>
-        </CardHeader>
+        </div>
 
         <motion.div
           initial={{ opacity: 0 }}
@@ -136,7 +146,7 @@ const ChatReportSection: React.FC<ReportSectionProps> = ({ section, index }) => 
           transition={{ duration: 0.3 }}
           className="overflow-hidden"
         >
-          <CardContent className="pt-0 space-y-4">
+          <div className="pt-0 space-y-4">
             {/* Snapshot Section */}
             <div>
               <div className="flex items-center gap-2 mb-4">
@@ -149,9 +159,9 @@ const ChatReportSection: React.FC<ReportSectionProps> = ({ section, index }) => 
               </div>
               <div className="space-y-3">
                 {section.full.snapshot.map((point, idx) => (
-                  <div key={idx} className="flex items-start gap-3 p-4 bg-white/10 dark:bg-gray-800/20 backdrop-blur-sm rounded-lg border border-white/20 dark:border-gray-700/50 shadow-sm">
-                    <div className="w-3 h-3 bg-gray-500 dark:bg-gray-400 rounded-full mt-1 flex-shrink-0 shadow-sm" />
-                    <p className="text-sm text-gray-700 dark:text-gray-300 break-words leading-relaxed">
+                  <div key={idx} className="flex items-start gap-3 p-4 bg-white/10 dark:bg-white/5 backdrop-blur-md rounded-lg border border-white/20 dark:border-white/15 shadow-sm">
+                    <div className="w-3 h-3 bg-gray-500 dark:bg-gray-300 rounded-full mt-1 flex-shrink-0 shadow-sm" />
+                    <p className="text-sm text-gray-700 dark:text-gray-200 break-words leading-relaxed">
                       {formatNumericBold(point)}
                     </p>
                   </div>
@@ -162,10 +172,10 @@ const ChatReportSection: React.FC<ReportSectionProps> = ({ section, index }) => 
             {/* Chart Section */}
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-full bg-white/20 dark:bg-gray-700/50 flex items-center justify-center">
-                  <BarChart3 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                <div className="w-8 h-8 rounded-full bg-white/20 dark:bg-white/10 flex items-center justify-center">
+                  <BarChart3 className="w-4 h-4 text-gray-600 dark:text-gray-300" />
                 </div>
-                <h4 className="text-base font-semibold text-gray-800 dark:text-gray-200">
+                <h4 className="text-base font-semibold text-gray-800 dark:text-gray-100">
                   Data Visualization
                 </h4>
               </div>
@@ -177,27 +187,27 @@ const ChatReportSection: React.FC<ReportSectionProps> = ({ section, index }) => 
             {/* Recommendations Section */}
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-full bg-white/20 dark:bg-gray-700/50 flex items-center justify-center">
-                  <Lightbulb className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                <div className="w-8 h-8 rounded-full bg-white/20 dark:bg-white/10 flex items-center justify-center">
+                  <Lightbulb className="w-4 h-4 text-gray-600 dark:text-gray-300" />
                 </div>
-                <h4 className="text-base font-semibold text-gray-800 dark:text-gray-200">
+                <h4 className="text-base font-semibold text-gray-800 dark:text-gray-100">
                   Recommendations
                 </h4>
               </div>
               <div className="space-y-3">
                 {section.full.recommendations.map((recommendation, idx) => (
-                  <div key={idx} className="flex items-start gap-3 p-4 bg-white/10 dark:bg-gray-800/20 backdrop-blur-sm rounded-lg border border-white/20 dark:border-gray-700/50 shadow-sm">
-                    <div className="w-3 h-3 bg-gray-500 dark:bg-gray-400 rounded-full mt-1 flex-shrink-0 shadow-sm" />
-                    <p className="text-sm text-gray-700 dark:text-gray-300 break-words leading-relaxed">
+                  <div key={idx} className="flex items-start gap-3 p-4 bg-white/10 dark:bg-white/5 backdrop-blur-md rounded-lg border border-white/20 dark:border-white/15 shadow-sm">
+                    <div className="w-3 h-3 bg-gray-500 dark:bg-gray-300 rounded-full mt-1 flex-shrink-0 shadow-sm" />
+                    <p className="text-sm text-gray-700 dark:text-gray-200 break-words leading-relaxed">
                       {formatNumericBold(recommendation)}
                     </p>
                   </div>
                 ))}
               </div>
             </div>
-          </CardContent>
+          </div>
         </motion.div>
-      </Card>
+      </div>
     </motion.div>
   );
 };

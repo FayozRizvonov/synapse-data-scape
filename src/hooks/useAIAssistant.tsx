@@ -82,8 +82,19 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log('Sending message to AI assistant:', message);
       
+      // Prepare a richer Pharma SM KB payload: include description and details for grounding
+      const compactKb = metricsKnowledgeBase.map(({ id, title, value, change, changeType, comparison, description, details, chartData, keywords, category }) => ({
+        id, title, value, change, changeType, comparison, description, details, chartData, keywords, category
+      }));
+
+      // Include recent chat history to reduce repetition and improve relevance
+      const historyPayload = messages.slice(-8).map(m => ({
+        role: m.sender === 'ai' ? 'assistant' : 'user',
+        content: m.content
+      }));
+      
       const { data, error: supabaseError } = await supabase.functions.invoke('ai-assistant', {
-        body: { message }
+        body: { message, kb: compactKb, history: historyPayload }
       });
 
       if (supabaseError) {
@@ -176,11 +187,9 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
               
               if (isValidStructure) {
                 report = parsed.report;
-                // Remove JSON from text to get clean response
-                cleanText = responseText.replace(jsonString, '').trim();
-                if (!cleanText) {
-                  cleanText = 'Analysis complete. Please review the detailed sections below.';
-                }
+                // Prefer the explicit summary text from the JSON; otherwise try to strip JSON from response
+                const stripped = responseText.replace(jsonString, '').trim();
+                cleanText = parsed.text || stripped || 'Analysis complete. Please review the detailed sections below.';
                 console.log('✅ Successfully parsed report with', parsed.report.sections.length, 'sections');
               } else {
                 console.warn('Invalid report structure received from AI');
@@ -280,8 +289,8 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
           const jsonBlockMatch = responseText.match(/\{[\s\S]*?\}/);
           if (jsonBlockMatch) {
             const jsonString = jsonBlockMatch[0]
-              .replace(/\n/g, ' ')   // remove line breaks for correct JSON
-              .replace(/'/g, '"');   // replace single quotes with double quotes
+              .replace(/\n/g, ' ')
+              .replace(/'/g, '"');
 
             try {
               const parsed = JSON.parse(jsonString);
@@ -384,7 +393,7 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [messages]);
 
   const clearChat = useCallback(() => {
     setMessages([]);
