@@ -18,10 +18,11 @@ export interface UseClaireAIBackend {
   
   // Backend Actions
   healthCheck: () => Promise<CLAIREAIResponse>;
-  trainModel: (projectId: number, dataPath?: string) => Promise<CLAIREAIResponse>;
-  optimizeBudget: (projectId: number, budget: number, scenarioType?: 'tmb' | 'tsv') => Promise<CLAIREAIResponse>;
-  generateInsights: (projectId: number, language?: 'en' | 'ru') => Promise<CLAIREAIResponse>;
-  processPrompt: (projectId: number, prompt: string) => Promise<CLAIREAIResponse>;
+  trainModel: (projectId: string | number, dataPath?: string) => Promise<CLAIREAIResponse>;
+  optimizeBudget: (projectId: string | number, budget: number, scenarioType?: 'tmb' | 'tsv') => Promise<CLAIREAIResponse>;
+  optimizeSalesForce: (projectId: string | number, config: any) => Promise<CLAIREAIResponse>;
+  generateInsights: (projectId: string | number, language?: 'en' | 'ru') => Promise<CLAIREAIResponse>;
+  processPrompt: (projectId: string | number, prompt: string) => Promise<CLAIREAIResponse>;
   
   // Data Integration
   getMetricsData: () => any;
@@ -87,7 +88,7 @@ const STATIC_CHART_DATA = [
   { date: '10/23', actual: 66273, predicted: 68760.02 }
 ];
 
-export function useClaireAIBackend(projectId: number = 1): UseClaireAIBackend {
+export function useClaireAIBackend(projectId: string | number = "550e8400-e29b-41d4-a716-446655440000"): UseClaireAIBackend {
   const [state, setState] = useState<UseClaireAIBackendState>({
     isLoading: false,
     error: null,
@@ -165,7 +166,7 @@ export function useClaireAIBackend(projectId: number = 1): UseClaireAIBackend {
   }, [setLoading, setData, setError, setConnected]);
 
   const trainModel = useCallback(async (
-    projectId: number, 
+    projectId: string | number, 
     dataPath?: string
   ): Promise<CLAIREAIResponse> => {
     if (!state.isConnected) {
@@ -204,7 +205,7 @@ export function useClaireAIBackend(projectId: number = 1): UseClaireAIBackend {
   }, [setLoading, setData, setError, state.isConnected]);
 
   const optimizeBudget = useCallback(async (
-    projectId: number, 
+    projectId: string | number, 
     budget: number, 
     scenarioType: 'tmb' | 'tsv' = 'tmb'
   ): Promise<CLAIREAIResponse> => {
@@ -250,8 +251,51 @@ export function useClaireAIBackend(projectId: number = 1): UseClaireAIBackend {
     }
   }, [setLoading, setData, setError, state.isConnected]);
 
+  const optimizeSalesForce = useCallback(async (
+    projectId: string | number, 
+    config: any
+  ): Promise<CLAIREAIResponse> => {
+    if (!state.isConnected) {
+      return {
+        status: 'warning',
+        message: 'Backend not connected, using static sales force data',
+        data: {
+          results: {
+            optimal_sales_force: 52,
+            projected_revenue: 10400000,
+            overall_roi: 2.8,
+            model_confidence: 0.92,
+            monthly_forecast: [0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35]
+          }
+        }
+      };
+    }
+
+    setLoading(true);
+    try {
+      const response = await claireAIClient.optimizeSalesForce({
+        project_id: projectId,
+        ...config
+      });
+      
+      if (response.status === 'success') {
+        setData(response.data);
+      } else {
+        setError(response.message);
+      }
+      return response;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Sales force optimization failed';
+      setError(errorMessage);
+      return {
+        status: 'error',
+        message: errorMessage,
+      };
+    }
+  }, [setLoading, setData, setError, state.isConnected]);
+
   const generateInsights = useCallback(async (
-    projectId: number, 
+    projectId: string | number, 
     language: 'en' | 'ru' = 'en'
   ): Promise<CLAIREAIResponse> => {
     if (!state.isConnected) {
@@ -297,7 +341,7 @@ export function useClaireAIBackend(projectId: number = 1): UseClaireAIBackend {
   }, [setLoading, setData, setError, state.isConnected]);
 
   const processPrompt = useCallback(async (
-    projectId: number, 
+    projectId: string | number, 
     prompt: string
   ): Promise<CLAIREAIResponse> => {
     if (!state.isConnected) {
@@ -448,6 +492,7 @@ export function useClaireAIBackend(projectId: number = 1): UseClaireAIBackend {
     healthCheck,
     trainModel,
     optimizeBudget,
+    optimizeSalesForce,
     generateInsights,
     processPrompt,
     

@@ -42,7 +42,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 
 const ClaireAdminControl = () => {
   const { permissions, isCompanyAdmin } = useAuth();
-  const claireAI = useClaireAIBackend(1);
+  const claireAI = useClaireAIBackend("550e8400-e29b-41d4-a716-446655440000");
   
   // State management
   const [activeTab, setActiveTab] = useState('data-connection');
@@ -81,6 +81,12 @@ const ClaireAdminControl = () => {
   const [robustOptimization, setRobustOptimization] = useState(false);
   const [scenarios, setScenarios] = useState<any[]>([]);
   const [selectedScenario, setSelectedScenario] = useState<string>('base');
+  
+  // Sales Force and Database state
+  const [salesForceData, setSalesForceData] = useState<any>(null);
+  const [databaseStatus, setDatabaseStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking');
+  const [savedModels, setSavedModels] = useState<any[]>([]);
+  const [savedScenarios, setSavedScenarios] = useState<any[]>([]);
 
   // Check admin permissions
   if (!isCompanyAdmin && !permissions?.can_ai_insights) {
@@ -371,13 +377,15 @@ const ClaireAdminControl = () => {
       }
       
       // Call backend optimization API
-      const response = await claireAI.optimizeBudget(1, constraints.total_budget, 'tmb');
+      const response = await claireAI.optimizeBudget("550e8400-e29b-41d4-a716-446655440000", constraints.total_budget, 'tmb');
       
       if (response.status === 'success') {
-        setOptimizationData(response.data);
+        // The backend returns data.results structure
+        const optimizationResults = response.data?.results || response.data;
+        setOptimizationData(optimizationResults);
         
         // Generate scenarios based on optimization results
-        const newScenarios = generateOptimizationScenarios(response.data);
+        const newScenarios = generateOptimizationScenarios(optimizationResults);
         setScenarios(newScenarios);
         
         console.log('Optimization completed successfully:', response);
@@ -405,7 +413,9 @@ const ClaireAdminControl = () => {
     const optimizedScenario = {
       id: 'optimized',
       name: 'Optimized',
-      projected_sales: optimizationData?.expected_sales || 24500000,
+      projected_sales: optimizationData?.expected_sales && !isNaN(optimizationData.expected_sales) 
+        ? optimizationData.expected_sales 
+        : 24500000,
       total_spend: constraints.total_budget,
       roi: optimizationData?.roi || { sf_calls: 2.6, digital: 3.4 },
       allocation: optimizationData?.allocation || {}
@@ -414,7 +424,9 @@ const ClaireAdminControl = () => {
     const conservativeScenario = {
       id: 'conservative',
       name: 'Conservative',
-      projected_sales: Math.round((optimizationData?.expected_sales || 24500000) * 0.85),
+      projected_sales: Math.round((optimizationData?.expected_sales && !isNaN(optimizationData.expected_sales) 
+        ? optimizationData.expected_sales 
+        : 24500000) * 0.85),
       total_spend: Math.round(constraints.total_budget * 0.9),
       roi: { sf_calls: 2.1, digital: 2.8 }
     };
@@ -451,6 +463,52 @@ const ClaireAdminControl = () => {
     };
     
     const mult = multipliers[type as keyof typeof multipliers];
+
+  // Sales Force Optimization handler
+  const handleSalesForceOptimization = async () => {
+    setIsProcessing(true);
+    try {
+      console.log('Starting sales force optimization...');
+      
+      // Get form values
+      const targetRevenue = parseFloat((document.getElementById('targetRevenue') as HTMLInputElement)?.value || '9.0');
+      const currentSalesForce = parseInt((document.getElementById('currentSalesForce') as HTMLInputElement)?.value || '45');
+      const newCompetitor = (document.getElementById('newCompetitor') as HTMLInputElement)?.checked || false;
+      const recession = (document.getElementById('recession') as HTMLInputElement)?.checked || false;
+      
+      // First, check backend connection
+      const healthResponse = await claireAI.healthCheck();
+      console.log('Health check before sales force optimization:', healthResponse);
+      
+      if (healthResponse.status !== 'success' && healthResponse.status !== 'healthy') {
+        setError('Backend not connected. Please check connection and try again.');
+        return;
+      }
+      
+      // Call backend sales force optimization API
+      const response = await claireAI.optimizeSalesForce("550e8400-e29b-41d4-a716-446655440000", {
+        target_revenue: targetRevenue,
+        current_sales_force: currentSalesForce,
+        external_factors: {
+          new_competitor: newCompetitor,
+          recession: recession
+        }
+      });
+      
+      if (response.status === 'success') {
+        setSalesForceData(response.data.results);
+        console.log('Sales force optimization completed successfully:', response);
+        setError(null); // Clear any previous errors
+      } else {
+        setError('Sales force optimization failed: ' + response.message);
+      }
+    } catch (error) {
+      console.error('Sales force optimization failed:', error);
+      setError('Sales force optimization failed. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
     
     return {
       id: type,
@@ -463,21 +521,43 @@ const ClaireAdminControl = () => {
 
   const handleSubmitForApproval = async () => {
     try {
-      // Submit selected scenario for approval
       console.log('Submitting scenario for approval:', selectedScenario);
       
-      // Simulate approval workflow
-      const approvalData = {
-        scenario_id: selectedScenario,
-        submitted_by: 'admin',
-        submitted_at: new Date().toISOString(),
-        status: 'pending_approval'
-      };
+      if (!selectedScenario) {
+        setError('Please select a scenario to submit for approval.');
+        return;
+      }
       
-      console.log('Approval submitted:', approvalData);
+      // Get the selected scenario data
+      const scenario = scenarios.find(s => s.id === selectedScenario);
+      if (!scenario) {
+        setError('Selected scenario not found.');
+        return;
+      }
       
-      // Show success message
-      setError(null);
+      // Call backend approval endpoint
+      const response = await fetch(`http://localhost:8000/models/${selectedScenario}/approve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          approval_notes: `Scenario ${scenario.name} submitted for approval`,
+          scenario_data: scenario
+        })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Approval submitted successfully:', result);
+        setError(null);
+        // Show success message
+        alert(`Scenario "${scenario.name}" submitted for approval successfully!`);
+      } else {
+        const errorData = await response.json();
+        console.error('Approval submission failed:', errorData);
+        setError(`Approval submission failed: ${errorData.detail || 'Unknown error'}`);
+      }
     } catch (error) {
       console.error('Approval submission failed:', error);
       setError('Approval submission failed. Please try again.');
@@ -603,7 +683,7 @@ const ClaireAdminControl = () => {
         {/* Main Content */}
         <div className="max-w-7xl mx-auto">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                        <TabsList className="grid w-full grid-cols-8 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+                        <TabsList className="grid w-full grid-cols-9 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
               <TabsTrigger value="data-connection" className="flex items-center gap-2">
                 <Database className="w-4 h-4" />
                 Data Connection
@@ -635,6 +715,10 @@ const ClaireAdminControl = () => {
               <TabsTrigger value="forecasting" className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4" />
                 Forecasting
+              </TabsTrigger>
+              <TabsTrigger value="sales-force" className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Sales Force
               </TabsTrigger>
             </TabsList>
 
@@ -1752,7 +1836,9 @@ const ClaireAdminControl = () => {
                               Expected Sales
                             </div>
                             <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                              ${(optimizationData.expected_sales / 1000000).toFixed(1)}M
+                              ${optimizationData.expected_sales && !isNaN(optimizationData.expected_sales) 
+                                ? (optimizationData.expected_sales / 1000000).toFixed(1) 
+                                : '0.0'}M
                             </div>
                           </CardContent>
                         </Card>
@@ -2000,6 +2086,211 @@ const ClaireAdminControl = () => {
                       </ResponsiveContainer>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Sales Force Analysis Tab */}
+            <TabsContent value="sales-force" className="space-y-6">
+              <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5" />
+                    Sales Force Optimization Analysis
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Database Status */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Database Status</p>
+                            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                              {databaseStatus === 'connected' ? 'Connected' : databaseStatus === 'checking' ? 'Checking...' : 'Disconnected'}
+                            </p>
+                          </div>
+                          <div className={`w-3 h-3 rounded-full ${databaseStatus === 'connected' ? 'bg-green-500' : databaseStatus === 'checking' ? 'bg-yellow-500' : 'bg-red-500'}`} />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Saved Models</p>
+                            <p className="text-2xl font-bold text-green-600 dark:text-green-400">{savedModels.length}</p>
+                          </div>
+                          <FileText className="w-8 h-8 text-green-500" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Saved Scenarios</p>
+                            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{savedScenarios.length}</p>
+                          </div>
+                          <BarChart3 className="w-8 h-8 text-purple-500" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Sales Force Optimization Form */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card className="bg-white/50 dark:bg-gray-800/50">
+                      <CardHeader>
+                        <CardTitle className="text-lg">Sales Force Optimization</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label htmlFor="targetRevenue">Target Revenue ($M)</Label>
+                          <Input
+                            id="targetRevenue"
+                            type="number"
+                            placeholder="9.0"
+                            className="bg-white/50 dark:bg-gray-800/50"
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor="currentSalesForce">Current Sales Force Size</Label>
+                          <Input
+                            id="currentSalesForce"
+                            type="number"
+                            placeholder="45"
+                            className="bg-white/50 dark:bg-gray-800/50"
+                          />
+                        </div>
+
+                        <div>
+                          <Label>External Factors</Label>
+                          <div className="space-y-2">
+                            <div className="flex items-center space-x-2">
+                              <input type="checkbox" id="newCompetitor" className="rounded" />
+                              <Label htmlFor="newCompetitor" className="text-sm">New Competitor Entry</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <input type="checkbox" id="recession" className="rounded" />
+                              <Label htmlFor="recession" className="text-sm">Economic Recession</Label>
+                            </div>
+                          </div>
+                        </div>
+
+                        <Button 
+                          onClick={handleSalesForceOptimization}
+                          disabled={isProcessing}
+                          className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
+                        >
+                          {isProcessing ? (
+                            <>
+                              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                              Optimizing...
+                            </>
+                          ) : (
+                            <>
+                              <Target className="w-4 h-4 mr-2" />
+                              Run Sales Force Optimization
+                            </>
+                          )}
+                        </Button>
+                      </CardContent>
+                    </Card>
+
+                    {/* Sales Force Results */}
+                    <Card className="bg-white/50 dark:bg-gray-800/50">
+                      <CardHeader>
+                        <CardTitle className="text-lg">Optimization Results</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {salesForceData ? (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                                <p className="text-sm text-gray-600 dark:text-gray-400">Optimal Sales Force</p>
+                                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                  {salesForceData.optimal_sales_force}
+                                </p>
+                              </div>
+                              <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                                <p className="text-sm text-gray-600 dark:text-gray-400">Projected Revenue</p>
+                                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                                  ${(salesForceData.projected_revenue / 1000000).toFixed(2)}M
+                                </p>
+                              </div>
+                              <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                                <p className="text-sm text-gray-600 dark:text-gray-400">Overall ROI</p>
+                                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                                  {salesForceData.overall_roi.toFixed(2)}x
+                                </p>
+                              </div>
+                              <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                                <p className="text-sm text-gray-600 dark:text-gray-400">Model Confidence</p>
+                                <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                                  {(salesForceData.model_confidence * 100).toFixed(0)}%
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                            <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                            <p>Run optimization to see results</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Monthly Forecast Chart */}
+                  {salesForceData && (
+                    <Card className="bg-white/50 dark:bg-gray-800/50">
+                      <CardHeader>
+                        <CardTitle className="text-lg">Monthly Revenue Forecast</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ResponsiveContainer width="100%" height={400}>
+                          <LineChart data={salesForceData.monthly_forecast.map((value: number, index: number) => ({
+                            month: `Month ${index + 1}`,
+                            revenue: value
+                          }))}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                            <XAxis 
+                              dataKey="month" 
+                              stroke="#6B7280"
+                              tick={{ fontSize: 12 }}
+                            />
+                            <YAxis 
+                              stroke="#6B7280"
+                              tick={{ fontSize: 12 }}
+                              tickFormatter={(value) => `${value.toFixed(2)}M`}
+                            />
+                            <Tooltip 
+                              contentStyle={{
+                                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                                border: '1px solid #E5E7EB',
+                                borderRadius: '8px'
+                              }}
+                              formatter={(value: any) => [`${value.toFixed(2)}M`, 'Revenue']}
+                            />
+                            <Line 
+                              type="monotone" 
+                              dataKey="revenue" 
+                              stroke="#10B981" 
+                              strokeWidth={3}
+                              dot={{ fill: '#10B981', strokeWidth: 2, r: 5 }}
+                              name="Projected Revenue"
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
