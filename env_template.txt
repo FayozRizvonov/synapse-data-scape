@@ -1,0 +1,81 @@
+# CLAIRE AI Environment Variables Template
+# Copy this file to .env and fill in your actual values
+
+# Database Configuration
+DB_URL=postgresql://user:password@localhost:5432/claire_ai
+# Alternative: mysql://root:password@localhost:3306/mmm
+
+# MLflow Configuration (for model versioning)
+MLFLOW_TRACKING_URI=http://localhost:5000
+MLFLOW_REGISTRY_URI=http://localhost:5000
+
+# Supabase Configuration
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# API Configuration
+API_HOST=0.0.0.0
+API_PORT=8000
+API_WORKERS=4
+
+# OpenAI Configuration (for advanced AI features)
+OPENAI_API_KEY=your_openai_api_key
+OPENAI_MODEL=gpt-4
+
+# Logging Configuration
+LOG_LEVEL=INFO
+LOG_FILE=claire_ai.log
+
+# Security Configuration
+SECRET_KEY=your_secret_key_here
+JWT_SECRET=your_jwt_secret_here
+CORS_ORIGINS=["http://localhost:3000", "https://yourdomain.com"]
+
+# Redis Configuration (for caching)
+REDIS_URL=redis://localhost:6379
+REDIS_PASSWORD=your_redis_password
+
+# Background Tasks
+BACKGROUND_TASK_WORKERS=2
+TASK_TIMEOUT=300
+
+# Model Configuration
+DEFAULT_MODEL_TYPE=DLT
+DEFAULT_SEASONALITY=12
+MAX_MODEL_ITERATIONS=1000
+
+# Optimization Configuration
+DEFAULT_OPTIMIZATION_TIMEOUT=60
+MAX_OPTIMIZATION_ITERATIONS=1000
+
+# Elasticity Norms (Pharma-specific)
+SALES_FORCE_MIN_ELASTICITY=0.02
+SALES_FORCE_MAX_ELASTICITY=0.15
+DIGITAL_MIN_ELASTICITY=0.01
+DIGITAL_MAX_ELASTICITY=0.08
+EMAIL_MIN_ELASTICITY=0.04
+EMAIL_MAX_ELASTICITY=0.25
+F2F_MIN_ELASTICITY=0.03
+F2F_MAX_ELASTICITY=0.12
+
+# Data Validation
+MAX_DATA_ROWS=100000
+MIN_DATA_ROWS=12
+ALLOWED_DATE_FORMATS=["%Y-%m-%d", "%Y/%m/%d", "%d/%m/%Y"]
+
+# Monitoring and Analytics
+ENABLE_METRICS=true
+METRICS_PORT=9090
+PROMETHEUS_ENDPOINT=/metrics
+
+# Development Settings
+DEBUG=false
+RELOAD=false
+ENABLE_SWAGGER=true
+ENABLE_CORS=true
+
+# Production Settings
+PRODUCTION=false
+SSL_CERT_FILE=
+SSL_KEY_FILE=

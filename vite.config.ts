@@ -1,6 +1,4 @@
 import { defineConfig } from "vite";
-// Ensure Node has webcrypto/streams in dev
-import "./mcp-polyfills.js";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
@@ -19,6 +17,16 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  define: {
+    global: 'globalThis',
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      define: {
+        global: 'globalThis',
+      },
     },
   },
 }));

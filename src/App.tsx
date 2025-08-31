@@ -18,6 +18,7 @@ import { AIAssistantProvider } from "@/hooks/useAIAssistant";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -83,6 +84,16 @@ const App = () => (
                 <ProtectedRoute>
                   <GlobalLayout>
                     <ClaireLandingModern />
+                  </GlobalLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/claire-ai" element={
+                <ProtectedRoute>
+                  <GlobalLayout>
+                    <div className="p-8 text-center">
+                  <h2 className="text-2xl font-bold mb-4">CLAIRE AI Dashboard</h2>
+                  <p className="text-gray-600">Dashboard component coming soon...</p>
+                </div>
                   </GlobalLayout>
                 </ProtectedRoute>
               } />

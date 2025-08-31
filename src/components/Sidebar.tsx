@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, Settings, Stethoscope, Landmark, Server, Shield, ChevronLeft, ChevronRight, MessageSquare, ChevronDown, Cloud, User } from 'lucide-react';
+import { Home, Settings, Stethoscope, Landmark, Server, Shield, ChevronLeft, ChevronRight, MessageSquare, ChevronDown, Cloud, User, Brain } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -87,7 +87,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           <div className="mt-2">
             <button
               className={`group flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                ['admin-overview','admin-brands','admin-community','admin-clouds'].includes(activeSection)
+                ['admin-overview','admin-brands','admin-community','admin-clouds','admin-model-control'].includes(activeSection)
                   ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-cyan-300'
                   : 'text-gray-700 dark:text-white/70 hover:bg-blue-50 dark:hover:bg-blue-900/10 hover:text-blue-700 dark:hover:text-cyan-300'
               }`}
@@ -137,6 +137,17 @@ const Sidebar: React.FC<SidebarProps> = ({
                 >
                   <Cloud className="w-4 h-4" />
                   <span className="ml-2">Clouds</span>
+                </button>
+                <button
+                  className={`group flex items-center w-full px-3 py-2 rounded-md text-sm transition-colors ${
+                    activeSection === 'admin-model-control'
+                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-cyan-300'
+                      : 'text-gray-700 dark:text-white/70 hover:bg-blue-50 dark:hover:bg-blue-900/10 hover:text-blue-700 dark:hover:text-cyan-300'
+                  }`}
+                  onClick={() => onSectionChange('admin-model-control')}
+                >
+                  <Brain className="w-4 h-4" />
+                  <span className="ml-2">Model Control</span>
                 </button>
               </div>
             )}

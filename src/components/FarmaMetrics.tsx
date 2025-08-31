@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import ParticleBackground from '@/components/ParticleBackground';
+import { useClaireAIBackend } from '@/hooks/useClaireAIBackend';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -50,6 +51,7 @@ interface MetricCard {
 
 const FarmaMetrics = () => {
   const { theme } = useTheme();
+  const claireAI = useClaireAIBackend(1); // Use project ID 1
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [keyMetricsExpanded, setKeyMetricsExpanded] = useState(false);
   const [situationMetricsExpanded, setSituationMetricsExpanded] = useState(false);
@@ -648,11 +650,47 @@ const FarmaMetrics = () => {
             <div className="p-3 rounded-xl bg-gradient-blue/20 dark:bg-gradient-cyan/20 border border-blue-500/30 dark:border-cyan-500/30">
               <Stethoscope className="w-8 h-8 text-blue-600 dark:text-cyan-500" />
             </div>
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white text-glow">Pharma S&M Augmented Analytics</h1>
+            <div className="flex items-center gap-4">
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white text-glow">Pharma S&M Augmented Analytics</h1>
+              <Badge variant={claireAI.isConnected ? "default" : "secondary"} className="ml-4">
+                {claireAI.isConnected ? "🟢 CLAIRE AI Connected" : "🟡 Static Data"}
+              </Badge>
+            </div>
           </div>
           <p className="text-gray-600 dark:text-white/70 max-w-2xl mx-auto">
             Advanced pharmaceutical sales and marketing analytics dashboard with real-time metrics and insights
           </p>
+          
+          {/* CLAIRE AI Backend Control Panel */}
+          <div className="flex items-center justify-center gap-4 mt-6">
+            <Button 
+              onClick={() => claireAI.trainModel(1, 'examples/sample_data.csv')} 
+              disabled={claireAI.isLoading}
+              variant="outline"
+              size="sm"
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+            >
+              {claireAI.isLoading ? 'Training...' : 'Train MMM Model'}
+            </Button>
+            <Button 
+              onClick={() => claireAI.optimizeBudget(1, 1000000)} 
+              disabled={claireAI.isLoading}
+              variant="outline"
+              size="sm"
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+            >
+              {claireAI.isLoading ? 'Optimizing...' : 'Optimize Budget'}
+            </Button>
+            <Button 
+              onClick={() => claireAI.generateInsights(1)} 
+              disabled={claireAI.isLoading}
+              variant="outline"
+              size="sm"
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+            >
+              {claireAI.isLoading ? 'Generating...' : 'Generate Insights'}
+            </Button>
+          </div>
         </div>
 
         {/* Marketing Optimization Recommendations */}

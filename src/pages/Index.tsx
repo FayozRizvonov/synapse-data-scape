@@ -22,6 +22,7 @@ import AdminPanelOverview from '@/components/admin/AdminPanelOverview';
 import AdminCatalog from '@/components/admin/AdminCatalog';
 import AdminCommunity from '@/components/admin/AdminCommunity';
 import AdminClouds from '@/components/admin/AdminClouds';
+import ClaireAdminControl from '@/pages/ClaireAdminControl';
 import Profile from '@/components/Profile';
 
 const Index = () => {
@@ -270,6 +271,8 @@ const Index = () => {
         return <AdminCatalog />;
       case 'admin-clouds':
         return <AdminClouds />;
+      case 'admin-model-control':
+        return <ClaireAdminControl />;
       case 'finance':
         return <FinanceMetrics />;
       case 'color-palette':
