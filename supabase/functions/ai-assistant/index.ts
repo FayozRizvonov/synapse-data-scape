@@ -357,6 +357,11 @@ RELEVANCE & DEDUPLICATION
 STRICT JSON OUTPUT
 - Always return a single JSON object using exactly one of the defined response types (text | report | card). No extra commentary outside the JSON.
 - All numeric claims must originate from PHARMA_SM_DATASET or be explicitly labeled as "simulated".
+
+TOTAL SALES DECOMPOSITION (mandatory when applicable)
+- If the insight mentions or centers on "Total Sales" (ключевые слова: "total sales", "общие продажи", "total revenue", "итого"), ALWAYS include the breakdown into "Base Sales" and "Incremental Sales" as part of the same view.
+- Present them both in the narrative (snapshot) and in the chart as separate series, e.g., a stacked bar/area or side-by-side bars/lines: [Total Sales, Base Sales, Incremental Sales].
+- Ensure numeric consistency: Total ≈ Base + Incremental for the period shown. If any values are simulated, mark them explicitly as "simulated".
 `;
 serve(async (req) => {
   console.log('=== AI Assistant Function Called ===');

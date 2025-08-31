@@ -182,9 +182,25 @@ const AdminCatalog: React.FC = () => {
           </Select>
           <div className="flex items-center gap-2">
             <div className="text-xs text-white/70">From</div>
-            <Input type="date" className="bg-white/5 border-white/10" value={dateFrom ? new Date(dateFrom).toISOString().slice(0,10) : ''} onChange={(e) => setDateFrom(e.target.value ? new Date(e.target.value) : undefined)} />
+            <Input
+              type="text"
+              inputMode="numeric"
+              aria-label="From date (YYYY-MM-DD)"
+              placeholder="YYYY-MM-DD"
+              className="bg-white/5 border-white/10"
+              value={dateFrom ? new Date(dateFrom).toISOString().slice(0,10) : ''}
+              onChange={(e) => setDateFrom(e.target.value ? new Date(e.target.value) : undefined)}
+            />
             <div className="text-xs text-white/70">To</div>
-            <Input type="date" className="bg-white/5 border-white/10" value={dateTo ? new Date(dateTo).toISOString().slice(0,10) : ''} onChange={(e) => setDateTo(e.target.value ? new Date(e.target.value) : undefined)} />
+            <Input
+              type="text"
+              inputMode="numeric"
+              aria-label="To date (YYYY-MM-DD)"
+              placeholder="YYYY-MM-DD"
+              className="bg-white/5 border-white/10"
+              value={dateTo ? new Date(dateTo).toISOString().slice(0,10) : ''}
+              onChange={(e) => setDateTo(e.target.value ? new Date(e.target.value) : undefined)}
+            />
           </div>
         </div>
       </div>
