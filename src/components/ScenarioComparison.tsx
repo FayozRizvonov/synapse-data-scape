@@ -8,8 +8,6 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, Target, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
-import AnimatedNumber from '@/components/AnimatedNumber';
-import Glow from '@/components/ai/Glow';
 
 const salesForecastData = [
   { name: 'Jan', actual: 0.12, baseline: 0.125, optimistic: 0.125, pessimistic: 0.125 },
@@ -176,46 +174,29 @@ const ScenarioComparison = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <div className="relative overflow-hidden backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 hover:border-white/20 transition-all duration-300">
-            <Glow className="opacity-30" />
+          <div className="backdrop-blur-[2px] bg-background/5 border border-border/10 rounded-2xl p-6 hover:bg-background/10 hover:border-border/20 transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
-                  <DollarSign className="w-5 h-5 text-cyan-400" />
+                <div className="p-2 rounded-lg bg-gradient-to-r from-accent/20 to-accent/10 border border-accent/30">
+                  <DollarSign className="w-5 h-5 text-accent" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Current</h3>
-                <span className="ml-2 inline-flex h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+                <h3 className="text-lg font-semibold text-foreground">Current</h3>
               </div>
-              <Badge variant="outline" className="border-cyan-500/30 text-cyan-400 bg-cyan-500/10">$0.7M Spend</Badge>
+              <Badge variant="outline" className="border-accent/30 text-accent bg-accent/10">0.7М$ Spend</Badge>
             </div>
             <div className="space-y-4">
               <div className="flex items-end gap-2">
-                <AnimatedNumber
-                  value={21.3}
-                  duration={1200}
-                  className="text-3xl font-bold text-gray-900 dark:text-white"
-                  formatter={(v) => `${v.toFixed(1)}M`}
-                />
-                <span className="text-sm text-gray-600 dark:text-white/60">Projected Sales</span>
+                <span className="text-3xl font-bold text-foreground">21.3М</span>
+                <span className="text-sm text-muted">Projected Sales</span>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-gray-600 dark:text-white/80">
                   <span>SF Calls ROI:</span>
-                  <AnimatedNumber
-                    value={2.4}
-                    duration={1200}
-                    className="font-semibold text-cyan-400"
-                    formatter={(v) => `${v.toFixed(1)}x`}
-                  />
+                  <span className="font-semibold text-cyan-400">2.4x</span>
                 </div>
                 <div className="flex justify-between text-gray-600 dark:text-white/80">
                   <span>Digital ROI:</span>
-                  <AnimatedNumber
-                    value={3.1}
-                    duration={1200}
-                    className="font-semibold text-cyan-400"
-                    formatter={(v) => `${v.toFixed(1)}x`}
-                  />
+                  <span className="font-semibold text-cyan-400">3.1x</span>
                 </div>
               </div>
             </div>
