@@ -31,27 +31,35 @@ app.add_middleware(
 
 # Pydantic models for API requests/responses
 class ModelRequest(BaseModel):
-    project_id: int
+    project_id: str
     model_type: str = 'DLT'  # 'DLT' or 'KTR'
     data_path: Optional[str] = None
     priors: Optional[Dict[str, Any]] = None
 
 class OptimizationRequest(BaseModel):
-    project_id: int
+    project_id: str
     scenario_type: str  # 'tmb' or 'tsv'
     total_budget: Optional[float] = None
     target_sales: Optional[float] = None
     channel_constraints: Optional[Dict[str, List[float]]] = None
     data_path: Optional[str] = None
 
+class SalesForceOptimizationRequest(BaseModel):
+    project_id: str
+    target_revenue: float
+    current_sales_force: int
+    external_factors: Optional[Dict[str, bool]] = None
+    cost_per_rep: Optional[float] = 150000
+    data_path: Optional[str] = None
+
 class InsightRequest(BaseModel):
-    project_id: int
+    project_id: str
     analysis_type: str = 'comprehensive'  # 'contribution', 'elasticity', 'roi', 'comprehensive'
     language: str = 'en'  # 'en' or 'ru'
     data_path: Optional[str] = None
 
 class AgentPromptRequest(BaseModel):
-    project_id: int
+    project_id: str
     prompt: str
     data_path: Optional[str] = None
 
@@ -64,7 +72,7 @@ class ResponseModel(BaseModel):
 # Global agent cache (in production, use Redis or database)
 agent_cache = {}
 
-def get_or_create_agent(project_id: int, data_path: Optional[str] = None) -> PharmaMMMAgent:
+def get_or_create_agent(project_id: str, data_path: Optional[str] = None) -> PharmaMMMAgent:
     """Get existing agent or create new one"""
     cache_key = f"{project_id}_{data_path or 'default'}"
     
@@ -186,6 +194,37 @@ async def create_optimization_scenario(request: OptimizationRequest):
         # Run optimization
         results = agent.run_optimization(optimization_config)
         
+        # Save scenario to Supabase if available
+        try:
+            from supabase_client import supabase_mmm_client
+            if supabase_mmm_client.is_connected():
+                scenario_data = {
+                    'scenario_name': f'Optimization_{request.scenario_type}_{datetime.now().strftime("%Y%m%d_%H%M%S")}',
+                    'scenario_type': request.scenario_type,
+                    'scenario_config': {
+                        'scenario_type': request.scenario_type,
+                        'total_budget': request.total_budget,
+                        'target_sales': request.target_sales,
+                        'channel_constraints': request.channel_constraints
+                    },
+                    'optimization_results': results,
+                    'total_budget': results.get('total_budget'),
+                    'expected_sales': results.get('expected_sales'),
+                    'roi_metrics': results.get('roi', {}),
+                    'allocation_breakdown': results.get('allocation', {})
+                }
+                
+                model_id = getattr(agent, 'saved_model_id', None)
+                if model_id:
+                    scenario_id = supabase_mmm_client.save_optimization_scenario(
+                        request.project_id, model_id, scenario_data
+                    )
+                    if scenario_id:
+                        logger.info(f"Optimization scenario saved to Supabase with ID: {scenario_id}")
+                        results['scenario_id'] = scenario_id
+        except Exception as e:
+            logger.warning(f"Failed to save scenario to Supabase: {e}")
+        
         return ResponseModel(
             status="success",
             message="Optimization completed successfully",
@@ -198,6 +237,89 @@ async def create_optimization_scenario(request: OptimizationRequest):
         
     except Exception as e:
         logger.error(f"Error in optimization: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/optimize/sales-force", response_model=ResponseModel)
+async def optimize_sales_force(request: SalesForceOptimizationRequest):
+    """Run sales force optimization based on MMM model outputs"""
+    try:
+        logger.info(f"Running sales force optimization for project {request.project_id}")
+        
+        # Get or create agent with default data path
+        data_path = request.data_path or "examples/sample_data.csv"
+        agent = get_or_create_agent(request.project_id, data_path)
+        
+        # Connect to data source if not already done
+        if agent.data is None:
+            agent.connect_to_data_source(data_path)
+            agent.clean_data()
+        
+        # Build model if not available
+        if agent.model is None:
+            model_config = ModelConfig(model_type=ModelType.DLT)
+            agent.fit_tvc_model(model_config)
+        
+        # Create sales force optimization config
+        from claire_ai_agent import SalesForceOptimizationConfig
+        config = SalesForceOptimizationConfig(
+            target_revenue=request.target_revenue,
+            current_sales_force=request.current_sales_force,
+            external_factors=request.external_factors,
+            cost_per_rep=request.cost_per_rep
+        )
+        
+        # Run sales force optimization
+        results = agent.run_sales_force_optimization(config)
+        
+        # Save sales force scenario to Supabase if available
+        try:
+            from supabase_client import supabase_mmm_client
+            if supabase_mmm_client.is_connected():
+                scenario_data = {
+                    'scenario_name': f'SalesForce_{request.target_revenue}M_{datetime.now().strftime("%Y%m%d_%H%M%S")}',
+                    'target_revenue': request.target_revenue,
+                    'current_sales_force': request.current_sales_force,
+                    'optimal_sales_force': results.get('optimal_sales_force'),
+                    'optimal_range': results.get('optimal_range', []),
+                    'projected_revenue': results.get('projected_revenue'),
+                    'projected_profit': results.get('projected_profit'),
+                    'overall_roi': results.get('overall_roi'),
+                    'monthly_forecast': results.get('monthly_forecast', []),
+                    'productivity_per_rep': results.get('productivity_per_rep'),
+                    'total_cost': results.get('total_cost'),
+                    'external_factors': request.external_factors,
+                    'model_confidence': results.get('model_confidence'),
+                    'scenario_config': {
+                        'target_revenue': request.target_revenue,
+                        'current_sales_force': request.current_sales_force,
+                        'external_factors': request.external_factors,
+                        'cost_per_rep': request.cost_per_rep
+                    }
+                }
+                
+                model_id = getattr(agent, 'saved_model_id', None)
+                if model_id:
+                    scenario_id = supabase_mmm_client.save_sales_force_scenario(
+                        request.project_id, model_id, scenario_data
+                    )
+                    if scenario_id:
+                        logger.info(f"Sales force scenario saved to Supabase with ID: {scenario_id}")
+                        results['scenario_id'] = scenario_id
+        except Exception as e:
+            logger.warning(f"Failed to save sales force scenario to Supabase: {e}")
+        
+        return ResponseModel(
+            status="success",
+            message="Sales force optimization completed successfully",
+            data={
+                "project_id": request.project_id,
+                "scenario_type": "sales_force_optimization",
+                "results": results
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in sales force optimization: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/insights/generate", response_model=ResponseModel)
@@ -269,7 +391,7 @@ async def process_agent_prompt(request: AgentPromptRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/projects/{project_id}/status")
-async def get_project_status(project_id: int):
+async def get_project_status(project_id: str):
     """Get status of a project"""
     try:
         # Check if agent exists in cache
@@ -296,7 +418,7 @@ async def get_project_status(project_id: int):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/projects/{project_id}")
-async def clear_project_cache(project_id: int):
+async def clear_project_cache(project_id: str):
     """Clear project from cache"""
     try:
         # Remove all cache entries for this project
@@ -324,10 +446,15 @@ async def health_check():
         "cache_size": len(agent_cache),
         "endpoints": [
             "/model/train",
-            "/optimize/scenario", 
+            "/optimize/scenario",
+            "/optimize/sales-force",
             "/insights/generate",
             "/agent/process",
-            "/projects/{project_id}/status"
+            "/projects/{project_id}/status",
+            "/models/{project_id}/latest",
+            "/scenarios/{project_id}/optimization",
+            "/scenarios/{project_id}/sales-force",
+            "/models/{model_id}/approve"
         ]
     }
 
@@ -335,7 +462,7 @@ async def health_check():
 @app.post("/model/retrain")
 async def retrain_model_background(
     background_tasks: BackgroundTasks,
-    project_id: int,
+    project_id: str,
     data_path: Optional[str] = None
 ):
     """Retrain model in background"""
@@ -350,7 +477,7 @@ async def retrain_model_background(
         logger.error(f"Error starting retrain: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-async def retrain_model_task(project_id: int, data_path: Optional[str] = None):
+async def retrain_model_task(project_id: str, data_path: Optional[str] = None):
     """Background task for model retraining"""
     try:
         logger.info(f"Starting background retrain for project {project_id}")
@@ -372,6 +499,99 @@ async def retrain_model_task(project_id: int, data_path: Optional[str] = None):
         
     except Exception as e:
         logger.error(f"Error in background retrain: {e}")
+
+@app.get("/models/{project_id}/latest", response_model=ResponseModel)
+async def get_latest_approved_model(project_id: str):
+    """Get the latest approved model for a project"""
+    try:
+        from supabase_client import supabase_mmm_client
+        if not supabase_mmm_client.is_connected():
+            raise HTTPException(status_code=503, detail="Database not connected")
+        
+        model = supabase_mmm_client.get_latest_approved_model(project_id)
+        
+        if not model:
+            raise HTTPException(status_code=404, detail="No approved model found for this project")
+        
+        return ResponseModel(
+            status="success",
+            message="Latest approved model retrieved successfully",
+            data=model
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving latest approved model: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/scenarios/{project_id}/optimization", response_model=ResponseModel)
+async def get_optimization_scenarios(project_id: str, scenario_type: Optional[str] = None):
+    """Get approved optimization scenarios for a project"""
+    try:
+        from supabase_client import supabase_mmm_client
+        if not supabase_mmm_client.is_connected():
+            raise HTTPException(status_code=503, detail="Database not connected")
+        
+        scenarios = supabase_mmm_client.get_approved_scenarios(project_id, scenario_type)
+        
+        return ResponseModel(
+            status="success",
+            message=f"Retrieved {len(scenarios)} optimization scenarios",
+            data={"scenarios": scenarios}
+        )
+        
+    except Exception as e:
+        logger.error(f"Error retrieving optimization scenarios: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/scenarios/{project_id}/sales-force", response_model=ResponseModel)
+async def get_sales_force_scenarios(project_id: str):
+    """Get approved sales force scenarios for a project"""
+    try:
+        from supabase_client import supabase_mmm_client
+        if not supabase_mmm_client.is_connected():
+            raise HTTPException(status_code=503, detail="Database not connected")
+        
+        scenarios = supabase_mmm_client.get_approved_sales_force_scenarios(project_id)
+        
+        return ResponseModel(
+            status="success",
+            message=f"Retrieved {len(scenarios)} sales force scenarios",
+            data={"scenarios": scenarios}
+        )
+        
+    except Exception as e:
+        logger.error(f"Error retrieving sales force scenarios: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/models/{model_id}/approve", response_model=ResponseModel)
+async def approve_model(model_id: str, approval_notes: Optional[str] = None):
+    """Approve a model for use in scenarios"""
+    try:
+        from supabase_client import supabase_mmm_client
+        if not supabase_mmm_client.is_connected():
+            raise HTTPException(status_code=503, detail="Database not connected")
+        
+        # Note: In a real implementation, you'd get the user_id from authentication
+        user_id = "admin"  # Placeholder
+        
+        success = supabase_mmm_client.approve_model(model_id, user_id, approval_notes)
+        
+        if not success:
+            raise HTTPException(status_code=400, detail="Failed to approve model")
+        
+        return ResponseModel(
+            status="success",
+            message="Model approved successfully",
+            data={"model_id": model_id}
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error approving model: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn

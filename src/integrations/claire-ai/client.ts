@@ -9,7 +9,7 @@ export interface CLAIREAIResponse<T = any> {
 }
 
 export interface ModelTrainingRequest {
-  project_id: number;
+  project_id: string | number;
   data_path?: string;
   model_config?: {
     model_type: 'DLT' | 'KTR' | 'LINEAR';
@@ -29,11 +29,22 @@ export interface ModelTrainingResponse {
 }
 
 export interface OptimizationRequest {
-  project_id: number;
+  project_id: string | number;
   scenario_type: 'tmb' | 'tsv';
   total_budget?: number;
   target_sales?: number;
   channel_constraints?: Record<string, [number, number]>;
+}
+
+export interface SalesForceOptimizationRequest {
+  project_id: string | number;
+  target_revenue: number;
+  current_sales_force: number;
+  external_factors?: {
+    new_competitor?: boolean;
+    recession?: boolean;
+  };
+  cost_per_rep?: number;
 }
 
 export interface OptimizationResponse {
@@ -46,7 +57,7 @@ export interface OptimizationResponse {
 }
 
 export interface InsightsRequest {
-  project_id: number;
+  project_id: string | number;
   language?: 'en' | 'ru';
 }
 
@@ -61,12 +72,12 @@ export interface InsightsResponse {
 }
 
 export interface AgentPromptRequest {
-  project_id: number;
+  project_id: string | number;
   prompt: string;
 }
 
 export interface ProjectStatusResponse {
-  project_id: number;
+  project_id: string | number;
   status: 'idle' | 'training' | 'optimizing' | 'error';
   last_updated: string;
   model_metrics?: ModelTrainingResponse['model_metrics'];
@@ -139,6 +150,14 @@ class CLAIREAIClient {
     });
   }
 
+  // Sales force optimization
+  async optimizeSalesForce(request: SalesForceOptimizationRequest): Promise<CLAIREAIResponse<any>> {
+    return this.request('/optimize/sales-force', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
   // Generate insights
   async generateInsights(request: InsightsRequest): Promise<CLAIREAIResponse<InsightsResponse>> {
     return this.request('/insights/generate', {
@@ -156,12 +175,12 @@ class CLAIREAIClient {
   }
 
   // Get project status
-  async getProjectStatus(projectId: number): Promise<CLAIREAIResponse<ProjectStatusResponse>> {
+  async getProjectStatus(projectId: string | number): Promise<CLAIREAIResponse<ProjectStatusResponse>> {
     return this.request(`/projects/${projectId}/status`);
   }
 
   // Upload data file
-  async uploadData(projectId: number, file: File): Promise<CLAIREAIResponse> {
+  async uploadData(projectId: string | number, file: File): Promise<CLAIREAIResponse> {
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -187,12 +206,12 @@ class CLAIREAIClient {
   }
 
   // Get available data sources
-  async getDataSources(projectId: number): Promise<CLAIREAIResponse<string[]>> {
+  async getDataSources(projectId: string | number): Promise<CLAIREAIResponse<string[]>> {
     return this.request(`/data/sources/${projectId}`);
   }
 
   // Connect to data source
-  async connectDataSource(projectId: number, sourcePath: string): Promise<CLAIREAIResponse> {
+  async connectDataSource(projectId: string | number, sourcePath: string): Promise<CLAIREAIResponse> {
     return this.request('/data/connect', {
       method: 'POST',
       body: JSON.stringify({

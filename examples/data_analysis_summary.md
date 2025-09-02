@@ -15,7 +15,7 @@
 - **Total Growth**: 629% over 5.7 years
 - **Monthly Growth Rate**: ~2.2% average
 - **Annual Growth Rate**: ~30% average
-
+need to pro
 ### **Sales Value**
 - **Starting Value**: $45,678 (Jan 2020)
 - **Ending Value**: $341,247 (Aug 2025)
