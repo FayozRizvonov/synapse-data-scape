@@ -19,7 +19,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [role, setRole] = useState<'marketing' | 'finance' | 'commercial'>('commercial');
+  const [role, setRole] = useState<'marketing' | 'finance' | 'commercial' | 'gm' | 'commercial_lead' | 'marketing_ops'>('commercial');
   const [companies, setCompanies] = useState<Array<{ id: string; name: string }>>([]);
   const [companyId, setCompanyId] = useState<string>('');
 
@@ -146,6 +146,9 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
                     <SelectItem value="commercial">commercial</SelectItem>
                     <SelectItem value="marketing">marketing</SelectItem>
                     <SelectItem value="finance">finance</SelectItem>
+                    <SelectItem value="gm">General Manager</SelectItem>
+                    <SelectItem value="commercial_lead">Commercial Lead</SelectItem>
+                    <SelectItem value="marketing_ops">Marketing Ops</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

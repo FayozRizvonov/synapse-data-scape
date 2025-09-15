@@ -4,9 +4,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Message, useAIAssistant } from '@/hooks/useAIAssistant';
+import { useAuth } from '@/contexts/AuthContext';
 
 import ChatMetricCardEnhanced from './ChatMetricCardEnhanced';
 import ChatReportSection from './ChatReportSection';
+import type { MetricCard } from '@/data/metricsKnowledgeBase';
 import { 
   User, 
   Bot, 
@@ -46,6 +48,7 @@ const ChatView: React.FC<ChatViewProps> = ({
   onNavigateToSection
 }) => {
   const { messages, isLoading, lastAIResponse, sendMessage } = useAIAssistant();
+  const { userRole } = useAuth();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
@@ -129,8 +132,11 @@ const ChatView: React.FC<ChatViewProps> = ({
       }
     }
 
+    // Remove inline JSON blocks to avoid showing raw objects in chat text
+    const withoutJson = content.replace(/\{[\s\S]*\}/, '').trim();
+    const baseText = withoutJson.length > 0 ? withoutJson : content;
     // Remove all sequences of three or more asterisks
-    const sanitizedContent = content.replace(/\*{3,}/g, "");
+    const sanitizedContent = baseText.replace(/\*{3,}/g, "");
 
     // Split text into lines
     const formattedLines = sanitizedContent.split('\n').map((line, index) => {
@@ -218,6 +224,46 @@ const ChatView: React.FC<ChatViewProps> = ({
     return formattedLines;
   };
 
+  // Fallback extractor: when upstream parser didn't set message.report/card,
+  // recover structured JSON embedded in the text so ChatView can still render.
+  type ChartType = 'bar' | 'line' | 'pie';
+  interface ExtractedChart {
+    type: ChartType;
+    x: { label: string; categories?: string[] };
+    y: { label: string };
+    series: Array<{ name: string; data: number[] }>;
+    style: { colors: string[]; height: number };
+  }
+  interface ExtractedSection {
+    title: string;
+    short: string;
+    full: {
+      snapshot: string[];
+      chart: ExtractedChart;
+      recommendations: string[];
+    };
+  }
+  interface ExtractedReport { sections: Array<ExtractedSection> }
+  interface ExtractedResult { report?: ExtractedReport; card?: MetricCard }
+  const extractStructuredFromText = (content: string): ExtractedResult => {
+    try {
+      const match = content.match(/\{[\s\S]*\}/);
+      if (!match) return {};
+      let jsonString = match[0];
+      jsonString = jsonString.replace(/,(\s*[}\]])/g, '$1');
+      const parsed = JSON.parse(jsonString) as unknown;
+      const p = parsed as { type?: string; report?: ExtractedReport; sections?: ExtractedSection[]; card?: MetricCard; title?: string; value?: string; chartData?: MetricCard['chartData'] };
+      if (p.type === 'report' && p.report?.sections) return { report: p.report };
+      if (p.type === 'card' && p.card) return { card: p.card };
+      // Bare shapes
+      if (p.sections) return { report: { sections: p.sections } };
+      if (p.title && (p.value || p.chartData)) return { card: p as unknown as MetricCard };
+    } catch {
+      // ignore
+    }
+    return {};
+  };
+
   const handleGoToCard = (metricId: string, section: string) => {
     if (onNavigateToSection) {
       onNavigateToSection(section);
@@ -279,6 +325,15 @@ const ChatView: React.FC<ChatViewProps> = ({
       return null;
     }
     
+    // Try to recover structured content from raw text if not provided
+    const recovered: ExtractedResult = (!message.report && !message.card && isAI)
+      ? extractStructuredFromText(message.content)
+      : {} as ExtractedResult;
+    const recoveredReport = recovered.report;
+    const recoveredCard = recovered.card;
+
+    const hasStructured = !!(message.report || message.card || recoveredReport || recoveredCard);
+
     return (
       <React.Fragment key={message.id}>
         <div
@@ -298,7 +353,7 @@ const ChatView: React.FC<ChatViewProps> = ({
             isAI ? "order-2" : "order-1"
           )}>
             {/* Render the top message card only when there's no structured content */}
-            {!(isAI && (message.report || message.card)) && (
+            {!(isAI && hasStructured) && (
               <Card className={cn(
                 "backdrop-blur-[2px] bg-white/10 border border-white/20 shadow-lg",
                 isAI 
@@ -329,9 +384,9 @@ const ChatView: React.FC<ChatViewProps> = ({
                         onClick={(e) => {
                           downloadClosestCard(e.currentTarget as HTMLElement, 'CLAIRE_AI_Response');
                         }}
-                        className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                        className="h-7 px-2 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                       >
-                        <Download className="w-4 h-4 mr-1" />
+                        <Download className="w-3.5 h-3.5 mr-1" />
                         Download PNG
                       </Button>
                     </div>
@@ -398,7 +453,7 @@ const ChatView: React.FC<ChatViewProps> = ({
         </div>
 
         {/* New report sections display (merged header + sections) */}
-        {isAI && message.report && (
+        {isAI && (message.report || recoveredReport) && (
           <div className="flex gap-3 mb-4 justify-start">
             <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
               <Bot className="w-5 h-5 text-white" />
@@ -443,7 +498,7 @@ const ChatView: React.FC<ChatViewProps> = ({
 
                   {/* Sections */}
                   <div className="space-y-3">
-                    {message.report.sections.map((section, index) => (
+                    {(message.report?.sections || (recoveredReport ? recoveredReport.sections : [])).map((section: ExtractedSection, index: number) => (
                       <ChatReportSection
                         key={index}
                         section={section}
@@ -459,7 +514,7 @@ const ChatView: React.FC<ChatViewProps> = ({
         )}
 
         {/* Card display */}
-        {isAI && message.card && (
+        {isAI && (message.card || recoveredCard) && (
           <div className="flex gap-3 mb-4 justify-start">
             <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
               <Bot className="w-5 h-5 text-white" />
@@ -504,11 +559,11 @@ const ChatView: React.FC<ChatViewProps> = ({
 
                   {/* Card itself */}
                   <ChatMetricCardEnhanced
-                    metric={message.card}
+                    metric={(message.card as MetricCard) || (recoveredCard as MetricCard)}
                     onGoToCard={handleGoToCard}
                     onShowChart={handleShowChart}
-                    isExpanded={expandedCards.has(message.card.id)}
-                    onToggleExpand={() => handleToggleExpand(message.card.id)}
+                    isExpanded={expandedCards.has(((message.card as MetricCard) || (recoveredCard as MetricCard)).id)}
+                    onToggleExpand={() => handleToggleExpand(((message.card as MetricCard) || (recoveredCard as MetricCard)).id)}
                   />
                 </CardContent>
                 <div className="absolute -left-2 top-6 h-3 w-3 rotate-45 bg-white/10 dark:bg-white/5 border-l border-t border-white/15" />
@@ -537,6 +592,11 @@ const ChatView: React.FC<ChatViewProps> = ({
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             CLAIRE AI Assistant
           </h2>
+          {userRole && (
+            <span className="ml-2 text-[11px] px-2 py-0.5 rounded-full border border-white/20 bg-white/10 text-white/80">
+              {userRole === 'gm' ? 'GM' : userRole === 'commercial_lead' ? 'Commercial Lead' : userRole === 'marketing_ops' ? 'Marketing Ops' : userRole}
+            </span>
+          )}
         </div>
         {onClose && (
           <Button

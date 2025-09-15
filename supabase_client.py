@@ -6,6 +6,8 @@ from datetime import datetime
 import logging
 from supabase import create_client, Client
 from dotenv import load_dotenv
+from io import BytesIO
+import pandas as pd
 
 # Load environment variables
 load_dotenv()
@@ -18,7 +20,8 @@ class SupabaseMMMClient:
     def __init__(self):
         """Initialize Supabase client"""
         self.supabase_url = os.getenv('SUPABASE_URL')
-        self.supabase_key = os.getenv('SUPABASE_ANON_KEY')
+        # Prefer service role key for server-side writes; fallback to anon for read-only
+        self.supabase_key = os.getenv('SUPABASE_SERVICE_ROLE_KEY') or os.getenv('SUPABASE_ANON_KEY')
         
         if not self.supabase_url or not self.supabase_key:
             logger.warning("Supabase credentials not found. Database operations will be disabled.")
@@ -267,6 +270,55 @@ class SupabaseMMMClient:
         except Exception as e:
             logger.error(f"Error retrieving approved sales force scenarios: {e}")
             return []
+
+    # UI Key Metrics
+    def insert_ui_key_metrics(self, payload: Dict[str, Any]) -> bool:
+        if not self.is_connected():
+            logger.warning("Supabase not connected. UI key metrics not saved.")
+            return False
+        try:
+            result = self.client.table('mmm_ui_key_metrics').insert(payload).execute()
+            if result.data:
+                logger.info("UI key metrics snapshot saved")
+                return True
+            logger.error("Failed to save UI key metrics: No data returned")
+            return False
+        except Exception as e:
+            logger.error(f"Error saving UI key metrics: {e}")
+            return False
+
+    # Dataset Loading
+    def load_training_dataframe(self, project_id: str, bucket: Optional[str] = None, path: Optional[str] = None) -> Optional[pd.DataFrame]:
+        """Load training dataset from Supabase Storage if configured.
+
+        Tries explicit bucket/path; otherwise uses SUPABASE_DATASET_BUCKET and SUPABASE_DATASET_PATH.
+        Returns a pandas DataFrame, or None if unavailable.
+        """
+        if not self.is_connected():
+            logger.warning("Supabase not connected. Cannot load dataset.")
+            return None
+        try:
+            bucket_name = bucket or os.getenv('SUPABASE_DATASET_BUCKET')
+            object_path = path or os.getenv('SUPABASE_DATASET_PATH')
+            if not bucket_name or not object_path:
+                logger.info("No dataset bucket/path configured; skipping Supabase dataset load")
+                return None
+            resp = self.client.storage.from_(bucket_name).download(object_path)
+            if not resp:
+                logger.error(f"Failed to download dataset from {bucket_name}/{object_path}")
+                return None
+            bytes_io = BytesIO(resp)
+            # Try CSV first; could be extended to parquet based on extension
+            try:
+                df = pd.read_csv(bytes_io)
+                logger.info(f"Loaded dataset from storage: {bucket_name}/{object_path} ({len(df)} rows)")
+                return df
+            except Exception as e:
+                logger.error(f"Error parsing CSV dataset: {e}")
+                return None
+        except Exception as e:
+            logger.error(f"Error loading dataset from Supabase storage: {e}")
+            return None
     
     # Scenario Comparisons
     def save_scenario_comparison(self, project_id: str, comparison_data: Dict[str, Any], user_id: Optional[str] = None) -> Optional[str]:

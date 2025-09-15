@@ -1,6 +1,7 @@
 import { useState, useCallback, createContext, useContext, ReactNode, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { metricsKnowledgeBase, findMetricByQuery, MetricCard, getTopPerformingChannels, getRegionalPerformance, getMarketingRecommendations, getScenarioComparisons } from '@/data/metricsKnowledgeBase';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface Message {
   id: string;
@@ -67,6 +68,7 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [lastAIResponse, setLastAIResponse] = useState<AIResponse | null>(null);
+  const { userRole } = useAuth();
 
   const sendMessage = useCallback(async (message: string): Promise<void> => {
     setIsLoading(true);
@@ -94,7 +96,7 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
       }));
       
       const { data, error: supabaseError } = await supabase.functions.invoke('ai-assistant', {
-        body: { message, kb: compactKb, history: historyPayload }
+        body: { message, kb: compactKb, history: historyPayload, persona: userRole }
       });
 
       if (supabaseError) {
@@ -106,6 +108,24 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
       
       if (!data) {
         throw new Error('Received empty response from AI assistant');
+      }
+
+      // Handle debug/error payloads returned with status 200
+      if ((data as any).error_message) {
+        const dbg = (data as any).error_debug || {};
+        const body: string = (dbg.body || dbg.message || dbg.statusText || '') as string;
+        const snippet = body ? String(body).slice(0, 300) : '';
+        const errorText = `Error from AI service: ${(data as any).error_message}. ${snippet ? `Details: ${snippet}` : ''}`;
+
+        const aiResponse: AIResponse = { text: errorText, responseType: 'text' };
+        setLastAIResponse(aiResponse);
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: errorText,
+          sender: 'ai'
+        };
+        setMessages(prev => [...prev, aiMessage]);
+        return; // stop further parsing
       }
 
       const responseText = data.response || 'Sorry, could not get a response.';
@@ -168,37 +188,102 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
               card = parsed.card as MetricCard;
             }
             cleanText = parsed.text || 'Here is the detailed information:';
-          } else if (parsed.type === 'report' && parsed.report && parsed.report.sections) {
+          } else if (parsed.type === 'report' && (parsed.report?.sections || parsed.sections || parsed["Simulation Results"] || parsed["Ranked Playbook"])) {
             responseType = 'report';
             cleanText = parsed.text || 'Analysis complete. Please review the detailed sections below.';
-            
-            // Validate the report structure - accept 1-4 sections
-            if (Array.isArray(parsed.report.sections) && parsed.report.sections.length >= 1 && parsed.report.sections.length <= 4) {
+
+            // Normalize alternative shapes into our canonical { report: { sections: [...] } }
+            const normalized = (() => {
+              // 1) Already in canonical structure
+              if (parsed.report?.sections && Array.isArray(parsed.report.sections)) {
+                return parsed.report as AIReport;
+              }
+              // 2) Some models may return { sections: [...] }
+              if (Array.isArray((parsed as any).sections)) {
+                return { sections: (parsed as any).sections } as AIReport;
+              }
+              // 3) Persona-specific minimal object: keys like "Simulation Results" and "Ranked Playbook"
+              const simResults: string[] | undefined = (parsed as any)["Simulation Results"] || (parsed as any)["simulation_results"]; 
+              const playbook: string[] | undefined = (parsed as any)["Ranked Playbook"] || (parsed as any)["ranked_playbook"] || (parsed as any).recommendations;
+              if (simResults || playbook) {
+                const snapshot = Array.isArray(simResults) && simResults.length > 0 ? simResults.slice(0, 2) : [
+                  'Scenario analysis available. Values normalized for display.'
+                ];
+                const recommendations = Array.isArray(playbook) && playbook.length > 0 ? playbook.slice(0, 3) : [
+                  'Prioritize highest-ROI lever based on latest model outputs.'
+                ];
+                const fallbackChart = {
+                  type: 'bar' as const,
+                  x: { label: 'Scenario' },
+                  y: { label: 'Impact' },
+                  series: [
+                    { name: 'Base', data: [0] },
+                    { name: 'Scenario', data: [0] },
+                  ],
+                  style: { colors: ['#3B82F6', '#10B981'], height: 220 }
+                };
+                return {
+                  sections: [
+                    {
+                      title: (parsed as any).title || 'Scenario Simulation',
+                      short: snapshot[0] || 'Scenario comparison and recommended plays.',
+                      full: {
+                        snapshot,
+                        chart: ((parsed as any).chart && (parsed as any).chart.type && (parsed as any).chart.series) ? (parsed as any).chart : fallbackChart,
+                        recommendations,
+                      }
+                    }
+                  ]
+                } as AIReport;
+              }
+              return undefined;
+            })();
+
+            if (normalized && Array.isArray(normalized.sections) && normalized.sections.length >= 1) {
+              report = normalized;
+              const stripped = responseText.replace(jsonString, '').trim();
+              cleanText = parsed.text || stripped || 'Analysis complete. Please review the detailed sections below.';
+              console.log('✅ Normalized report structure with', normalized.sections.length, 'sections');
+            } else if (parsed.report?.sections) {
+              // Validate canonical structure
               const isValidStructure = parsed.report.sections.every((section: ReportSection) => 
-                section.title && 
-                section.short && 
-                section.full && 
-                Array.isArray(section.full.snapshot) && 
-                section.full.snapshot.length >= 1 &&
-                section.full.chart &&
-                Array.isArray(section.full.recommendations) && 
-                section.full.recommendations.length >= 1
+                section.title && section.short && section.full && Array.isArray(section.full.snapshot) && section.full.chart && Array.isArray(section.full.recommendations)
               );
-              
               if (isValidStructure) {
                 report = parsed.report;
-                // Prefer the explicit summary text from the JSON; otherwise try to strip JSON from response
                 const stripped = responseText.replace(jsonString, '').trim();
                 cleanText = parsed.text || stripped || 'Analysis complete. Please review the detailed sections below.';
                 console.log('✅ Successfully parsed report with', parsed.report.sections.length, 'sections');
               } else {
                 console.warn('Invalid report structure received from AI');
-                // Request regeneration if structure is invalid
                 throw new Error('Invalid report structure. Please regenerate the response.');
               }
             } else {
-              console.warn('Report sections count is invalid');
-              throw new Error('Report must contain 1-4 sections. Please regenerate the response.');
+              console.warn('Report not present after normalization');
+              throw new Error('Report must contain sections. Please regenerate the response.');
+            }
+          } else if (!parsed.type) {
+            // Heuristic: model returned a bare card-like object
+            const looksLikeCard = (parsed.title && (parsed.value || parsed.chartData)) || parsed.card;
+            const cardPayload = parsed.card || parsed;
+            if (looksLikeCard) {
+              responseType = 'card';
+              try {
+                const candidateId: string | undefined = cardPayload.id || cardPayload.metricId;
+                const kbMetric = candidateId ? metricsKnowledgeBase.find(m => m.id === candidateId) : undefined;
+                if (kbMetric) {
+                  card = {
+                    ...kbMetric,
+                    ...cardPayload,
+                    chartData: cardPayload.chartData || kbMetric.chartData,
+                  } as MetricCard;
+                } else {
+                  card = cardPayload as MetricCard;
+                }
+              } catch (_) {
+                card = cardPayload as MetricCard;
+              }
+              cleanText = parsed.text || 'Here is the detailed information:';
             }
           }
         }
@@ -393,7 +478,7 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [messages]);
+  }, [messages, userRole]);
 
   const clearChat = useCallback(() => {
     setMessages([]);

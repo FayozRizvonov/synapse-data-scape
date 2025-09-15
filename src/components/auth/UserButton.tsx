@@ -30,7 +30,10 @@ export const UserButton: React.FC = () => {
       admin: 'Administrator',
       marketing: 'Marketing',
       finance: 'Finance',
-      commercial: 'Commercial'
+      commercial: 'Commercial',
+      gm: 'General Manager',
+      commercial_lead: 'Commercial Lead',
+      marketing_ops: 'Marketing Ops'
     };
     return role ? (roleLabels as any)[role] || role : 'User';
   };

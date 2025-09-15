@@ -4,6 +4,8 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 // @ts-expect-error - Deno remote import types unavailable in Node tooling
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+// @ts-expect-error - Deno remote import types unavailable in Node tooling
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // eslint-disable
 
@@ -11,6 +13,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 declare const Deno: { env: { get: (key: string) => string | undefined } };
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const supabaseUrl = Deno.env.get('SUPABASE_URL');
+const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -387,11 +391,105 @@ serve(async (req) => {
     console.log('✅ OpenAI API key found');
 
     const requestBody = await req.json();
-    const { message, kb, history } = requestBody;
+    const { message, kb, history, persona } = requestBody as { message: string; kb?: unknown; history?: any[]; persona?: string };
     console.log('📨 Received message:', message);
+    if (persona) {
+      console.log('👤 Persona:', persona);
+    }
     if (kb) {
       console.log('📚 Received Pharma SM KB payload');
     }
+
+    // Initialize Supabase client with the caller's JWT for RLS-safe access
+    let modelOutputsCompact: unknown[] | null = null;
+    try {
+      if (!supabaseUrl || !supabaseAnonKey) {
+        console.warn('⚠️ Supabase URL or ANON key not configured; skipping model outputs fetch');
+      } else {
+        const authHeader = req.headers.get('Authorization') || '';
+        const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+          global: { headers: authHeader ? { Authorization: authHeader } : {} }
+        });
+        console.log('🔎 Fetching latest model outputs with RLS...');
+        const { data: outputs, error: outputsError } = await supabase
+          .from('mmm_model_outputs')
+          .select('id, model_id, project_id, output_type, output_data, generated_at')
+          .order('generated_at', { ascending: false })
+          .limit(20);
+        if (outputsError) {
+          console.warn('⚠️ Failed to fetch model outputs:', outputsError.message);
+        } else if (outputs && outputs.length > 0) {
+          // Trim large payloads to keep prompt bounded
+          modelOutputsCompact = outputs.map((o: any) => ({
+            id: o.id,
+            model_id: o.model_id,
+            project_id: o.project_id,
+            output_type: o.output_type,
+            generated_at: o.generated_at,
+            // keep only first 10 keys if huge
+            output_data: (() => {
+              try {
+                const od = o.output_data;
+                if (od && typeof od === 'object' && !Array.isArray(od)) {
+                  const keys = Object.keys(od).slice(0, 5);
+                  const trimmed: Record<string, unknown> = {};
+                  for (const k of keys) trimmed[k] = od[k];
+                  return trimmed;
+                }
+                return od;
+              } catch (_) {
+                return o.output_data;
+              }
+            })()
+          }));
+          console.log(`✅ Retrieved ${outputs.length} model output rows (compacted)`);
+        } else {
+          console.log('ℹ️ No model outputs available for this user');
+        }
+      }
+    } catch (e) {
+      console.warn('⚠️ Error while preparing model outputs for prompt:', e?.message || e);
+    }
+
+    // Persona-specific formatting rules
+    const personaContext = (() => {
+      switch ((persona || '').toLowerCase()) {
+        case 'gm':
+        case 'general_manager':
+        case 'general manager':
+          return `PERSONA = GENERAL MANAGER (GM)
+Objective: Quick diagnosis + top-level recovery levers.
+STRICT FORMAT:
+1) Executive Summary (2–3 sentences) — why it happened + headline recovery option.
+2) Snapshot Chart — single chart (line or bar) showing overall performance trend (e.g., TRx by quarter, ROI dip).
+3) Top 2 Recommendations — clear, quantified recovery plays with expected impact and timeline.
+OUTPUT TYPE: Return a single JSON object ONLY with {"type":"report"} and exactly one section; no extra prose. The section.short must be the one-line takeaway. Provide exactly 2 recommendations.
+`;          
+        case 'commercial_lead':
+        case 'commercial lead':
+          return `PERSONA = COMMERCIAL LEAD
+Objective: Scenario testing + tactical budget allocation.
+STRICT FORMAT:
+1) Scenario Simulation — compare Base vs Scenario in a chart (no tables). Use series names: ["Base", "Scenario"].
+2) Simulation Results — 2–3 bullet points: expected TRx lift, ROI change, confidence.
+3) Ranked Playbook — top 3 moves, ordered.
+OUTPUT TYPE: Return a single JSON object ONLY with {"type":"report"} and exactly one section; no extra prose. Use bar or line chart with two series (Base vs Scenario). Provide exactly 3 ranked recommendations.
+`;
+        case 'marketing_ops':
+        case 'marketing ops':
+          return `PERSONA = MARKETING OPS
+Objective: Content performance optimization.
+STRICT FORMAT:
+1) Performance Flag — underperforming sequence or channel.
+2) Metric Card (1–2 KPIs) — ROI, engagement %, conversion, with red/yellow/green indicator.
+3) Actionable Recommendation — proposed fix with expected lift.
+4) Optional Benchmark — add if available in model outputs.
+OUTPUT TYPE: Return a single JSON object ONLY — prefer {"type":"card"}; if a chart is essential, use {"type":"report"} with one section. No extra prose. Always include at least one recommendation.
+`;
+        default:
+          return '';
+      }
+    })();
 
     console.log('🤖 Calling OpenAI API...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -408,10 +506,16 @@ serve(async (req) => {
             role: 'system',
             content: metricsContext
           },
+          ...(personaContext ? [{ role: 'system', content: personaContext }] : []),
+          ...(modelOutputsCompact ? [{
+            role: 'system',
+            content: 'MODEL_OUTPUTS_DATASET (JSON). Use to ground insights and recommendations. Prefer concrete numbers from this dataset when relevant.\n' +
+              JSON.stringify(modelOutputsCompact).slice(0, 20000)
+          }] : []),
           ...(kb ? [{
             role: 'system',
             content: `PHARMA_SM_DATASET (JSON). Use as the authoritative source for values, ids, and chart data. Do not speculate beyond it unless explicitly asked.\n` +
-              JSON.stringify(kb).slice(0, 120000)
+              JSON.stringify(kb).slice(0, 20000)
           }] : []),
           ...(Array.isArray(history) ? history.slice(-10).map((h) => ({
             role: h.role === 'assistant' ? 'assistant' : 'user',
@@ -429,7 +533,21 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`❌ OpenAI API error: ${response.status} ${response.statusText}`, errorText);
-      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+      // Return debug to client (status 200) so UI can show cause instead of generic 500
+      return new Response(JSON.stringify({
+        response: '',
+        error_message: 'OpenAI API error',
+        error_debug: {
+          source: 'openai',
+          httpStatus: response.status,
+          statusText: response.statusText,
+          body: errorText?.slice(0, 2000) || 'unknown'
+        },
+        timestamp: new Date().toISOString()
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      });
     }
 
     const data = await response.json();
@@ -452,18 +570,14 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('❌ Error in ai-assistant function:', error);
-    const errorResponse = {
-      error: error.message || 'Unknown error occurred',
-      response: 'Sorry, an error occurred. Please try again.',
+    return new Response(JSON.stringify({
+      response: '',
+      error_message: 'Edge function error',
+      error_debug: { source: 'edge-function', message: (error as any)?.message?.toString()?.slice(0, 2000) },
       timestamp: new Date().toISOString()
-    };
-
-    return new Response(JSON.stringify(errorResponse), {
-      status: 500,
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json'
-      }
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 }); 

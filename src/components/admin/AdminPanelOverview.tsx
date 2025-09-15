@@ -15,7 +15,7 @@ interface MemberRow {
   id: string;
   user_id: string;
   company_id: string;
-  role: 'admin' | 'marketing' | 'finance' | 'commercial';
+  role: 'admin' | 'marketing' | 'finance' | 'commercial' | 'gm' | 'commercial_lead' | 'marketing_ops';
   status?: 'pending' | 'active' | 'declined';
   created_at: string;
   email: string | null;
@@ -230,6 +230,9 @@ const AdminPanelOverview: React.FC = () => {
                       <SelectItem value="commercial">commercial</SelectItem>
                       <SelectItem value="marketing">marketing</SelectItem>
                       <SelectItem value="finance">finance</SelectItem>
+                      <SelectItem value="gm">gm</SelectItem>
+                      <SelectItem value="commercial_lead">commercial_lead</SelectItem>
+                      <SelectItem value="marketing_ops">marketing_ops</SelectItem>
                       <SelectItem value="admin">admin</SelectItem>
                     </SelectContent>
                   </Select>
@@ -272,6 +275,9 @@ const AdminPanelOverview: React.FC = () => {
                   <SelectItem value="commercial">commercial</SelectItem>
                   <SelectItem value="marketing">marketing</SelectItem>
                   <SelectItem value="finance">finance</SelectItem>
+                  <SelectItem value="gm">gm</SelectItem>
+                  <SelectItem value="commercial_lead">commercial_lead</SelectItem>
+                  <SelectItem value="marketing_ops">marketing_ops</SelectItem>
                   <SelectItem value="admin">admin</SelectItem>
                 </SelectContent>
               </Select>

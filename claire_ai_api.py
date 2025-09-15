@@ -8,6 +8,7 @@ import logging
 from datetime import datetime
 import asyncio
 from claire_ai_agent import PharmaMMMAgent, ModelConfig, OptimizationConfig, ModelType, ScenarioType
+from supabase_client import supabase_mmm_client
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -101,8 +102,21 @@ async def train_model(request: ModelRequest):
         # Get or create agent
         agent = get_or_create_agent(request.project_id, request.data_path)
         
-        # Connect to data source
-        agent.connect_to_data_source(request.data_path)
+        # Determine data source: prefer explicit path, else try Supabase dataset
+        data_path = request.data_path
+        if not data_path:
+            try:
+                df = supabase_mmm_client.load_training_dataframe(request.project_id)
+                if df is not None:
+                    tmp_path = "examples/supabase_dataset.csv"
+                    df.to_csv(tmp_path, index=False)
+                    data_path = tmp_path
+                    logger.info(f"Using dataset from Supabase storage: {tmp_path}")
+            except Exception as e:
+                logger.warning(f"Failed to load dataset from Supabase: {e}")
+        
+        # Connect to data source (falls back to provided path or raises)
+        agent.connect_to_data_source(data_path)
         
         # Validate data
         validation = agent.validate_data()
@@ -139,6 +153,61 @@ async def train_model(request: ModelRequest):
         
         # Generate outputs
         outputs = agent.generate_outputs()
+
+        # Persist outputs to Supabase (best-effort)
+        try:
+            model_id = getattr(agent, 'saved_model_id', None)
+            supabase_mmm_client.save_model_output(model_id, request.project_id, 'outputs', outputs)
+            # Persist UI key metrics snapshot from dataset if possible
+            # Use last row of the original data for point-in-time key metrics
+            try:
+                from supabase_client import supabase_mmm_client
+                df_last = agent.data.iloc[-1] if agent.data is not None and len(agent.data) > 0 else None
+                def safe_get(name: str, alt: str = None):
+                    if df_last is not None:
+                        if name in df_last:
+                            return float(df_last[name] or 0)
+                        if alt and alt in df_last:
+                            return float(df_last[alt] or 0)
+                    return 0.0
+                payload = {
+                    'project_id': request.project_id,
+                    'sales_volume': safe_get('sales_volume'),
+                    'sales_value': safe_get('sales_value'),
+                    'f2f_call': safe_get('f2f_call', 'clm_call'),
+                    'webvirtual_call': safe_get('webvirtual_call', 'phone_call'),
+                    'webinar': safe_get('webinar'),
+                    'mass_email': safe_get('mass_email'),
+                    'email_1to1': safe_get('email_1to1'),
+                    'digital_display': safe_get('digital_display'),
+                    'digital_video': safe_get('digital_video'),
+                    'medscape_banner': safe_get('medscape_banner'),
+                    'out_of_home': safe_get('out_of_home'),
+                    'symposium': safe_get('symposium'),
+                    'samples_distributed': safe_get('samples_distributed'),
+                    'patient_share': safe_get('patient_share'),
+                    'market_access_score': safe_get('market_access_score'),
+                    'sample_to_script_ratio': safe_get('sample_to_script_ratio'),
+                    'rebate_spend': safe_get('rebate_spend'),
+                    'roi': safe_get('roi'),
+                    'f2f_call_cost': safe_get('f2f_call_cost', 'clm_call_cost'),
+                    'webvirtual_call_cost': safe_get('webvirtual_call_cost', 'phone_call_cost'),
+                    'webinar_cost': safe_get('webinar_cost'),
+                    'mass_email_cost': safe_get('mass_email_cost'),
+                    'email_1to1_cost': safe_get('email_1to1_cost'),
+                    'digital_display_cost': safe_get('digital_display_cost'),
+                    'digital_video_cost': safe_get('digital_video_cost'),
+                    'medscape_banner_cost': safe_get('medscape_banner_cost'),
+                    'out_of_home_cost': safe_get('out_of_home_cost'),
+                    'symposium_cost': safe_get('symposium_cost'),
+                    'samples_cost': safe_get('samples_cost'),
+                    'total_promotional_cost': safe_get('total_promotional_cost'),
+                }
+                supabase_mmm_client.insert_ui_key_metrics(payload)
+            except Exception as ie:
+                logger.warning(f"Failed to persist UI key metrics snapshot: {ie}")
+        except Exception as e:
+            logger.warning(f"Failed to persist model outputs: {e}")
         
         return ResponseModel(
             status="success",
@@ -333,7 +402,18 @@ async def generate_insights(request: InsightRequest):
         
         # Connect to data source if not already done
         if agent.data is None:
-            agent.connect_to_data_source(request.data_path)
+            data_path = request.data_path
+            if not data_path:
+                try:
+                    df = supabase_mmm_client.load_training_dataframe(request.project_id)
+                    if df is not None:
+                        tmp_path = "examples/supabase_dataset.csv"
+                        df.to_csv(tmp_path, index=False)
+                        data_path = tmp_path
+                        logger.info(f"Using dataset from Supabase storage: {tmp_path}")
+                except Exception as e:
+                    logger.warning(f"Failed to load dataset from Supabase: {e}")
+            agent.connect_to_data_source(data_path)
             agent.clean_data()
         
         # Build model if not available
@@ -348,6 +428,15 @@ async def generate_insights(request: InsightRequest):
         if request.analysis_type == 'comprehensive':
             outputs = agent.generate_outputs()
             insights['outputs'] = outputs
+
+        # Persist insights (and outputs if present) to Supabase (best-effort)
+        try:
+            model_id = getattr(agent, 'saved_model_id', None)
+            supabase_mmm_client.save_model_output(model_id, request.project_id, 'insights', insights)
+            if 'outputs' in insights:
+                supabase_mmm_client.save_model_output(model_id, request.project_id, 'outputs', insights['outputs'])
+        except Exception as e:
+            logger.warning(f"Failed to persist insights/outputs: {e}")
         
         return ResponseModel(
             status="success",

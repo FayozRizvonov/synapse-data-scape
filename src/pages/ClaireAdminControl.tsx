@@ -463,6 +463,14 @@ const ClaireAdminControl = () => {
     };
     
     const mult = multipliers[type as keyof typeof multipliers];
+    return {
+      id: type,
+      name: type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' '),
+      projected_sales: Math.round(baseSales * mult.sales),
+      total_spend: Math.round(constraints.total_budget * mult.spend),
+      roi: { sf_calls: 2.4 * mult.roi, digital: 3.1 * mult.roi }
+    };
+  };
 
   // Sales Force Optimization handler
   const handleSalesForceOptimization = async () => {
@@ -508,15 +516,6 @@ const ClaireAdminControl = () => {
     } finally {
       setIsProcessing(false);
     }
-  };
-    
-    return {
-      id: type,
-      name: type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' '),
-      projected_sales: Math.round(baseSales * mult.sales),
-      total_spend: Math.round(constraints.total_budget * mult.spend),
-      roi: { sf_calls: 2.4 * mult.roi, digital: 3.1 * mult.roi }
-    };
   };
 
   const handleSubmitForApproval = async () => {

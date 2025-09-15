@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ParticleBackground from '@/components/ParticleBackground';
-import { FeatureCard } from '@/components/FeatureCard';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -16,7 +15,17 @@ import {
   Stethoscope,
   Calendar,
   BarChart3,
-  Mail
+  Mail,
+  Phone,
+  Monitor,
+  HeartHandshake,
+  FileText,
+  ChevronDown,
+  ChevronUp,
+  Expand,
+  Share,
+  Download,
+  RefreshCw
 } from 'lucide-react';
 import SituationDetailModal from './SituationDetailModal';
 import ScenarioComparison from './ScenarioComparison';
@@ -28,12 +37,11 @@ import { BauhausBorder } from '@/components/ui/bauhaus-border';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import AnimatedNumber from './AnimatedNumber';
-import { ChevronDown, ChevronUp, Phone, MousePointer, HeartHandshake, MapPin, Smartphone, Send, MessageCircle, Zap, Star, Share2, Download, Expand, ChevronLeft, ChevronRight, Monitor, FileText } from "lucide-react";
 import { useTheme } from '@/hooks/useTheme';
 import { LineChart, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line, Area, ResponsiveContainer } from 'recharts';
 import { VoiceAssistant } from './VoiceAssistant';
 import ChatView from './ChatView';
-import { usePharmaMetrics, useModelPerformanceStats } from '@/hooks/usePharmaMetrics';
+import { usePharmaMetrics, useModelPerformanceStats, MetricCard } from '@/hooks/usePharmaMetrics';
 
 // Local interface for our component that extends the base MetricCard
 interface LocalMetricCard {
@@ -65,6 +73,7 @@ const convertToMetricCard = (localCard: LocalMetricCard) => {
 
 const FarmaMetricsWithAssistant = () => {
   const { permissions, isCompanyAdmin } = useAuth();
+  const { theme } = useTheme();
   const [keyMetricsExpanded, setKeyMetricsExpanded] = useState(false);
   const [situationMetricsExpanded, setSituationMetricsExpanded] = useState(false);
   const [selectedCard, setSelectedCard] = useState<LocalMetricCard | null>(null);
@@ -73,27 +82,76 @@ const FarmaMetricsWithAssistant = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('2022-2024');
   const [selectedBreakdownPeriod, setSelectedBreakdownPeriod] = useState('2022-2024');
 
-  // Live data from Supabase (MMM outputs)
+  // Use dynamic data hooks
   const {
-    keyMetrics: hookKeyMetrics,
-    uiKeyMetrics,
+    keyMetrics: dynamicKeyMetrics,
+    situationMetrics: dynamicSituationMetrics,
+    modelOutputs: dynamicModelOutputs,
+    roiAnalysis: dynamicROIAnalysis,
+    promotionalImpact: dynamicPromotionalImpact,
+    salesVolumeData: dynamicSalesVolumeData,
+    salesBreakdownData: dynamicSalesBreakdownData,
     loading: metricsLoading,
     error: metricsError,
-    refreshData
+    refreshData,
+    setPeriod
   } = usePharmaMetrics({
-    projectId: 'fa95a40e-7574-47c1-9c46-85820edad19f',
+    projectId: "fa95a40e-7574-47c1-9c46-85820edad19f",
     period: selectedPeriod,
     autoRefresh: true,
-    refreshInterval: 60000
+    refreshInterval: 60000 // 1 minute
   });
 
-  const { rSquared, mape } = useModelPerformanceStats({
-    projectId: 'fa95a40e-7574-47c1-9c46-85820edad19f'
+  const {
+    rSquared,
+    adjRSquared,
+    mape,
+    durbinWatson,
+    aic,
+    bic,
+    loading: statsLoading,
+    error: statsError
+  } = useModelPerformanceStats({
+    projectId: "fa95a40e-7574-47c1-9c46-85820edad19f"
   });
 
-  // Function to get data based on selected period
+  // Helper function to get icon for metric
+  const getIconForMetric = (metricId: string) => {
+    const iconMap: { [key: string]: React.ComponentType<React.SVGProps<SVGSVGElement>> } = {
+      'revenue': TrendingUp,
+      'prescriptions': Users,
+      'sample-ratio': Pill,
+      'roi': DollarSign,
+      'market-access': Target,
+      'phone-web-calls': Phone,
+      'digital-dtc-company': Monitor,
+      'f2f-calls-new': HeartHandshake,
+      'mass-email': Mail,
+      'medscape-banner': FileText,
+      'total-sales': DollarSign,
+      'base-sales': Activity,
+      'incremental': BarChart3,
+      'promotional-spend': BarChart3,
+      'vrr': BarChart3,
+      'seasonality': Calendar,
+      'trend': TrendingUp,
+      'f2f-calls': Users,
+      'web-virtual-calls': Stethoscope,
+      'symposium': Calendar,
+      'sfmc-emails': Mail
+    };
+    return iconMap[metricId] || Activity;
+  };
+
+  // Function to get data based on selected period - now uses dynamic data
   const getSalesVolumeData = () => {
-    const dataSet2022_2024 = [
+    // Use dynamic data if available, otherwise fallback to static data
+    if (dynamicSalesVolumeData && dynamicSalesVolumeData.length > 0) {
+      return dynamicSalesVolumeData;
+    }
+    
+    // Fallback static data
+    return [
       { date: '02/22', actual: 7029, predicted: 9471.55 },
       { date: '03/22', actual: 10377, predicted: 12375.2 },
       { date: '04/22', actual: 9312, predicted: 9312 },
@@ -119,76 +177,17 @@ const FarmaMetricsWithAssistant = () => {
       { date: '12/23', actual: 73178.43, predicted: 73960.32 },
       { date: '01/24', actual: 73073.86, predicted: 70613.55 }
     ];
-
-    const dataSet2021_2023 = [
-      { date: '02/21', actual: 6029, predicted: 8471.55 },
-      { date: '03/21', actual: 9377, predicted: 11375.2 },
-      { date: '04/21', actual: 8312, predicted: 8312 },
-      { date: '05/21', actual: 13277, predicted: 17426.22 },
-      { date: '06/21', actual: 19724, predicted: 20983.7 },
-      { date: '07/21', actual: 29918, predicted: 27244.63 },
-      { date: '08/21', actual: 33050, predicted: 30743.4 },
-      { date: '09/21', actual: 37067, predicted: 34519.12 },
-      { date: '10/21', actual: 41180, predicted: 39947.85 },
-      { date: '11/21', actual: 44384, predicted: 44004.51 },
-      { date: '12/21', actual: 50630, predicted: 49038.29 },
-      { date: '01/22', actual: 46616, predicted: 46902.53 },
-      { date: '02/22', actual: 38867, predicted: 38637.02 },
-      { date: '03/22', actual: 41861, predicted: 41536.09 },
-      { date: '04/22', actual: 46427, predicted: 42825.95 },
-      { date: '05/22', actual: 50633, predicted: 46494.45 },
-      { date: '06/22', actual: 51458, predicted: 49741.54 },
-      { date: '07/22', actual: 53441, predicted: 54542.83 },
-      { date: '08/22', actual: 57362, predicted: 59401.6 },
-      { date: '09/22', actual: 57554, predicted: 62384.03 },
-      { date: '10/22', actual: 65273, predicted: 67760.02 },
-      { date: '11/22', actual: 68056.57, predicted: 69882.45 },
-      { date: '12/22', actual: 72178.43, predicted: 72960.32 },
-      { date: '01/23', actual: 72073.86, predicted: 69613.55 }
-    ];
-
-    const dataSet2020_2022 = [
-      { date: '02/20', actual: 7029, predicted: 9471.55 },
-      { date: '03/20', actual: 10377, predicted: 12375.2 },
-      { date: '04/20', actual: 9312, predicted: 9312 },
-      { date: '05/20', actual: 14277, predicted: 18426.22 },
-      { date: '06/20', actual: 20724, predicted: 21983.7 },
-      { date: '07/20', actual: 30918, predicted: 28244.63 },
-      { date: '08/20', actual: 34050, predicted: 31743.4 },
-      { date: '09/20', actual: 38067, predicted: 35519.12 },
-      { date: '10/20', actual: 42180, predicted: 40947.85 },
-      { date: '11/20', actual: 45384, predicted: 45004.51 },
-      { date: '12/20', actual: 51630, predicted: 50038.29 },
-      { date: '01/21', actual: 47616, predicted: 47902.53 },
-      { date: '02/21', actual: 39867, predicted: 39637.02 },
-      { date: '03/21', actual: 42861, predicted: 42536.09 },
-      { date: '04/21', actual: 47427, predicted: 43825.95 },
-      { date: '05/21', actual: 51633, predicted: 47494.45 },
-      { date: '06/21', actual: 52458, predicted: 50741.54 },
-      { date: '07/21', actual: 54441, predicted: 55542.83 },
-      { date: '08/21', actual: 58362, predicted: 60401.6 },
-      { date: '09/21', actual: 58554, predicted: 63384.03 },
-      { date: '10/21', actual: 66273, predicted: 68760.02 },
-      { date: '11/21', actual: 69056.57, predicted: 70882.45 },
-      { date: '12/21', actual: 73178.43, predicted: 73960.32 },
-      { date: '01/22', actual: 73073.86, predicted: 70613.55 }
-    ];
-
-    switch (selectedPeriod) {
-      case '2022-2024':
-        return dataSet2022_2024;
-      case '2021-2023':
-        return dataSet2021_2023;
-      case '2020-2022':
-        return dataSet2020_2022;
-      default:
-        return dataSet2022_2024;
-    }
   };
 
-  // Function to get breakdown chart data based on selected period
+  // Function to get breakdown chart data based on selected period - now uses dynamic data
   const getSalesVolumeBreakdownData = () => {
-    const breakdownData2022_2024 = [
+    // Use dynamic data if available, otherwise fallback to static data
+    if (dynamicSalesBreakdownData && dynamicSalesBreakdownData.length > 0) {
+      return dynamicSalesBreakdownData;
+    }
+    
+    // Fallback static data
+    return [
       { date: '02/22', base: 6911.35, phoneWeb_ABC: 0, f2f_ABC: 0, phoneWeb_X: 0, f2f_X: 80.56, digitalDTC: 26.48, medscape: 0, outOfHome: 0, massEmail: 0, internalEmail: 1.46 },
       { date: '03/22', base: 10011.79, phoneWeb_ABC: 137.91, f2f_ABC: 0, phoneWeb_X: 12.58, f2f_X: 161.54, digitalDTC: 37.61, medscape: 0, outOfHome: 0, massEmail: 1.25, internalEmail: 1.23 },
       { date: '04/22', base: 8028.31, phoneWeb_ABC: 153.67, f2f_ABC: 1003.14, phoneWeb_X: 11.32, f2f_X: 145.39, digitalDTC: 48.49, medscape: 10.7, outOfHome: 0, massEmail: 3.74, internalEmail: 0.61 },
@@ -214,132 +213,16 @@ const FarmaMetricsWithAssistant = () => {
       { date: '12/23', base: 58674.14, phoneWeb_ABC: 5196.96, f2f_ABC: 1756.97, phoneWeb_X: 892.1, f2f_X: 158.78, digitalDTC: 3508.82, medscape: 266.55, outOfHome: 1216.29, massEmail: 6.9, internalEmail: 2.21 },
       { date: '01/24', base: 59714.51, phoneWeb_ABC: 5258.44, f2f_ABC: 1126.56, phoneWeb_X: 890.92, f2f_X: 164.11, digitalDTC: 3157.94, medscape: 239.89, outOfHome: 1094.66, massEmail: 7.53, internalEmail: 6.77 }
     ];
-
-    const breakdownData2021_2023 = [
-      { date: '02/21', base: 5911.35, phoneWeb_ABC: 0, f2f_ABC: 0, phoneWeb_X: 0, f2f_X: 70.56, digitalDTC: 20.48, medscape: 0, outOfHome: 0, massEmail: 0, internalEmail: 1.46 },
-      { date: '03/21', base: 9011.79, phoneWeb_ABC: 120.91, f2f_ABC: 0, phoneWeb_X: 10.58, f2f_X: 151.54, digitalDTC: 30.61, medscape: 0, outOfHome: 0, massEmail: 1.25, internalEmail: 1.23 },
-      { date: '04/21', base: 7028.31, phoneWeb_ABC: 140.67, f2f_ABC: 900.14, phoneWeb_X: 9.32, f2f_X: 135.39, digitalDTC: 40.49, medscape: 8.7, outOfHome: 0, massEmail: 3.74, internalEmail: 0.61 },
-      { date: '05/21', base: 12184.01, phoneWeb_ABC: 250.35, f2f_ABC: 550.88, phoneWeb_X: 30.34, f2f_X: 120.85, digitalDTC: 50.04, medscape: 35.94, outOfHome: 0, massEmail: 5.54, internalEmail: 0.31 },
-      { date: '06/21', base: 18139.4, phoneWeb_ABC: 750.49, f2f_ABC: 480.88, phoneWeb_X: 75.11, f2f_X: 110.77, digitalDTC: 55.68, medscape: 55.16, outOfHome: 0, massEmail: 8.95, internalEmail: 6.19 },
-      { date: '07/21', base: 27356.33, phoneWeb_ABC: 1100.76, f2f_ABC: 700.79, phoneWeb_X: 118.2, f2f_X: 125.43, digitalDTC: 62.85, medscape: 72.47, outOfHome: 320.54, massEmail: 8.3, internalEmail: 11.47 },
-      { date: '08/21', base: 28486.48, phoneWeb_ABC: 1450.05, f2f_ABC: 780.55, phoneWeb_X: 230.54, f2f_X: 130.25, digitalDTC: 900.84, medscape: 82.57, outOfHome: 620.03, massEmail: 9.43, internalEmail: 6.68 },
-      { date: '09/21', base: 30037.69, phoneWeb_ABC: 1850.62, f2f_ABC: 1280.06, phoneWeb_X: 300.1, f2f_X: 158.12, digitalDTC: 1750.98, medscape: 90.4, outOfHome: 880.77, massEmail: 10.11, internalEmail: 4.06 },
-      { date: '10/21', base: 33796.34, phoneWeb_ABC: 2450.09, f2f_ABC: 1000.35, phoneWeb_X: 430.77, f2f_X: 168.15, digitalDTC: 1700.29, medscape: 98.97, outOfHome: 790.19, massEmail: 9.1, internalEmail: 5.39 },
-      { date: '11/21', base: 35395.05, phoneWeb_ABC: 3100.37, f2f_ABC: 850.82, phoneWeb_X: 540.89, f2f_X: 162.55, digitalDTC: 1800.93, medscape: 105.49, outOfHome: 1450.62, massEmail: 8.68, internalEmail: 13.35 },
-      { date: '12/21', base: 40993.09, phoneWeb_ABC: 3450.21, f2f_ABC: 520.09, phoneWeb_X: 600.97, f2f_X: 148.7, digitalDTC: 1750.52, medscape: 110.14, outOfHome: 2050.51, massEmail: 8.21, internalEmail: 12.53 },
-      { date: '01/22', base: 36854.75, phoneWeb_ABC: 4100.33, f2f_ABC: 300.86, phoneWeb_X: 700.95, f2f_X: 132.53, digitalDTC: 1580.49, medscape: 128.7, outOfHome: 1850.56, massEmail: 7.39, internalEmail: 8.28 },
-      { date: '02/22', base: 29015.94, phoneWeb_ABC: 4650.58, f2f_ABC: 220.9, phoneWeb_X: 780.97, f2f_X: 122.12, digitalDTC: 1420.49, medscape: 142.46, outOfHome: 1650.5, massEmail: 6.65, internalEmail: 7.35 },
-      { date: '03/22', base: 31495.82, phoneWeb_ABC: 5250.52, f2f_ABC: 360.16, phoneWeb_X: 880.81, f2f_X: 118.88, digitalDTC: 1280.12, medscape: 158.4, outOfHome: 1480.25, massEmail: 5.98, internalEmail: 13.86 },
-      { date: '04/22', base: 35845.58, phoneWeb_ABC: 5650.55, f2f_ABC: 370.75, phoneWeb_X: 860.59, f2f_X: 105.6, digitalDTC: 1150.96, medscape: 242.35, outOfHome: 1330.93, massEmail: 5.39, internalEmail: 13.04 },
-      { date: '05/22', base: 40042.29, phoneWeb_ABC: 5800.87, f2f_ABC: 290.42, phoneWeb_X: 920.47, f2f_X: 108.26, digitalDTC: 1040.91, medscape: 262.57, outOfHome: 1200.83, massEmail: 4.86, internalEmail: 14.18 },
-      { date: '06/22', base: 40423.43, phoneWeb_ABC: 5950.47, f2f_ABC: 560.72, phoneWeb_X: 940.21, f2f_X: 109.75, digitalDTC: 940.29, medscape: 280.08, outOfHome: 1080.45, massEmail: 4.38, internalEmail: 8.68 },
-      { date: '07/22', base: 42631.52, phoneWeb_ABC: 5850.59, f2f_ABC: 710.41, phoneWeb_X: 950.68, f2f_X: 118.58, digitalDTC: 850.2, medscape: 295.83, outOfHome: 970.41, massEmail: 4.7, internalEmail: 9.65 },
-      { date: '08/22', base: 45081.26, phoneWeb_ABC: 5700.7, f2f_ABC: 640.18, phoneWeb_X: 910.7, f2f_X: 106.22, digitalDTC: 1580.98, medscape: 308.02, outOfHome: 1720.26, massEmail: 5.59, internalEmail: 6.98 },
-      { date: '09/22', base: 43065.51, phoneWeb_ABC: 5700.7, f2f_ABC: 930.42, phoneWeb_X: 910.45, f2f_X: 99.34, digitalDTC: 3100.19, medscape: 302.3, outOfHome: 1620.43, massEmail: 5.12, internalEmail: 6.98 },
-      { date: '10/22', base: 49856.45, phoneWeb_ABC: 5600.05, f2f_ABC: 1300.01, phoneWeb_X: 915.02, f2f_X: 93.14, digitalDTC: 3750.03, medscape: 290.53, outOfHome: 1470.59, massEmail: 5.79, internalEmail: 5.14 },
-      { date: '11/22', base: 52581.96, phoneWeb_ABC: 5450.56, f2f_ABC: 1950.41, phoneWeb_X: 935.3, f2f_X: 138.45, digitalDTC: 3580.66, medscape: 275.38, outOfHome: 1320.43, massEmail: 5.77, internalEmail: 4.07 },
-      { date: '12/22', base: 57674.14, phoneWeb_ABC: 5100.96, f2f_ABC: 1720.97, phoneWeb_X: 875.1, f2f_X: 152.78, digitalDTC: 3440.82, medscape: 260.55, outOfHome: 1190.29, massEmail: 6.9, internalEmail: 2.21 },
-      { date: '01/23', base: 58714.51, phoneWeb_ABC: 5180.44, f2f_ABC: 1100.56, phoneWeb_X: 875.92, f2f_X: 158.11, digitalDTC: 3100.94, medscape: 235.89, outOfHome: 1070.66, massEmail: 7.53, internalEmail: 6.77 }
-    ];
-
-    const breakdownData2020_2022 = [
-      { date: '02/20', base: 6911.35, phoneWeb_ABC: 0, f2f_ABC: 0, phoneWeb_X: 0, f2f_X: 80.56, digitalDTC: 26.48, medscape: 0, outOfHome: 0, massEmail: 0, internalEmail: 1.46 },
-      { date: '03/20', base: 10011.79, phoneWeb_ABC: 137.91, f2f_ABC: 0, phoneWeb_X: 12.58, f2f_X: 161.54, digitalDTC: 37.61, medscape: 0, outOfHome: 0, massEmail: 1.25, internalEmail: 1.23 },
-      { date: '04/20', base: 8028.31, phoneWeb_ABC: 153.67, f2f_ABC: 1003.14, phoneWeb_X: 11.32, f2f_X: 145.39, digitalDTC: 48.49, medscape: 10.7, outOfHome: 0, massEmail: 3.74, internalEmail: 0.61 },
-      { date: '05/20', base: 13184.01, phoneWeb_ABC: 266.35, f2f_ABC: 601.88, phoneWeb_X: 35.34, f2f_X: 130.85, digitalDTC: 58.04, medscape: 39.94, outOfHome: 0, massEmail: 5.54, internalEmail: 0.31 },
-      { date: '06/20', base: 19139.4, phoneWeb_ABC: 781.49, f2f_ABC: 505.88, phoneWeb_X: 82.11, f2f_X: 117.77, digitalDTC: 60.68, medscape: 59.16, outOfHome: 0, massEmail: 8.95, internalEmail: 6.19 },
-      { date: '07/20', base: 28356.33, phoneWeb_ABC: 1136.76, f2f_ABC: 737.79, phoneWeb_X: 124.2, f2f_X: 131.43, digitalDTC: 67.85, medscape: 77.47, outOfHome: 330.54, massEmail: 8.3, internalEmail: 11.47 },
-      { date: '08/20', base: 29486.48, phoneWeb_ABC: 1486.05, f2f_ABC: 804.55, phoneWeb_X: 237.54, f2f_X: 135.25, digitalDTC: 921.84, medscape: 86.57, outOfHome: 628.03, massEmail: 9.43, internalEmail: 6.68 },
-      { date: '09/20', base: 31037.69, phoneWeb_ABC: 1918.62, f2f_ABC: 1315.06, phoneWeb_X: 308.1, f2f_X: 164.12, digitalDTC: 1800.98, medscape: 94.4, outOfHome: 895.77, massEmail: 10.11, internalEmail: 4.06 },
-      { date: '10/20', base: 34796.34, phoneWeb_ABC: 2495.09, f2f_ABC: 1042.35, phoneWeb_X: 440.77, f2f_X: 173.15, digitalDTC: 1754.29, medscape: 102.97, outOfHome: 806.19, massEmail: 9.1, internalEmail: 5.39 },
-      { date: '11/20', base: 36395.05, phoneWeb_ABC: 3181.37, f2f_ABC: 896.82, phoneWeb_X: 553.89, f2f_X: 168.55, digitalDTC: 1854.93, medscape: 108.49, outOfHome: 1481.62, massEmail: 8.68, internalEmail: 13.35 },
-      { date: '12/20', base: 41993.09, phoneWeb_ABC: 3523.21, f2f_ABC: 538.09, phoneWeb_X: 617.97, f2f_X: 151.7, digitalDTC: 1804.52, medscape: 114.14, outOfHome: 2089.51, massEmail: 8.21, internalEmail: 12.53 },
-      { date: '01/21', base: 37854.75, phoneWeb_ABC: 4195.33, f2f_ABC: 322.86, phoneWeb_X: 725.95, f2f_X: 136.53, digitalDTC: 1629.49, medscape: 133.7, outOfHome: 1880.56, massEmail: 7.39, internalEmail: 8.28 },
-      { date: '02/21', base: 30015.94, phoneWeb_ABC: 4711.58, f2f_ABC: 229.9, phoneWeb_X: 797.97, f2f_X: 127.12, digitalDTC: 1472.49, medscape: 147.46, outOfHome: 1692.5, massEmail: 6.65, internalEmail: 7.35 },
-      { date: '03/21', base: 32495.82, phoneWeb_ABC: 5353.52, f2f_ABC: 373.16, phoneWeb_X: 906.81, f2f_X: 122.88, digitalDTC: 1331.12, medscape: 163.4, outOfHome: 1523.25, massEmail: 5.98, internalEmail: 13.86 },
-      { date: '04/21', base: 36845.58, phoneWeb_ABC: 5714.55, f2f_ABC: 386.75, phoneWeb_X: 891.59, f2f_X: 110.6, digitalDTC: 1203.96, medscape: 249.35, outOfHome: 1370.93, massEmail: 5.39, internalEmail: 13.04 },
-      { date: '05/21', base: 41042.29, phoneWeb_ABC: 5881.87, f2f_ABC: 304.42, phoneWeb_X: 934.47, f2f_X: 112.26, digitalDTC: 1088.91, medscape: 269.57, outOfHome: 1233.83, massEmail: 4.86, internalEmail: 14.18 },
-      { date: '06/21', base: 41423.43, phoneWeb_ABC: 6032.47, f2f_ABC: 580.72, phoneWeb_X: 954.21, f2f_X: 113.75, digitalDTC: 984.29, medscape: 286.08, outOfHome: 1110.45, massEmail: 4.38, internalEmail: 8.68 },
-      { date: '07/21', base: 43631.52, phoneWeb_ABC: 5931.59, f2f_ABC: 728.41, phoneWeb_X: 965.68, f2f_X: 123.58, digitalDTC: 892.2, medscape: 301.83, outOfHome: 999.41, massEmail: 4.7, internalEmail: 9.65 },
-      { date: '08/21', base: 46081.26, phoneWeb_ABC: 5781.7, f2f_ABC: 654.18, phoneWeb_X: 925.7, f2f_X: 111.22, digitalDTC: 1623.98, medscape: 315.02, outOfHome: 1764.26, massEmail: 5.59, internalEmail: 6.98 },
-      { date: '09/21', base: 44065.51, phoneWeb_ABC: 5784.7, f2f_ABC: 953.42, phoneWeb_X: 927.45, f2f_X: 104.34, digitalDTC: 3162.19, medscape: 308.3, outOfHome: 1668.43, massEmail: 5.12, internalEmail: 6.98 },
-      { date: '10/21', base: 50856.45, phoneWeb_ABC: 5679.05, f2f_ABC: 1332.01, phoneWeb_X: 929.02, f2f_X: 98.14, digitalDTC: 3836.03, medscape: 296.53, outOfHome: 1501.59, massEmail: 5.79, internalEmail: 5.14 },
-      { date: '11/21', base: 53581.96, phoneWeb_ABC: 5544.56, f2f_ABC: 1993.41, phoneWeb_X: 949.3, f2f_X: 143.45, digitalDTC: 3649.66, medscape: 282.38, outOfHome: 1351.43, massEmail: 5.77, internalEmail: 4.07 },
-      { date: '12/21', base: 58674.14, phoneWeb_ABC: 5196.96, f2f_ABC: 1756.97, phoneWeb_X: 892.1, f2f_X: 158.78, digitalDTC: 3508.82, medscape: 266.55, outOfHome: 1216.29, massEmail: 6.9, internalEmail: 2.21 },
-      { date: '01/22', base: 59714.51, phoneWeb_ABC: 5258.44, f2f_ABC: 1126.56, phoneWeb_X: 890.92, f2f_X: 164.11, digitalDTC: 3157.94, medscape: 239.89, outOfHome: 1094.66, massEmail: 7.53, internalEmail: 6.77 }
-    ];
-
-    switch (selectedBreakdownPeriod) {
-      case '2022-2024':
-        return breakdownData2022_2024;
-      case '2021-2023':
-        return breakdownData2021_2023;
-      case '2020-2022':
-        return breakdownData2020_2022;
-      default:
-        return breakdownData2022_2024;
-    }
   };
 
-  // Map hook key metrics (icon string -> component)
-  const iconMap: { [key: string]: React.ComponentType<React.SVGProps<SVGSVGElement>> } = {
-    Activity,
-    BarChart3,
-    TrendingUp,
-    TrendingDown,
-    Users,
-    Pill,
-    DollarSign,
-    Target,
-    Calendar,
-    Mail,
-  };
-
-  const liveKeyMetrics: LocalMetricCard[] = hookKeyMetrics.map(k => ({
-    id: k.id,
-    title: k.title,
-    value: k.value,
-    change: k.change,
-    changeType: k.changeType,
-    comparison: k.comparison,
-    icon: iconMap[k.icon] || Activity,
-    category: 'key',
-    section: 'key-metrics',
-    description: k.description ?? 'Live ROI from MMM outputs'
-  }));
-
-  // Prefer dataset-driven UI metrics; fallback to model-driven if dataset snapshot ещё не записан; иначе к статике
-  const uiIconMap: { [key: string]: React.ComponentType<React.SVGProps<SVGSVGElement>> } = {
-    Activity,
-    BarChart3,
-    TrendingUp,
-    TrendingDown,
-    Users,
-    Pill,
-    DollarSign,
-    Target,
-    Calendar,
-    Mail,
-    Phone,
-    Monitor,
-    HeartHandshake,
-    FileText,
-  };
-
-  const uiLiveCards: LocalMetricCard[] = (uiKeyMetrics || []).map(k => ({
-    id: k.id,
-    title: k.title,
-    value: k.value,
-    change: k.change,
-    changeType: k.changeType,
-    comparison: k.comparison,
-    icon: uiIconMap[k.icon] || Activity,
-    category: 'key',
-    section: 'key-metrics',
-    description: k.description ?? ''
-  }));
-
-  const keyMetrics: LocalMetricCard[] = uiLiveCards.length > 0 ? uiLiveCards : (liveKeyMetrics.length > 0 ? liveKeyMetrics : [
+  // Use dynamic metrics if available, otherwise fallback to static data
+  const keyMetrics: LocalMetricCard[] = dynamicKeyMetrics.length > 0 ? dynamicKeyMetrics.map((metric: MetricCard) => ({
+    ...metric,
+    description: metric.description ?? '',
+    icon: getIconForMetric(metric.id),
+    category: 'key' as const,
+    section: 'key-metrics' as const
+  })) : [
     {
       id: 'revenue',
       title: 'QoQ Revenue Growth',
@@ -545,9 +428,19 @@ const FarmaMetricsWithAssistant = () => {
         ]
       }
     }
-  ]);
+  ];
 
-  const situationMetrics: LocalMetricCard[] = [
+  // Debug: Log the dynamic situation metrics
+  console.log('dynamicSituationMetrics:', dynamicSituationMetrics);
+  console.log('dynamicSituationMetrics length:', dynamicSituationMetrics.length);
+  
+  const situationMetrics: LocalMetricCard[] = dynamicSituationMetrics.length > 0 ? dynamicSituationMetrics.map((metric: MetricCard) => ({
+    ...metric,
+    description: metric.description ?? '',
+    icon: getIconForMetric(metric.id),
+    category: 'situation' as const,
+    section: 'situation' as const
+  })) : [
     {
       id: 'total-sales',
       title: 'Total Sales',
@@ -590,7 +483,7 @@ const FarmaMetricsWithAssistant = () => {
     },
     {
       id: 'incremental',
-      title: 'Incremental',
+      title: 'Incremental Sales',
       value: '$7.3M',
       change: '+18.2%',
       changeType: 'positive',
@@ -657,9 +550,9 @@ const FarmaMetricsWithAssistant = () => {
       icon: BarChart3,
       category: 'situation',
       section: 'situation',
-      description: 'Volume Response Rate measures the effectiveness of marketing activities in driving volume increases.',
+      description: 'Volume response rate - this is raw activity divided by contribution of the same activity from the model to describe number of prescription per activity.',
       details: {
-        description: 'Volume Response Rate measures the effectiveness of marketing activities in driving volume increases.',
+        description: 'Volume response rate - this is raw activity divided by contribution of the same activity from the model to describe number of prescription per activity.',
         breakdown: [
           { label: 'Volume Impact', value: '+18.2%' },
           { label: 'Response Rate', value: '3.6x' },
@@ -812,7 +705,8 @@ const FarmaMetricsWithAssistant = () => {
   };
 
   const renderMetricSection = (metrics: LocalMetricCard[], isExpanded: boolean, setExpanded: (expanded: boolean) => void, title: string, hideShowMoreButton = false) => {
-    const defaultCards = 4;
+    // Show more cards initially for Key Metrics since we now have 25 metrics
+    const defaultCards = title === "Key Metrics" ? 8 : 4;
     const visibleCards = isExpanded ? metrics.length : defaultCards;
     const hasMoreCards = metrics.length > defaultCards;
     
@@ -821,26 +715,105 @@ const FarmaMetricsWithAssistant = () => {
     const beforeVRR = vrrIndex >= 0 ? metrics.slice(0, vrrIndex + 1) : [];
     const afterVRR = vrrIndex >= 0 ? metrics.slice(vrrIndex + 1) : metrics;
     
-    const renderCards = (cards: LocalMetricCard[], startIndex: number = 0) => {
-      return cards.map((card, index) => (
-        <FeatureCard
+    const renderCard = (card: LocalMetricCard, index: number) => {
+      
+      // Icon mapping
+      const iconMap: { [key: string]: React.ElementType } = {
+        TrendingUp,
+        TrendingDown,
+        Activity,
+        Users,
+        Pill,
+        DollarSign,
+        BarChart3,
+        Target,
+        Calendar,
+        Mail,
+        Phone,
+        Monitor,
+        HeartHandshake,
+        FileText
+      };
+
+      // Get icon component - handle both string names and React components
+      let IconComponent: React.ElementType = Activity;
+      if (typeof card.icon === 'string') {
+        IconComponent = iconMap[card.icon] || Activity;
+      } else if (card.icon && typeof card.icon === 'function') {
+        IconComponent = card.icon as React.ElementType;
+      }
+
+      // Border color for Key and Situation
+      const accentColor = card.category === 'key' ? '#156ef6' : '#24d200';
+      const borderRadius = '1.25em';
+      const borderWidth = '2px';
+      const backgroundColor = theme === 'dark' 
+        ? 'rgba(30, 41, 59, 0.9)' 
+        : 'rgba(255, 255, 255, 0.9)';
+
+      return (
+        <BauhausBorder
           key={card.id}
+          accentColor={accentColor}
+          borderRadius={borderRadius}
+          borderWidth={borderWidth}
+          backgroundColor={backgroundColor}
+          className="h-full"
+        >
+          <Card 
           id={card.id}
-          feature={{
-            title: card.title,
-            icon: card.icon,
-            description: card.description,
-            value: card.value,
-            change: card.change,
-            changeType: card.changeType,
-            comparison: card.comparison,
-            category: card.category
-          }}
-          className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl hover:bg-white/20 hover:border-white/30 dark:shadow-none shadow-lg shadow-gray-200/50"
+            className="bg-transparent border-0 shadow-none flex flex-col transition-all duration-300 hover:-translate-y-1 h-full"
+            style={{ animation: `fade-in 0.5s ease-out ${index * 0.1}s forwards` }}
           onClick={() => handleCardClick(card)}
-          style={{ animation: `fade-in 0.5s ease-out ${(startIndex + index) * 0.1}s forwards` }}
-        />
-      ));
+          >
+            <CardHeader className="flex flex-row items-start justify-between pb-2">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-gradient-blue/20 dark:bg-gradient-cyan/20 border border-blue-500/30 dark:border-cyan-500/30">
+                  <IconComponent className="w-5 h-5 text-blue-600 dark:text-cyan-500" />
+                </div>
+                <CardTitle className="text-sm font-medium text-gray-900 dark:text-white">
+                  {card.title}
+                </CardTitle>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" className="w-8 h-8 text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/80 dark:hover:bg-slate-800/50">
+                  <Share className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="w-8 h-8 text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/80 dark:hover:bg-slate-800/50">
+                  <Download className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="w-8 h-8 text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/80 dark:hover:bg-slate-800/50">
+                  {card.category === 'key' ? <ChevronDown className="w-4 h-4" /> : <Expand className="w-4 h-4" />}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-end gap-2">
+                  <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                    {card.value}
+                  </div>
+                  <Badge 
+                    variant={card.changeType === 'positive' ? 'default' : 'destructive'}
+                    className="mb-1 bg-gradient-green/20 dark:bg-gradient-cyan/20 text-green-600 dark:text-cyan-400 border-green-500/30 dark:border-cyan-500/30"
+                  >
+                    {card.changeType === 'positive' ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
+                    {card.change}
+                  </Badge>
+                </div>
+                
+                <p className="text-sm text-gray-600 dark:text-slate-400">{card.comparison}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </BauhausBorder>
+      );
+    };
+
+    const renderCards = (cards: LocalMetricCard[], startIndex: number = 0) => {
+      return cards.map((card, index) => 
+        renderCard(card, startIndex + index)
+      );
     };
     
     return (
@@ -852,15 +825,15 @@ const FarmaMetricsWithAssistant = () => {
               variant="ghost"
               size="sm"
               onClick={() => setExpanded(!isExpanded)}
-              className="flex items-center gap-2 hover:bg-white/10 text-gray-600 dark:text-white/70 hover:text-gray-900 dark:hover:text-white transition-colors"
+              className="flex items-center gap-2 hover:bg-gradient-blue/10 dark:hover:bg-gradient-cyan/10 text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition-colors"
             >
               <span className="text-sm">
                 {isExpanded ? 'Hide' : `Show All (${metrics.length})`}
               </span>
               {isExpanded ? (
-                <TrendingUp className="w-4 h-4 transition-transform duration-300" />
+                <ChevronUp className="w-4 h-4 transition-transform duration-300" />
               ) : (
-                <TrendingDown className="w-4 h-4 transition-transform duration-300" />
+                <ChevronDown className="w-4 h-4 transition-transform duration-300" />
               )}
             </Button>
           )}
@@ -871,7 +844,7 @@ const FarmaMetricsWithAssistant = () => {
         }`}>
           {/* Cards before and including VRR */}
           {vrrIndex >= 0 && beforeVRR.length > 0 && (
-            <div className="grid gap-6 transition-all duration-500 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mb-8">
+            <div className="grid gap-6 transition-all duration-500 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-4 mb-8">
               {renderCards(beforeVRR.slice(0, Math.min(visibleCards, beforeVRR.length)))}
             </div>
           )}
@@ -880,14 +853,14 @@ const FarmaMetricsWithAssistant = () => {
           {vrrIndex >= 0 && afterVRR.length > 0 && (isExpanded || visibleCards > beforeVRR.length) && (
             <div className="mb-6">
               <div className="flex items-center gap-4 mb-6">
-                <div className="h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-white/30 to-transparent flex-1"></div>
-                <h3 className="text-lg font-semibold text-gray-700 dark:text-white/80 px-4 py-2 bg-white/5 rounded-lg border border-white/10">
+                <div className="h-px bg-gradient-to-r from-transparent via-blue-300 dark:via-cyan-500/30 to-transparent flex-1"></div>
+                <h3 className="text-lg font-semibold text-blue-700 dark:text-cyan-400 px-4 py-2 bg-gradient-blue/10 dark:bg-gradient-cyan/10 rounded-lg border border-blue-500/30 dark:border-cyan-500/30">
                   Model Output
                 </h3>
-                <div className="h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-white/30 to-transparent flex-1"></div>
+                <div className="h-px bg-gradient-to-r from-transparent via-blue-300 dark:via-cyan-500/30 to-transparent flex-1"></div>
               </div>
               
-              <div className="grid gap-6 transition-all duration-500 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-6 transition-all duration-500 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-4">
                 {renderCards(
                   afterVRR.slice(0, Math.max(0, visibleCards - beforeVRR.length)),
                   beforeVRR.length
@@ -898,7 +871,7 @@ const FarmaMetricsWithAssistant = () => {
           
           {/* Fallback for when VRR is not found */}
           {vrrIndex < 0 && (
-            <div className="grid gap-6 transition-all duration-500 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-6 transition-all duration-500 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-4">
               {renderCards(metrics.slice(0, visibleCards))}
             </div>
           )}
@@ -909,16 +882,45 @@ const FarmaMetricsWithAssistant = () => {
             <Button
               variant="outline"
               onClick={() => setExpanded(true)}
-              className="flex items-center gap-2 hover:bg-white/10 border-white/30 text-gray-600 dark:text-white/70 hover:text-gray-900 dark:hover:text-white transition-all"
+              className="flex items-center gap-2 hover:bg-gradient-blue/10 dark:hover:bg-gradient-cyan/10 border-blue-500/30 dark:border-cyan-500/30 text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition-all"
             >
               <span>Show {metrics.length - defaultCards} more cards</span>
-              <TrendingDown className="w-4 h-4" />
+              <ChevronDown className="w-4 h-4" />
             </Button>
           </div>
         )}
       </div>
     );
   };
+
+  // Show loading state
+  if (metricsLoading) {
+    return (
+      <div className="relative min-h-screen bg-black flex items-center justify-center">
+        <ParticleBackground />
+        <div className="relative z-10 text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-white text-lg">Loading pharma metrics...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (metricsError) {
+    return (
+      <div className="relative min-h-screen bg-black flex items-center justify-center">
+        <ParticleBackground />
+        <div className="relative z-10 text-center">
+          <div className="text-red-400 text-6xl mb-4">⚠️</div>
+          <p className="text-white text-lg mb-4">Error loading metrics: {metricsError}</p>
+          <Button onClick={refreshData} className="bg-blue-600 hover:bg-blue-700">
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen bg-black">
@@ -937,6 +939,31 @@ const FarmaMetricsWithAssistant = () => {
           <p className="text-gray-600 dark:text-white/70 max-w-2xl mx-auto">
             Advanced pharmaceutical sales and marketing analytics dashboard with real-time metrics and insights
           </p>
+          
+          {/* Data Status */}
+          <div className="flex items-center justify-center gap-4 mt-4">
+            <div className="flex items-center gap-2 text-sm">
+              <div className={`w-2 h-2 rounded-full ${metricsLoading ? 'bg-yellow-400' : metricsError ? 'bg-red-400' : 'bg-green-400'}`}></div>
+              <span className="text-gray-600 dark:text-white/70">
+                {metricsLoading ? 'Loading...' : metricsError ? 'Error' : 'Connected'}
+              </span>
+            </div>
+            {!metricsLoading && !metricsError && (
+              <Button 
+                onClick={refreshData} 
+                variant="outline" 
+                size="sm"
+                className="text-gray-600 dark:text-white/70 border-gray-300 dark:border-white/30 hover:bg-white/10"
+              >
+                Refresh Data
+              </Button>
+            )}
+            {!metricsLoading && !metricsError && (
+              <span className="text-xs text-gray-500 dark:text-white/50">
+                Last updated: {new Date().toLocaleTimeString()}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Marketing Optimization Recommendations */}
@@ -1066,10 +1093,321 @@ const FarmaMetricsWithAssistant = () => {
         )}
 
         {/* Key Metrics */}
-        {renderMetricSection(keyMetrics, keyMetricsExpanded, setKeyMetricsExpanded, "Key Metrics", true)}
-        
-        {/* Situation Metrics */}
-        {renderMetricSection(situationMetrics, situationMetricsExpanded, setSituationMetricsExpanded, "Channel Impact", true)}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-glow">Key Metrics</h2>
+            <div className="flex items-center gap-4">
+              {/* Period Selector */}
+              <Select value={selectedPeriod} onValueChange={(value) => {
+                setSelectedPeriod(value);
+                setPeriod(value);
+              }}>
+                <SelectTrigger className="w-32 bg-white/5 border-white/20 text-white">
+                  <SelectValue placeholder="Period" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="2022-2024">2022-2024</SelectItem>
+                  <SelectItem value="2021-2023">2021-2023</SelectItem>
+                  <SelectItem value="2020-2022">2020-2022</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {/* Data Source Badge */}
+              <Badge variant="outline" className="bg-green-500/20 border-green-500/30 text-green-400">
+                🟢 Live Data from CSV
+              </Badge>
+              
+              {/* Metrics Count */}
+              <span className="text-sm text-gray-500 dark:text-white/50">
+                ({dynamicKeyMetrics.length > 0 ? dynamicKeyMetrics.length : keyMetrics.length} metrics)
+              </span>
+              
+              {/* Refresh Button */}
+              <Button
+                onClick={refreshData}
+                variant="outline"
+                size="sm"
+                className="bg-white/5 border-white/20 text-white hover:bg-white/10"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
+          </div>
+          
+          {renderMetricSection(keyMetrics, keyMetricsExpanded, setKeyMetricsExpanded, "Key Metrics", true)}
+        </div>
+
+        {/* Model Summary */}
+        {situationMetrics && situationMetrics.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-glow">Model Summary</h2>
+              <button
+                onClick={() => setSituationMetricsExpanded(!situationMetricsExpanded)}
+                className="text-sm text-blue-500 hover:text-blue-400 transition-colors"
+              >
+                {situationMetricsExpanded ? 'Show Less' : 'Show All (6)'}
+              </button>
+            </div>
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {situationMetrics.slice(0, situationMetricsExpanded ? situationMetrics.length : 6).map((metric) => (
+                <div
+                  key={metric.id}
+                  className="relative group bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6 hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+                  style={{
+                    borderRight: '2px solid #10b981',
+                    borderBottom: '2px solid #10b981'
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-400/30">
+                      {React.createElement(getIconForMetric(metric.id), { className: "w-6 h-6 text-green-400" })}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-green-500">
+                        {metric.value}
+                      </div>
+                      <div className={`text-sm font-medium ${
+                        metric.changeType === 'positive'
+                          ? 'text-green-600 dark:text-green-400'
+                          : 'text-red-600 dark:text-red-400'
+                      }`}>
+                        {metric.change}
+                      </div>
+                    </div>
+                  </div>
+
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    {metric.title}
+                  </h3>
+
+                  <p className="text-sm text-gray-600 dark:text-white/70 mb-3">
+                    {metric.description}
+                  </p>
+
+                  <div className="text-xs text-gray-500 dark:text-white/50">
+                    {metric.comparison}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ROI Analysis */}
+        {dynamicROIAnalysis && dynamicROIAnalysis.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-glow">ROI Analysis</h2>
+            </div>
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {dynamicROIAnalysis.map((roi) => (
+                <div
+                  key={roi.id}
+                  className="relative group bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6 hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+                  style={{
+                    borderRight: '2px solid #10b981',
+                    borderBottom: '2px solid #10b981'
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-400/30">
+                      {React.createElement(getIconForMetric(roi.id), { className: "w-6 h-6 text-green-400" })}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-green-500">
+                        {roi.roi_percentage}
+                      </div>
+                      <div className={`text-sm font-medium ${
+                        roi.changeType === 'positive'
+                          ? 'text-green-600 dark:text-green-400'
+                          : 'text-red-600 dark:text-red-400'
+                      }`}>
+                        {roi.change}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    {roi.title}
+                  </h3>
+                  
+                  <div className="space-y-2 mb-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-white/70">ROI Ratio:</span>
+                      <span className="text-gray-900 dark:text-white font-medium">{roi.roi_ratio}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-white/70">Revenue:</span>
+                      <span className="text-gray-900 dark:text-white font-medium">{roi.incremental_revenue}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-white/70">Cost:</span>
+                      <span className="text-gray-900 dark:text-white font-medium">{roi.total_cost}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-white/70">Efficiency:</span>
+                      <span className={`font-medium ${
+                        roi.efficiency === 'High' ? 'text-green-600 dark:text-green-400' :
+                        roi.efficiency === 'Medium' ? 'text-yellow-600 dark:text-yellow-400' :
+                        'text-red-600 dark:text-red-400'
+                      }`}>
+                        {roi.efficiency}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="text-xs text-gray-500 dark:text-white/50">
+                    Activity Level: {roi.activity_level}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ROI Analysis */}
+        {dynamicROIAnalysis && dynamicROIAnalysis.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-glow">ROI Analysis</h2>
+            </div>
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {dynamicROIAnalysis.map((roi) => (
+                <div
+                  key={roi.id}
+                  className="relative group bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6 hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-400/30">
+                      {React.createElement(getIconForMetric(roi.id), { className: "w-6 h-6 text-green-400" })}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {roi.roi_percentage}
+                      </div>
+                      <div className={`text-sm font-medium ${
+                        roi.changeType === 'positive' 
+                          ? 'text-green-600 dark:text-green-400' 
+                          : 'text-red-600 dark:text-red-400'
+                      }`}>
+                        {roi.change}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    {roi.title}
+                  </h3>
+                  
+                  <div className="space-y-2 mb-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-white/70">ROI Ratio:</span>
+                      <span className="text-gray-900 dark:text-white font-medium">{roi.roi_ratio}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-white/70">Revenue:</span>
+                      <span className="text-gray-900 dark:text-white font-medium">{roi.incremental_revenue}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-white/70">Cost:</span>
+                      <span className="text-gray-900 dark:text-white font-medium">{roi.total_cost}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-white/70">Efficiency:</span>
+                      <span className={`font-medium ${
+                        roi.efficiency === 'High' ? 'text-green-600 dark:text-green-400' :
+                        roi.efficiency === 'Medium' ? 'text-yellow-600 dark:text-yellow-400' :
+                        'text-red-600 dark:text-red-400'
+                      }`}>
+                        {roi.efficiency}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="text-xs text-gray-500 dark:text-white/50">
+                    Activity Level: {roi.activity_level}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Promotional Impact Analysis */}
+        {dynamicPromotionalImpact && dynamicPromotionalImpact.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-glow">Promotional Impact Analysis</h2>
+            </div>
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {dynamicPromotionalImpact.map((impact) => (
+                <div
+                  key={impact.id}
+                  className="relative group bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6 hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/30">
+                      {React.createElement(getIconForMetric(impact.id), { className: "w-6 h-6 text-purple-400" })}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {impact.incremental_sales}
+                      </div>
+                      <div className={`text-sm font-medium ${
+                        impact.changeType === 'positive' 
+                          ? 'text-green-600 dark:text-green-400' 
+                          : 'text-red-600 dark:text-red-400'
+                      }`}>
+                        {impact.change}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    {impact.title}
+                  </h3>
+                  
+                  <div className="space-y-2 mb-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-white/70">Share of Voice:</span>
+                      <span className="text-gray-900 dark:text-white font-medium">{impact.share_of_voice}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-white/70">Impact Level:</span>
+                      <span className={`font-medium ${
+                        impact.impact_level === 'High' ? 'text-green-600 dark:text-green-400' :
+                        impact.impact_level === 'Medium' ? 'text-yellow-600 dark:text-yellow-400' :
+                        'text-red-600 dark:text-red-400'
+                      }`}>
+                        {impact.impact_level}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-white/70">Category:</span>
+                      <span className="text-gray-900 dark:text-white font-medium">{impact.category}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-white/70">Change:</span>
+                      <span className={`font-medium ${
+                        impact.changeType === 'positive' 
+                          ? 'text-green-600 dark:text-green-400' 
+                          : 'text-red-600 dark:text-red-400'
+                      }`}>
+                        {impact.change_percentage}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <p className="text-xs text-gray-500 dark:text-white/50">
+                    {impact.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Model Performance Stats */}
         <div className="space-y-4">
@@ -1099,7 +1437,9 @@ const FarmaMetricsWithAssistant = () => {
                 <TooltipTrigger asChild>
                   <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10 cursor-help transition-colors hover:bg-white/10">
                     <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">R²</div>
-                    <div className="text-lg font-semibold text-green-600 dark:text-green-400">{(rSquared * 100).toFixed(2)}%</div>
+                    <div className="text-lg font-semibold text-green-600 dark:text-green-400">
+                      {statsLoading ? '...' : `${(rSquared * 100).toFixed(2)}%`}
+                    </div>
                     <div className="text-xs text-gray-500 dark:text-slate-500 mt-1">Overall model fit</div>
                   </div>
                 </TooltipTrigger>
@@ -1112,7 +1452,9 @@ const FarmaMetricsWithAssistant = () => {
                 <TooltipTrigger asChild>
                   <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10 cursor-help transition-colors hover:bg-white/10">
                     <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">Adj R²</div>
-                    <div className="text-lg font-semibold text-orange-600 dark:text-orange-400">{(rSquared * 100).toFixed(1)}%</div>
+                    <div className="text-lg font-semibold text-orange-600 dark:text-orange-400">
+                      {statsLoading ? '...' : `${(adjRSquared * 100).toFixed(1)}%`}
+                    </div>
                     <div className="text-xs text-gray-500 dark:text-slate-500 mt-1">Adjusted for predictors</div>
                   </div>
                 </TooltipTrigger>
@@ -1125,7 +1467,9 @@ const FarmaMetricsWithAssistant = () => {
                 <TooltipTrigger asChild>
                   <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10 cursor-help transition-colors hover:bg-white/10">
                     <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">MAPE</div>
-                    <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">{(mape * 100).toFixed(2)}%</div>
+                    <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+                      {statsLoading ? '...' : `${(mape * 100).toFixed(2)}%`}
+                    </div>
                     <div className="text-xs text-gray-500 dark:text-slate-500 mt-1">Prediction accuracy</div>
                   </div>
                 </TooltipTrigger>
@@ -1138,7 +1482,9 @@ const FarmaMetricsWithAssistant = () => {
                 <TooltipTrigger asChild>
                   <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10 cursor-help transition-colors hover:bg-white/10">
                     <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">DW</div>
-                    <div className="text-lg font-semibold text-red-600 dark:text-red-400">0.63</div>
+                    <div className="text-lg font-semibold text-red-600 dark:text-red-400">
+                      {statsLoading ? '...' : durbinWatson.toFixed(2)}
+                    </div>
                     <div className="text-xs text-gray-500 dark:text-slate-500 mt-1">Autocorrelation</div>
                   </div>
                 </TooltipTrigger>
@@ -1151,7 +1497,9 @@ const FarmaMetricsWithAssistant = () => {
                 <TooltipTrigger asChild>
                   <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10 cursor-help transition-colors hover:bg-white/10">
                     <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">AIC</div>
-                    <div className="text-lg font-semibold text-purple-600 dark:text-purple-400">325.99</div>
+                    <div className="text-lg font-semibold text-purple-600 dark:text-purple-400">
+                      {statsLoading ? '...' : aic.toFixed(2)}
+                    </div>
                     <div className="text-xs text-gray-500 dark:text-slate-500 mt-1">Model comparison</div>
                   </div>
                 </TooltipTrigger>
@@ -1164,7 +1512,9 @@ const FarmaMetricsWithAssistant = () => {
                 <TooltipTrigger asChild>
                   <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10 cursor-help transition-colors hover:bg-white/10">
                     <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">BIC</div>
-                    <div className="text-lg font-semibold text-indigo-600 dark:text-indigo-400">353.08</div>
+                    <div className="text-lg font-semibold text-indigo-600 dark:text-indigo-400">
+                      {statsLoading ? '...' : bic.toFixed(2)}
+                    </div>
                     <div className="text-xs text-gray-500 dark:text-slate-500 mt-1">Model comparison</div>
                   </div>
                 </TooltipTrigger>
