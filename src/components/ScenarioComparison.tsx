@@ -78,10 +78,10 @@ const COLORS = [
 ];
 
 const GRADIENT_PAIRS = [
-  ['hsl(var(--chart-senary))', 'hsl(var(--chart-senary))'],
-  ['hsl(var(--chart-quinary))', 'hsl(var(--chart-quinary))'],
-  ['hsl(var(--chart-secondary))', 'hsl(var(--chart-secondary))'],
-  ['hsl(var(--text-muted))', 'hsl(var(--text-muted))']
+  ['var(--chart-senary)', 'var(--chart-senary)'],
+  ['var(--chart-quinary)', 'var(--chart-quinary)'],
+  ['var(--chart-secondary)', 'var(--chart-secondary)'],
+  ['var(--text-muted)', 'var(--text-muted)']
 ];
 
 const AllocationChart = ({ title, data }: { title: string; data: typeof currentSpendData }) => (
@@ -378,8 +378,8 @@ const ScenarioComparison = () => {
                 <BarChart data={scenarioComparisonData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
                     <XAxis dataKey="name" tick={{ fill: 'var(--chart-axis)' }} />
-                    <YAxis yAxisId="left" orientation="left" stroke="var(--chart-senary)" tick={{ fill: 'var(--chart-axis)' }} label={{ value: 'Value (Sales & Spend in $K)', angle: -90, position: 'insideLeft', fill: 'var(--chart-axis)' }} />
-                    <YAxis yAxisId="right" orientation="right" stroke="var(--chart-quinary)" tick={{ fill: 'var(--chart-axis)' }} />
+                    <YAxis yAxisId="left" orientation="left" stroke="var(--chart-axis)" tick={{ fill: 'var(--chart-axis)' }} label={{ value: 'Value (Sales & Spend in $K)', angle: -90, position: 'insideLeft', fill: 'var(--chart-axis)' }} />
+                    <YAxis yAxisId="right" orientation="right" stroke="var(--chart-axis)" tick={{ fill: 'var(--chart-axis)' }} />
                     <Tooltip
                         contentStyle={{
                             background: 'var(--chart-tooltip-bg)',
@@ -390,9 +390,9 @@ const ScenarioComparison = () => {
                         }}
                     />
                     <Legend />
-                    <Bar yAxisId="left" dataKey="Sales" fill="var(--chart-senary)" />
-                    <Bar yAxisId="left" dataKey="Spend" fill="var(--chart-quinary)" />
-                    <Line yAxisId="right" type="monotone" dataKey="ROI" stroke="var(--chart-tertiary)" />
+                    <Bar yAxisId="left" dataKey="Sales" fill="var(--chart-primary)" />
+                    <Bar yAxisId="left" dataKey="Spend" fill="var(--chart-secondary)" />
+                    <Line yAxisId="right" type="monotone" dataKey="ROI" stroke="var(--metric-key)" />
                 </BarChart>
             </ResponsiveContainer>
             <div className="grid md:grid-cols-2 gap-8 mt-8">
