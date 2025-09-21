@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { motion } from "framer-motion";
 import { 
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Label 
 } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, Target, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
 
@@ -67,6 +67,7 @@ const comparisonTableData = {
         { channel: 'SF Calls', baseline: '2.4x', optimistic: '2.6x', pessimistic: '2.1x' },
         { channel: 'Digital', baseline: '3.1x', optimistic: '3.4x', pessimistic: '2.8x' },
         { channel: '1-to-1 Email', baseline: '2.1x', optimistic: '2.3x', pessimistic: '1.9x' },
+        { channel: 'Web Virtual Calls', baseline: '2.5x', optimistic: '2.8x', pessimistic: '2.0x' },
     ]
 };
 
@@ -160,6 +161,19 @@ const AllocationChart = ({ title, data }: { title: string; data: typeof currentS
 );
 
 const ScenarioComparison = () => {
+  const [hoverLabel, setHoverLabel] = useState<string | null>(null);
+  const hoverTint = (label: string | null) => {
+    switch (label) {
+      case 'Baseline':
+        return 'rgba(34,211,238,0.10)'; // cyan tint
+      case 'Optimistic':
+        return 'rgba(34,197,94,0.10)'; // green tint
+      case 'Pessimistic':
+        return 'rgba(239,68,68,0.10)'; // red tint
+      default:
+        return 'rgba(255,255,255,0.06)';
+    }
+  };
   const parseValue = (valueStr: string) => {
     return parseFloat(valueStr.replace(/[$,%xM]/g, ''));
   };
@@ -181,7 +195,7 @@ const ScenarioComparison = () => {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
-                  <DollarSign className="w-5 h-5 text-cyan-400" />
+                  <BarChart3 className="w-5 h-5 text-cyan-400" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Current</h3>
               </div>
@@ -189,8 +203,8 @@ const ScenarioComparison = () => {
             </div>
             <div className="space-y-4">
               <div className="flex items-end gap-2">
-                <span className="text-3xl font-bold text-gray-900 dark:text-white">21.3M</span>
-                <span className="text-sm text-gray-600 dark:text-white/60">Projected Sales</span>
+                <span className="text-3xl font-bold text-gray-900 dark:text-white">$21.3M</span>
+                <span className="text-sm text-gray-600 dark:text-white/60">Actual Sales</span>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-gray-600 dark:text-white/80">
@@ -224,7 +238,7 @@ const ScenarioComparison = () => {
             </div>
             <div className="space-y-4">
               <div className="flex items-end gap-2">
-                <span className="text-3xl font-bold text-gray-900 dark:text-white">24.5M</span>
+                <span className="text-3xl font-bold text-gray-900 dark:text-white">$24.5M</span>
                 <span className="text-sm text-gray-600 dark:text-white/60">Projected Sales</span>
               </div>
               <div className="space-y-2">
@@ -259,7 +273,7 @@ const ScenarioComparison = () => {
             </div>
             <div className="space-y-4">
               <div className="flex items-end gap-2">
-                <span className="text-3xl font-bold text-gray-900 dark:text-white">19.17M</span>
+                <span className="text-3xl font-bold text-gray-900 dark:text-white">$19.17M</span>
                 <span className="text-sm text-gray-600 dark:text-white/60">Projected Sales</span>
               </div>
               <div className="space-y-2">
@@ -279,10 +293,30 @@ const ScenarioComparison = () => {
 
       <Tabs defaultValue="sales_forecast" className="w-full">
         <TabsList className="grid w-full grid-cols-4 backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-xl p-1">
-          <TabsTrigger value="sales_forecast" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-lg">Sales Forecast</TabsTrigger>
-          <TabsTrigger value="roi_forecast" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-lg">ROI Forecast</TabsTrigger>
-          <TabsTrigger value="spend_allocation" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-lg">Spend Allocation</TabsTrigger>
-          <TabsTrigger value="scenario_comparison" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-lg">Scenario Comparison</TabsTrigger>
+          <TabsTrigger 
+            value="sales_forecast" 
+            className="rounded-lg hover:bg-white/5 data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500/15 data-[state=active]:to-blue-500/15 data-[state=active]:text-foreground data-[state=active]:border data-[state=active]:border-white/10"
+          >
+            Sales Forecast
+          </TabsTrigger>
+          <TabsTrigger 
+            value="roi_forecast" 
+            className="rounded-lg hover:bg-white/5 data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-500/15 data-[state=active]:to-fuchsia-500/15 data-[state=active]:text-foreground data-[state=active]:border data-[state=active]:border-white/10"
+          >
+            ROI Forecast
+          </TabsTrigger>
+          <TabsTrigger 
+            value="spend_allocation" 
+            className="rounded-lg hover:bg-white/5 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500/15 data-[state=active]:to-green-500/15 data-[state=active]:text-foreground data-[state=active]:border data-[state=active]:border-white/10"
+          >
+            Spend Allocation
+          </TabsTrigger>
+          <TabsTrigger 
+            value="scenario_comparison" 
+            className="rounded-lg hover:bg-white/5 data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500/15 data-[state=active]:to-blue-500/15 data-[state=active]:text-foreground data-[state=active]:border data-[state=active]:border-white/10"
+          >
+            Scenario Comparison
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="sales_forecast" className="mt-6">
             <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-6">
@@ -374,13 +408,32 @@ const ScenarioComparison = () => {
               </div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Scenario Comparison</h3>
             </div>
-            <ResponsiveContainer width="100%" height={350}>
-                <BarChart data={scenarioComparisonData}>
+            <ResponsiveContainer width="100%" height={380}>
+                <BarChart 
+                  data={scenarioComparisonData}
+                  margin={{ left: 70, right: 20, top: 20, bottom: 5 }}
+                  onMouseMove={(state: { activeLabel?: string } | undefined) => setHoverLabel(state?.activeLabel ?? null)}
+                  onMouseLeave={() => setHoverLabel(null)}
+                >
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
                     <XAxis dataKey="name" tick={{ fill: 'var(--chart-axis)' }} />
-                    <YAxis yAxisId="left" orientation="left" stroke="var(--chart-axis)" tick={{ fill: 'var(--chart-axis)' }} label={{ value: 'Value (Sales & Spend in $K)', angle: -90, position: 'insideLeft', fill: 'var(--chart-axis)' }} />
+                    <YAxis yAxisId="left" orientation="left" stroke="var(--chart-axis)" tick={{ fill: 'var(--chart-axis)' }}>
+                      <Label
+                        content={({ viewBox }) => {
+                          const vb = (viewBox || {}) as { x?: number; y?: number; width?: number; height?: number };
+                          const x = (vb.x ?? 0) - 40; // pull slightly left of axis line
+                          const y = (vb.y ?? 0) + ((vb.height ?? 0) / 2); // vertical center of chart area
+                          return (
+                            <text x={x} y={y} fill="var(--chart-axis)" textAnchor="middle" transform={`rotate(-90, ${x}, ${y})`}>
+                              Value (Sales Volume & Spend in $K)
+                            </text>
+                          );
+                        }}
+                      />
+                    </YAxis>
                     <YAxis yAxisId="right" orientation="right" stroke="var(--chart-axis)" tick={{ fill: 'var(--chart-axis)' }} />
                     <Tooltip
+                        cursor={{ fill: hoverTint(hoverLabel), opacity: 1 }}
                         contentStyle={{
                             background: 'var(--chart-tooltip-bg)',
                             borderColor: 'var(--chart-tooltip-border)',
@@ -389,9 +442,9 @@ const ScenarioComparison = () => {
                             backdropFilter: 'blur(10px)'
                         }}
                     />
-                    <Legend />
-                    <Bar yAxisId="left" dataKey="Sales" fill="var(--chart-primary)" />
-                    <Bar yAxisId="left" dataKey="Spend" fill="var(--chart-secondary)" />
+                    <Legend formatter={(value) => (value === 'Sales' ? 'Sales Volume' : value)} />
+                    <Bar yAxisId="left" dataKey="Sales" name="Sales Volume" fill="var(--chart-primary)" className="hover:opacity-90" />
+                    <Bar yAxisId="left" dataKey="Spend" fill="var(--chart-secondary)" className="hover:opacity-90" />
                     <Line yAxisId="right" type="monotone" dataKey="ROI" stroke="var(--metric-key)" />
                 </BarChart>
             </ResponsiveContainer>

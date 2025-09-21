@@ -179,6 +179,8 @@ const FarmaMetricsWithAssistant = () => {
     ];
   };
 
+  // Removed prototype history helper (no inline expansion)
+
   // Function to get breakdown chart data based on selected period - now uses dynamic data
   const getSalesVolumeBreakdownData = () => {
     // Use dynamic data if available, otherwise fallback to static data
@@ -346,7 +348,7 @@ const FarmaMetricsWithAssistant = () => {
     },
     {
       id: 'digital-dtc-company',
-      title: 'Digital DTC Company',
+      title: 'Digital DTC Compaign',
       value: '476,405',
       change: '+22.8%',
       changeType: 'positive',
@@ -621,7 +623,7 @@ const FarmaMetricsWithAssistant = () => {
     },
     {
       id: 'web-virtual-calls',
-      title: 'WEB Virtual Calls',
+      title: 'Web Virtual Calls',
       value: '$0.6M',
       change: '+5.2%',
       changeType: 'positive',
@@ -710,10 +712,11 @@ const FarmaMetricsWithAssistant = () => {
     const visibleCards = isExpanded ? metrics.length : defaultCards;
     const hasMoreCards = metrics.length > defaultCards;
     
-    // Find VRR index to split metrics
-    const vrrIndex = metrics.findIndex(card => card.id === 'vrr');
-    const beforeVRR = vrrIndex >= 0 ? metrics.slice(0, vrrIndex + 1) : [];
-    const afterVRR = vrrIndex >= 0 ? metrics.slice(vrrIndex + 1) : metrics;
+    // Grouping: Show ROI + VRR + Seasonality + Trend before the divider (Channel Impact),
+    // and keep the rest under Model Output
+    const headIds = new Set(['roi', 'vrr', 'seasonality', 'trend']);
+    const beforeVRR = metrics.filter(card => headIds.has(card.id));
+    const afterVRR = metrics.filter(card => !headIds.has(card.id));
     
     const renderCard = (card: LocalMetricCard, index: number) => {
       
@@ -750,6 +753,7 @@ const FarmaMetricsWithAssistant = () => {
       const backgroundColor = theme === 'dark' 
         ? 'rgba(30, 41, 59, 0.9)' 
         : 'rgba(255, 255, 255, 0.9)';
+      // Removed prototype expansion for this component
 
       return (
         <BauhausBorder
@@ -803,6 +807,8 @@ const FarmaMetricsWithAssistant = () => {
                 </div>
                 
                 <p className="text-sm text-gray-600 dark:text-slate-400">{card.comparison}</p>
+
+                {/* Prototype expansion removed */}
               </div>
             </CardContent>
           </Card>
@@ -843,14 +849,14 @@ const FarmaMetricsWithAssistant = () => {
           isExpanded ? 'max-h-none' : ''
         }`}>
           {/* Cards before and including VRR */}
-          {vrrIndex >= 0 && beforeVRR.length > 0 && (
+          {beforeVRR.length > 0 && (
             <div className="grid gap-6 transition-all duration-500 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-4 mb-8">
               {renderCards(beforeVRR.slice(0, Math.min(visibleCards, beforeVRR.length)))}
             </div>
           )}
           
           {/* Model Output section header */}
-          {vrrIndex >= 0 && afterVRR.length > 0 && (isExpanded || visibleCards > beforeVRR.length) && (
+          {afterVRR.length > 0 && (isExpanded || visibleCards > beforeVRR.length) && (
             <div className="mb-6">
               <div className="flex items-center gap-4 mb-6">
                 <div className="h-px bg-gradient-to-r from-transparent via-blue-300 dark:via-cyan-500/30 to-transparent flex-1"></div>
@@ -869,8 +875,8 @@ const FarmaMetricsWithAssistant = () => {
             </div>
           )}
           
-          {/* Fallback for when VRR is not found */}
-          {vrrIndex < 0 && (
+          {/* Fallback when grouping yields no head cards */}
+          {beforeVRR.length === 0 && (
             <div className="grid gap-6 transition-all duration-500 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-4">
               {renderCards(metrics.slice(0, visibleCards))}
             </div>

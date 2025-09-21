@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
@@ -21,6 +21,14 @@ const SituationDetailModal: React.FC<SituationDetailModalProps> = ({
   children 
 }) => {
   const { theme } = useTheme();
+  const [range, setRange] = useState<'3M' | '6M' | '12M'>('12M');
+  type ClickDatum = { name: string } & Record<string, number | string>;
+  const filteredData = useMemo<ClickDatum[]>(() => {
+    const all = (card?.chartData?.data as ClickDatum[]) || [];
+    if (range === '3M') return all.slice(-3);
+    if (range === '6M') return all.slice(-6);
+    return all;
+  }, [card?.chartData, range]);
   
   if (!card) return null;
 
@@ -144,8 +152,8 @@ const SituationDetailModal: React.FC<SituationDetailModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="backdrop-blur-[2px] bg-gray-100/80 dark:bg-white/5 border border-gray-200/50 dark:border-white/10 rounded-xl p-4 flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-blue-600 dark:text-cyan-400" />
-                <span className="text-sm text-gray-600 dark:text-white/60">Current Value</span>
+                <BarChart3 className="w-5 h-5 text-blue-600 dark:text-cyan-400" />
+                <span className="text-sm text-gray-600 dark:text-white/60">Last 12 Months</span>
               </div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white">{card.value}</div>
             </div>
@@ -163,11 +171,15 @@ const SituationDetailModal: React.FC<SituationDetailModalProps> = ({
             </div>
             <div className="backdrop-blur-[2px] bg-gray-100/80 dark:bg-white/5 border border-gray-200/50 dark:border-white/10 rounded-xl p-4 flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-blue-600 dark:text-cyan-400" />
+                {card.category === 'situation' ? (
+                  <BarChart3 className="w-5 h-5 text-blue-600 dark:text-cyan-400" />
+                ) : (
+                  <Users className="w-5 h-5 text-blue-600 dark:text-cyan-400" />
+                )}
                 <span className="text-sm text-gray-600 dark:text-white/60">Category</span>
               </div>
               <div className="text-lg font-semibold text-blue-600 dark:text-cyan-400 capitalize">
-                {card.category === 'situation' ? 'Spend' : card.category}
+                {card.id === 'digital-dtc-company' ? 'Digital' : (card.category === 'situation' ? 'Model Estimate' : card.category)}
               </div>
             </div>
           </div>
@@ -198,13 +210,43 @@ const SituationDetailModal: React.FC<SituationDetailModalProps> = ({
           {/* Chart */}
           {card.chartData && (
             <div className="backdrop-blur-[2px] bg-gray-100/80 dark:bg-white/5 border border-gray-200/50 dark:border-white/10 rounded-xl p-4">
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">{getChartTitle(card)}</h3>
+              <div className="mb-2 ml-2">
+                <span className="inline-block px-3 py-1 rounded-md bg-white/80 text-gray-900 dark:bg-black/50 dark:text-white shadow-sm">
+                  {getChartTitle(card)}
+                </span>
+              </div>
+
+              {/* Range chips */}
+              <div className="flex items-center justify-end gap-2 mb-2">
+                {(['3M','6M','12M'] as const).map((r) => (
+                  <Button
+                    key={r}
+                    size="sm"
+                    variant={r === range ? 'default' : 'outline'}
+                    className={r === range ? 'bg-cyan-500/30 border-cyan-500/50 text-white h-7 px-3' : 'h-7 px-3'}
+                    onClick={() => setRange(r)}
+                  >
+                    {r}
+                  </Button>
+                ))}
+              </div>
+
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={card.chartData.data}>
+                  <BarChart data={filteredData as unknown as { name: string }[] }>
+                    <defs>
+                      <linearGradient id="barClicksGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--chart-senary)" stopOpacity={0.95} />
+                        <stop offset="100%" stopColor="var(--chart-senary)" stopOpacity={0.30} />
+                      </linearGradient>
+                    </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid-stroke)" />
                     <XAxis dataKey="name" tick={{ fill: 'var(--chart-axis-color)', fontWeight: 600, fontSize: 13 }} />
-                    <YAxis tick={{ fill: 'var(--chart-axis-color)', fontWeight: 600, fontSize: 13 }} tickFormatter={v => `$${(v/1000).toFixed(0)}K`} />
+                    <YAxis
+                      tick={{ fill: 'var(--chart-axis-color)', fontWeight: 600, fontSize: 13 }}
+                      tickFormatter={(v: number) => `${Number(v).toLocaleString()}`}
+                      label={{ value: 'Clicks', angle: -90, position: 'insideLeft', fill: '#ffffff', dx: -20, fontSize: 14 }}
+                    />
                     <Tooltip
                       contentStyle={{
                         background: 'var(--chart-tooltip-bg)',
@@ -215,9 +257,17 @@ const SituationDetailModal: React.FC<SituationDetailModalProps> = ({
                         boxShadow: 'var(--chart-tooltip-shadow)',
                         backdropFilter: 'blur(10px)'
                       }}
-                      formatter={(value: number) => [`$${(value/1000).toFixed(1)}K`, 'Revenue']}
+                      formatter={(value: number) => [`${Number(value).toLocaleString()}`, 'Clicks']}
                     />
-                    <Bar dataKey="revenue" fill="var(--chart-primary-color)" radius={[6, 6, 0, 0]} />
+                    <Bar
+                      dataKey={(card.chartData?.valueKey || 'clicks') as string}
+                      name="Clicks"
+                      fill="url(#barClicksGradient)"
+                      stroke="var(--chart-senary)"
+                      fillOpacity={1}
+                      radius={[6, 6, 0, 0]}
+                      activeBar={{ fill: 'var(--chart-senary)', fillOpacity: 0.78 } as unknown as object}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

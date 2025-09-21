@@ -10,31 +10,66 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { motion, AnimatePresence } from "framer-motion";
 import { AnimatedRadialChart } from './AnimatedRadialChart';
 
-const generateForecastData = (reps: number, budget: number) => {
-  const data = [];
-  let currentRevenue = (reps * 2000 + budget * 0.1) / 12;
+// Deterministic PRNG (LCG) seeded by reps & budget
+const makeRng = (seed: number) => {
+  let x = seed >>> 0;
+  return () => {
+    x = (1664525 * x + 1013904223) >>> 0;
+    return (x / 0xffffffff); // [0,1)
+  };
+};
 
+// Generate 12-month forecast in millions (e.g., 1.8 => $1.8M per month) with small, seeded noise.
+// Ensures the 12-month sum ~= target range [19M, 24.5M] based on the Target Revenue slider (budget).
+const generateForecastData = (reps: number, budget: number) => {
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-  for (let i = 0; i < 12; i++) {
-    const month = monthNames[i];
-    const fluctuation = (Math.random() - 0.5) * 0.1; // -5% to +5% fluctuation
-    currentRevenue *= (1 + fluctuation);
-    data.push({
-      name: month,
-      revenue: Math.max(0, currentRevenue)
-    });
-  }
-  return data;
+  // Target annual revenue in $M, clamped to [19, 24.5]
+  const targetM = Math.min(24.5, Math.max(19, budget / 1_000_000));
+
+  // Shape weights (relative monthly pattern). Sum will be normalized to targetM
+  // Start slightly lower, peak mid-year, dip in Jul, then recover
+  const shape = [1.0, 1.05, 1.08, 1.12, 1.16, 1.2, 0.96, 1.0, 1.03, 1.06, 1.09, 1.12];
+  const shapeSum = shape.reduce((a, b) => a + b, 0);
+
+  // Base monthly values in $M before noise (normalized to target)
+  const base = shape.map(w => (w / shapeSum) * targetM);
+
+  // Mild scaling bias from controls (keeps overall sum via renorm)
+  const repsBias = Math.pow(Math.max(10, reps) / 45, 0.15); // very mild
+  const bias = repsBias;
+
+  // Seed from reps & budget (stable per inputs)
+  const seed = Math.floor(reps * 1_000 + (budget % 1_000_000) / 1_000);
+  const rand = makeRng(seed);
+
+  // Small, seeded noise ±2.5%
+  const noise = () => (rand() - 0.5) * 0.05;
+
+  // Apply noise and bias, then renormalize so sum equals targetM
+  const withNoise = base.map(v => v * bias * (1 + noise()));
+  const total = withNoise.reduce((a, b) => a + b, 0) || 1;
+  const scaleToTarget = targetM / total;
+  const normalized = withNoise.map(v => Number((v * scaleToTarget).toFixed(3)));
+
+  return monthNames.map((name, i) => ({ name, revenue: normalized[i] }));
 };
 
 const Simulation = () => {
   const [reps, setReps] = useState(45);
-  const [budget, setBudget] = useState(9000000);
+  const [budget, setBudget] = useState(21300000);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const revenue = budget;
   const forecastData = generateForecastData(reps, budget);
+  const maxM = Math.max(...forecastData.map(d => d.revenue), 0);
+
+  // Derived ranges based on Target Revenue slider position
+  const minTarget = 19_000_000;
+  const maxTarget = 24_500_000;
+  const norm = Math.max(0, Math.min(1, (budget - minTarget) / (maxTarget - minTarget)));
+  const projectedInvestment = 1_200_000 + norm * (1_800_000 - 1_200_000); // $1.2M → $1.8M
+  const roiValue = 5.5 + norm * (7.1 - 5.5); // 5.5x → 7.1x
 
   return (
     <div className="space-y-8 mt-12 pb-24">
@@ -78,7 +113,7 @@ const Simulation = () => {
                     <div className="flex items-center gap-4">
                       <Slider
                         id="sales-reps"
-                        min={10} max={100} step={1}
+                        min={10} max={70} step={1}
                         value={[reps]}
                         onValueChange={(value) => setReps(value[0])}
                         className="flex-1"
@@ -96,7 +131,7 @@ const Simulation = () => {
                      <div className="flex items-center gap-4">
                       <Slider
                         id="marketing-budget"
-                        min={1000000} max={20000000} step={100000}
+                        min={19000000} max={24500000} step={100000}
                         value={[budget]}
                         onValueChange={(value) => setBudget(value[0])}
                         className="flex-1"
@@ -162,7 +197,7 @@ const Simulation = () => {
                          transition={{ duration: 0.4 }}
                        >
                          <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-xl p-4">
-                           <p className="text-sm text-gray-600 dark:text-white/70">Projected Revenue</p>
+                          <p className="text-sm text-gray-600 dark:text-white/70">Projected Revenue</p>
                            <p className="text-3xl font-bold text-gray-900 dark:text-white">
                               <AnimatedNumber value={revenue} formatter={(val) => `$${(val/1000000).toFixed(2)}M`} />
                           </p>
@@ -174,9 +209,9 @@ const Simulation = () => {
                          transition={{ duration: 0.4, delay: 0.1 }}
                        >
                          <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-xl p-4">
-                           <p className="text-sm text-gray-600 dark:text-white/70">Projected Profit</p>
-                           <p className="text-3xl font-bold text-green-400">
-                              <AnimatedNumber value={revenue * 0.21} formatter={(val) => `$${(val/1000000).toFixed(2)}M`} />
+                          <p className="text-sm text-gray-600 dark:text-white/70">Projected Investment</p>
+                          <p className="text-3xl font-bold text-green-400">
+                             <AnimatedNumber value={projectedInvestment} formatter={(val) => `$${(val/1000000).toFixed(2)}M`} />
                            </p>
                          </div>
                        </motion.div>
@@ -186,9 +221,9 @@ const Simulation = () => {
                          transition={{ duration: 0.4, delay: 0.2 }}
                        >
                          <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-xl p-4">
-                           <p className="text-sm text-gray-600 dark:text-white/70">Overall ROI</p>
+                          <p className="text-sm text-gray-600 dark:text-white/70">Overall ROI</p>
                             <p className="text-3xl font-bold text-amber-400">
-                              <AnimatedNumber value={(revenue / budget)} formatter={(val) => `${val.toFixed(2)}x`} />
+                             <AnimatedNumber value={roiValue} formatter={(val) => `${val.toFixed(2)}x`} />
                            </p>
                          </div>
                        </motion.div>
@@ -227,7 +262,8 @@ const Simulation = () => {
                           <YAxis 
                             stroke="var(--chart-axis)"
                             fontSize={12}
-                            tickFormatter={(value) => `$${(value/1000000).toFixed(1)}M`}
+                            domain={[0, Math.ceil(maxM * 1.2)]}
+                            tickFormatter={(value) => `${Number(value).toFixed(1)}M`}
                           />
                           <Tooltip 
                             contentStyle={{
@@ -237,7 +273,7 @@ const Simulation = () => {
                               color: 'var(--chart-tooltip-text)',
                               backdropFilter: 'blur(10px)'
                             }}
-                            formatter={(value: number) => [`$${(value/1000000).toFixed(2)}M`, 'Revenue']}
+                            formatter={(value: number) => [`${Number(value).toFixed(1)}M`, 'Revenue']}
                           />
                           <Area
                             type="monotone"
@@ -249,14 +285,16 @@ const Simulation = () => {
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
-                    {/* Animated Radial Chart for Number of Salesforce */}
+                    {/* Animated Radial Chart for Number of Sales Force */}
                     <div className="flex flex-col items-center mt-8">
-                      <span className="text-md font-semibold text-gray-900 dark:text-white mb-2">Number of Salesforce</span>
+                      <span className="text-md font-semibold text-gray-900 dark:text-white mb-2">Number of Sales Force</span>
                       <AnimatedRadialChart 
-                        value={Math.min(100, Math.round((revenue / 20000000) * 100))}
+                        value={Math.max(0, Math.min(100, reps))}
                         size={350}
                         duration={1.2}
-                        showLabels={true}
+                        showLabels={false}
+                        baseline={47}
+                        percentMode="delta"
                       />
                     </div>
                   </div>

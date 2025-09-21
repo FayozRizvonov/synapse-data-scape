@@ -62,8 +62,107 @@ const CHANNEL_TOKENS: Record<string, string> = {
   other: 'var(--chart-quinary)'
 };
 
+// Friendly labels for series keys
+const DIM_LABELS: Record<string, string> = diminishingChannels.reduce((acc, ch) => {
+  acc[ch.key] = ch.label;
+  return acc;
+}, {} as Record<string, string>);
+
+const BUDGET_LABELS: Record<string, string> = {
+  sf_calls: 'SF Calls',
+  digital: 'Digital',
+  email: 'Email',
+  other: 'Other'
+};
+
+// Format spend nicely for tooltip headers
+const formatCurrencyShort = (v: number) => {
+  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
+  return `$${Math.round(v / 1000).toLocaleString()}K`;
+};
+
+// Recharts tooltip payload shape used by our custom tooltips
+interface TooltipItemPayload {
+  color: string;
+  dataKey: string;
+  name: string;
+  value: number;
+}
+
+interface TooltipCommonProps {
+  active?: boolean;
+  payload?: TooltipItemPayload[];
+  label?: number | string;
+}
+
+// Custom tooltip for Diminishing Curves: hide default total/label row and format values
+const DimTooltip: React.FC<TooltipCommonProps> = ({ active, payload, label }) => {
+  if (!active || !payload || payload.length === 0) return null;
+  const items = payload
+    .filter((p) => p && p.value != null && DIM_LABELS[p.dataKey]) // allowlist + no nulls
+    .map((p) => ({
+      name: DIM_LABELS[p.dataKey] || p.name,
+      value: Number(p.value),
+      color: p.color
+    }));
+  if (items.length === 0) return null;
+  return (
+    <div style={{
+      backgroundColor: 'var(--chart-tooltip-bg)',
+      border: '1px solid var(--chart-tooltip-border)',
+      borderRadius: 8,
+      color: 'var(--chart-tooltip-text)',
+      backdropFilter: 'blur(10px)',
+      padding: 8,
+      minWidth: 160
+    }}>
+      <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 6 }}>Spend: {formatCurrencyShort(Number(label))}</div>
+      {items.map((it) => (
+        <div key={it.name} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginTop: 2 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 9999, background: it.color }} />
+            <span style={{ fontSize: 12 }}>{it.name}</span>
+          </div>
+          <span style={{ fontWeight: 600 }}>{it.value.toLocaleString()}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// Custom tooltip for Total Media Budget: hide default label row, show formatted spend and percentages
+const BudgetTooltip: React.FC<TooltipCommonProps> = ({ active, payload, label }) => {
+  if (!active || !payload || payload.length === 0) return null;
+  const items = payload
+    .filter((p) => p && p.value != null && BUDGET_LABELS[p.dataKey])
+    .map((p) => ({ name: BUDGET_LABELS[p.dataKey] || p.name, value: Number(p.value), color: p.color }));
+  if (items.length === 0) return null;
+  return (
+    <div style={{
+      backgroundColor: 'var(--chart-tooltip-bg)',
+      border: '1px solid var(--chart-tooltip-border)',
+      borderRadius: 8,
+      color: 'var(--chart-tooltip-text)',
+      backdropFilter: 'blur(10px)',
+      padding: 8,
+      minWidth: 160
+    }}>
+      <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 6 }}>Total Spend: {formatCurrencyShort(Number(label))}</div>
+      {items.map((it) => (
+        <div key={it.name} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginTop: 2 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 9999, background: it.color }} />
+            <span style={{ fontSize: 12 }}>{it.name}</span>
+          </div>
+          <span style={{ fontWeight: 600 }}>{(it.value * 100).toFixed(1)}%</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const TailoredPresentation: React.FC = () => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [diminishingCollapsed, setDiminishingCollapsed] = useState(false);
   const [budgetCollapsed, setBudgetCollapsed] = useState(false);
   const { theme } = useTheme();
@@ -78,7 +177,7 @@ const TailoredPresentation: React.FC = () => {
         <Button
           variant="outline"
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="border-accent/50 text-foreground hover:bg-accent/20 hover:text-accent-foreground"
+          className="border-cyan-500/50 text-gray-900 dark:text-white hover:bg-cyan-500/20 hover:text-white"
         >
           {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
           {isCollapsed ? 'Expand' : 'Collapse'}
@@ -134,16 +233,7 @@ const TailoredPresentation: React.FC = () => {
                       tickFormatter={(v) => v.toLocaleString()}
                       label={{ value: 'Sales Value', angle: -90, position: 'insideLeft', fill: 'var(--chart-axis)', fontSize: 12 }}
                     />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'var(--chart-tooltip-bg)',
-                        border: '1px solid var(--chart-tooltip-border)',
-                        borderRadius: '8px',
-                        color: 'var(--chart-tooltip-text)',
-                        backdropFilter: 'blur(10px)'
-                      }}
-                      formatter={(value: number) => value.toLocaleString()}
-                    />
+                    <Tooltip content={<DimTooltip />} />
                     <Legend />
                     {/* Gradients for diminishing curves area fill */}
                     <defs>
@@ -222,16 +312,7 @@ const TailoredPresentation: React.FC = () => {
                       fontSize={12}
                       tickFormatter={(v) => `${(v * 100).toFixed(0)}%`}
                     />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'var(--chart-tooltip-bg)',
-                        border: '1px solid var(--chart-tooltip-border)',
-                        borderRadius: '8px',
-                        color: 'var(--chart-tooltip-text)',
-                        backdropFilter: 'blur(10px)'
-                      }}
-                      formatter={(value: number, name: string) => [ (value * 100).toFixed(1) + '%', name ] }
-                    />
+                    <Tooltip content={<BudgetTooltip />} />
                     <Legend formatter={(value) => value.replace('_', ' ').toUpperCase()} />
                     {/* Gradients for channel fill */}
                     <defs>

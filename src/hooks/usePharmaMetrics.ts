@@ -120,9 +120,8 @@ export function usePharmaMetrics(params: { projectId: string; period?: string; a
   }, [row]);
 
   const keyMetrics: MetricCard[] = useMemo(() => {
-    // Возьмём топ-3 ROI как ключевые карточки
-    const top = roiAnalysis.slice(0, 3);
-    const cards: MetricCard[] = top.map((r) => ({
+    // Include all ROI channels as Key Metrics (sorted desc in roiAnalysis)
+    return roiAnalysis.map((r) => ({
       id: r.id,
       title: r.title,
       value: r.roi_ratio + 'x',
@@ -134,35 +133,7 @@ export function usePharmaMetrics(params: { projectId: string; period?: string; a
       section: 'key-metrics',
       description: 'Live ROI from MMM outputs',
     }));
-    // Добавим карточку метрики модели (R²/ MAPE)
-    if (modelMetrics.r2 != null) {
-      cards.unshift({
-        id: 'model-r2',
-        title: 'Model R²',
-        value: `${(modelMetrics.r2 * 100).toFixed(2)}%`,
-        change: '',
-        changeType: 'positive',
-        comparison: 'Overall model fit',
-        icon: 'Activity',
-        category: 'key',
-        section: 'key-metrics',
-      });
-    }
-    if (modelMetrics.mape != null) {
-      cards.push({
-        id: 'model-mape',
-        title: 'MAPE',
-        value: `${(modelMetrics.mape * 100).toFixed(2)}%`,
-        change: '',
-        changeType: 'positive',
-        comparison: 'Prediction error',
-        icon: 'Activity',
-        category: 'key',
-        section: 'key-metrics',
-      });
-    }
-    return cards;
-  }, [roiAnalysis, modelMetrics]);
+  }, [roiAnalysis]);
 
   // UI Key Metrics from dataset snapshot
   const uiKeyMetrics: MetricCard[] = useMemo(() => {

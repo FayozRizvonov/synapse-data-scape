@@ -24,6 +24,7 @@ import AdminCommunity from '@/components/admin/AdminCommunity';
 import AdminClouds from '@/components/admin/AdminClouds';
 import ClaireAdminControl from '@/pages/ClaireAdminControl';
 import Profile from '@/components/Profile';
+import ChatHistory from '@/components/ChatHistory';
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState('ai-insights');
@@ -144,7 +145,14 @@ const Index = () => {
           transition={{ duration: 0.4, delay: 0.2 }}
           className="group"
         >
-          <GlowCard className="cursor-pointer h-full" glowColor="blue" customSize>
+          <div 
+            role="button" 
+            tabIndex={0}
+            onClick={() => setActiveSection('pharma-sm')}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setActiveSection('pharma-sm'); } }}
+            className="cursor-pointer"
+          >
+          <GlowCard className="h-full" glowColor="blue" customSize>
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
                 <BarChart3 className="w-5 h-5 text-cyan-400" />
@@ -160,6 +168,7 @@ const Index = () => {
               </span>
             </div>
           </GlowCard>
+          </div>
         </motion.div>
 
         <motion.div
@@ -263,6 +272,8 @@ const Index = () => {
 
   const renderContent = () => {
     switch (activeSection) {
+      case 'chat-history':
+        return <ChatHistory onOpenChat={(id) => console.log('open chat', id)} />;
       case 'pharma-sm':
         return <FarmaMetricsWithAssistant />;
       case 'admin-overview':

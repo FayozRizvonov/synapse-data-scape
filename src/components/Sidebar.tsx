@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Home, Settings, Stethoscope, Landmark, Server, Shield, ChevronLeft, ChevronRight, MessageSquare, ChevronDown, Cloud, User, Brain } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 interface SidebarProps {
   activeSection: string;
@@ -17,13 +19,62 @@ const Sidebar: React.FC<SidebarProps> = ({
   onToggleCollapse 
 }) => {
   const { theme } = useTheme();
-  const { isCompanyAdmin, permissions } = useAuth();
+  const { isCompanyAdmin, permissions, loading } = useAuth();
+  const navigate = useNavigate();
   const menuItems = [
     { icon: Home, label: 'AI Insights', id: 'ai-insights' },
   ];
   const pharmaItem = { icon: Stethoscope, label: 'Pharma S&M', id: 'pharma-sm' };
-  const historyItem = { icon: MessageSquare, label: 'History of chats', id: 'chat-history' };
+  const historyItem = { icon: MessageSquare, label: 'Chat History', id: 'chat-history' };
   const [isAdminOpen, setIsAdminOpen] = useState(true);
+  const [recentQuestions, setRecentQuestions] = useState<Array<{ id: string; chat_id: string; content: string; created_at: string }>>([]);
+
+  useEffect(() => {
+    let timer: any;
+    const fromAny = (supabase as unknown as { from?: (t: string) => any })?.from;
+    if (!fromAny) return;
+
+    const load = async () => {
+      try {
+        const { data }: any = await fromAny('messages')
+          .select('id, chat_id, content, created_at')
+          .eq('sender', 'user')
+          .order('created_at', { ascending: false })
+          .limit(6);
+        let items = (data as any[])?.map((d) => ({ id: d.id, chat_id: d.chat_id, content: d.content, created_at: d.created_at })) || [];
+        if (!items.length) {
+          const { data: chats }: any = await fromAny('chats')
+            .select('id, title, updated_at')
+            .order('updated_at', { ascending: false })
+            .limit(6);
+          items = (chats as any[])?.map((c) => ({ id: c.id, chat_id: c.id, content: c.title, created_at: c.updated_at })) || [];
+        }
+        setRecentQuestions(items);
+      } catch (_) {}
+    };
+
+    if (!loading) {
+      load();
+      timer = setInterval(load, 5000);
+    }
+
+    // realtime updates (best effort)
+    let channel: any;
+    try {
+      channel = (supabase as any).channel('sidebar-recent-q')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload: any) => {
+          const m = payload.new as { id: string; chat_id: string; content: string; sender: string; created_at: string };
+          if (m.sender !== 'user') return;
+          setRecentQuestions(prev => [{ id: m.id, chat_id: m.chat_id, content: m.content, created_at: m.created_at }, ...prev].slice(0, 6));
+        })
+        .subscribe();
+    } catch (_) {}
+
+    return () => {
+      if (timer) clearInterval(timer);
+      try { (supabase as any).removeChannel?.(channel); } catch (_) {}
+    };
+  }, [loading]);
 
   const handleSettingsClick = () => {
     onSectionChange('settings');
@@ -183,6 +234,24 @@ const Sidebar: React.FC<SidebarProps> = ({
           {historyItem.icon && <historyItem.icon className="w-5 h-5" />}
           {!isCollapsed && <span className="ml-2">{historyItem.label}</span>}
         </button>
+
+        {/* Recent user questions */}
+        {!isCollapsed && recentQuestions.length > 0 && (
+          <div className="ml-9 mt-2 space-y-1">
+            {recentQuestions.map((q) => (
+              <button
+                key={q.id}
+                onClick={() => navigate(`/chat/${q.chat_id}`)}
+                className={`block text-left w-full text-xs px-2 py-1 rounded-md transition-colors ${
+                  'text-gray-600 dark:text-white/70 hover:bg-blue-50 dark:hover:bg-blue-900/10 hover:text-blue-700 dark:hover:text-cyan-300'
+                }`}
+                title={q.content}
+              >
+                {q.content.length > 42 ? q.content.slice(0, 42) + '…' : q.content}
+              </button>
+            ))}
+          </div>
+        )}
       </nav>
 
       {/* Support Section */}

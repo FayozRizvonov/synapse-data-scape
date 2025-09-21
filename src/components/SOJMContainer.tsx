@@ -154,7 +154,7 @@ const SOJMContainer: React.FC = () => {
           <h1 className="text-4xl font-bold text-foreground mb-4">
             Omnichannel Customer Journey Framework
           </h1>
-          <p className="text-lg text-muted max-w-3xl mx-auto">
+          <p className="text-lg text-slate-600 dark:text-white/70 max-w-3xl mx-auto">
             Comprehensive mapping of customer touchpoints across multiple channels and personas
           </p>
         </motion.div>
@@ -178,7 +178,7 @@ const SOJMContainer: React.FC = () => {
                 return (
                   <motion.div
                     key={persona.id}
-                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 ${
+                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 min-h-[120px] ${
                       isActive
                         ? `border-blue-500 bg-blue-50 shadow-lg${isDarkMode ? '' : ''}`
                         : 'border-slate-200 bg-white hover:border-slate-300 dark:border-white/10 dark:bg-white/5 dark:hover:border-cyan-700'
@@ -233,7 +233,7 @@ const SOJMContainer: React.FC = () => {
                 return (
                   <motion.div
                     key={path.personaId}
-                    className={`p-4 rounded-xl border-2 transition-all duration-300 ${
+                    className={`p-4 rounded-xl border-2 transition-all duration-300 min-h-[120px] ${
                       isActive
                         ? 'border-green-500 bg-green-50 shadow-lg dark:border-green-400 dark:bg-green-900/20'
                         : 'border-slate-200 bg-white dark:border-white/10 dark:bg-white/5'
@@ -244,11 +244,8 @@ const SOJMContainer: React.FC = () => {
                   >
                     <div className="flex items-center gap-3 mb-3">
                       <CheckCircle className={`w-5 h-5 ${isActive ? 'text-green-600 dark:text-green-400' : 'text-slate-400 dark:text-white/40'}`} />
-                      <h4 className="font-semibold text-slate-800 dark:text-white">{path.outcome}</h4>
+                      <h4 className="font-semibold text-slate-800 dark:text-white">{persona?.name}</h4>
                     </div>
-                    <p className="text-sm text-slate-600 dark:text-white/70 mb-3">
-                      {persona?.name}
-                    </p>
                     <div className="flex flex-wrap gap-1">
                       {path.touchpoints.map((touchpointId) => {
                         const touchpoint = touchpoints.find(t => t.id === touchpointId);

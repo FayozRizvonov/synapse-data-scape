@@ -68,10 +68,12 @@ export function FeatureCard({ feature, className, onClick, id, ...props }: Featu
 					<h3 className="mt-10 text-sm md:text-base font-semibold text-foreground">{feature.title}</h3>
 					{feature.value && (
 						<div className="mt-2 flex items-end gap-2">
-							<span className={`text-2xl font-bold ${feature.value.includes('%') ? 'text-success-foreground' : 'text-foreground'}`}>{feature.value}</span>
+						<span className={`text-2xl font-bold text-foreground`}>{feature.value}</span>
 							{feature.change && (
 								<span className={`text-sm font-medium ${
-									feature.changeType === 'positive' ? 'text-success-foreground' : 'text-error-foreground'
+									feature.changeType === 'positive'
+										? 'text-success-foreground text-green-500 dark:text-green-400'
+										: 'text-error-foreground text-red-500 dark:text-red-400'
 								}`}>{feature.change}</span>
 							)}
 						</div>

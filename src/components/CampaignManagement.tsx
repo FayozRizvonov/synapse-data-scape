@@ -11,58 +11,73 @@ import { Button } from '@/components/ui/button';
 
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+// UI-aligned palette (soft tints suitable for dark glass surfaces)
+const PALETTE = {
+  q1: { start: 'rgba(34,211,238,0.22)', end: 'rgba(6,182,212,0.08)', border: 'rgba(34,211,238,0.35)', hoverStart: 'rgba(34,211,238,0.30)', hoverEnd: 'rgba(6,182,212,0.12)' }, // Cyan
+  q2: { start: 'rgba(16,185,129,0.22)', end: 'rgba(5,150,105,0.08)', border: 'rgba(16,185,129,0.35)', hoverStart: 'rgba(16,185,129,0.30)', hoverEnd: 'rgba(5,150,105,0.12)' }, // Emerald
+  q3: { start: 'rgba(168,85,247,0.22)', end: 'rgba(124,58,237,0.08)', border: 'rgba(168,85,247,0.35)', hoverStart: 'rgba(168,85,247,0.30)', hoverEnd: 'rgba(124,58,237,0.12)' }, // Violet
+  q4: { start: 'rgba(59,130,246,0.22)', end: 'rgba(29,78,216,0.08)', border: 'rgba(59,130,246,0.35)', hoverStart: 'rgba(59,130,246,0.30)', hoverEnd: 'rgba(29,78,216,0.12)' }, // Indigo/Blue
+} as const;
+
+const quarterKey = (name: string) => (name.toLowerCase() as 'q1' | 'q2' | 'q3' | 'q4');
+
 const quarterData = [
   {
     name: 'Q1',
-    color: '#F25CA2',
+    color: '#22d3ee',
     activities: [
-      { name: 'HCP Email 1to1', color: '#F2B950', monthly: [10, 20, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-      { name: 'F2F Calls', color: '#5C6BF2', monthly: [5, 10, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-      { name: 'Web Virtual Calls', color: '#50F2B9', monthly: [8, 12, 18, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-      { name: 'Phone Calls', color: '#F25C5C', monthly: [6, 9, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+      { name: 'HCP Email 1to1', color: '#22d3ee', monthly: [10, 20, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+      { name: 'F2F Calls', color: '#22d3ee', monthly: [5, 10, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+      { name: 'Web Virtual Calls', color: '#22d3ee', monthly: [8, 12, 18, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+      { name: 'Phone Calls', color: '#22d3ee', monthly: [6, 9, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
     ],
   },
   {
     name: 'Q2',
-    color: '#F2B950',
+    color: '#10b981',
     activities: [
-      { name: 'HCP Email 1to1', color: '#F2B950', monthly: [0, 0, 0, 15, 25, 35, 0, 0, 0, 0, 0, 0] },
-      { name: 'F2F Calls', color: '#5C6BF2', monthly: [0, 0, 0, 7, 14, 21, 0, 0, 0, 0, 0, 0] },
-      { name: 'Web Virtual Calls', color: '#50F2B9', monthly: [0, 0, 0, 10, 15, 20, 0, 0, 0, 0, 0, 0] },
-      { name: 'Phone Calls', color: '#F25C5C', monthly: [0, 0, 0, 8, 12, 16, 0, 0, 0, 0, 0, 0] },
+      { name: 'HCP Email 1to1', color: '#10b981', monthly: [0, 0, 0, 15, 25, 35, 0, 0, 0, 0, 0, 0] },
+      { name: 'F2F Calls', color: '#10b981', monthly: [0, 0, 0, 7, 14, 21, 0, 0, 0, 0, 0, 0] },
+      { name: 'Web Virtual Calls', color: '#10b981', monthly: [0, 0, 0, 10, 15, 20, 0, 0, 0, 0, 0, 0] },
+      { name: 'Phone Calls', color: '#10b981', monthly: [0, 0, 0, 8, 12, 16, 0, 0, 0, 0, 0, 0] },
     ],
   },
   {
     name: 'Q3',
-    color: '#5C6BF2',
+    color: '#a855f7',
     activities: [
-      { name: 'HCP Email 1to1', color: '#F2B950', monthly: [0, 0, 0, 0, 0, 0, 20, 30, 25, 0, 0, 0] },
-      { name: 'F2F Calls', color: '#5C6BF2', monthly: [0, 0, 0, 0, 0, 0, 10, 20, 15, 0, 0, 0] },
-      { name: 'Web Virtual Calls', color: '#50F2B9', monthly: [0, 0, 0, 0, 0, 0, 15, 22, 18, 0, 0, 0] },
-      { name: 'Phone Calls', color: '#F25C5C', monthly: [0, 0, 0, 0, 0, 0, 12, 18, 14, 0, 0, 0] },
+      { name: 'HCP Email 1to1', color: '#a855f7', monthly: [0, 0, 0, 0, 0, 0, 20, 30, 25, 0, 0, 0] },
+      { name: 'F2F Calls', color: '#a855f7', monthly: [0, 0, 0, 0, 0, 0, 10, 20, 15, 0, 0, 0] },
+      { name: 'Web Virtual Calls', color: '#a855f7', monthly: [0, 0, 0, 0, 0, 0, 15, 22, 18, 0, 0, 0] },
+      { name: 'Phone Calls', color: '#a855f7', monthly: [0, 0, 0, 0, 0, 0, 12, 18, 14, 0, 0, 0] },
     ],
   },
   {
     name: 'Q4',
-    color: '#50F2B9',
+    color: '#3b82f6',
     activities: [
-      { name: 'HCP Email 1to1', color: '#F2B950', monthly: [0, 0, 0, 0, 0, 0, 0, 0, 0, 18, 28, 35] },
-      { name: 'F2F Calls', color: '#5C6BF2', monthly: [0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 16, 22] },
-      { name: 'Web Virtual Calls', color: '#50F2B9', monthly: [0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 20, 26] },
-      { name: 'Phone Calls', color: '#F25C5C', monthly: [0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 15, 20] },
+      { name: 'HCP Email 1to1', color: '#3b82f6', monthly: [0, 0, 0, 0, 0, 0, 0, 0, 0, 18, 28, 35] },
+      { name: 'F2F Calls', color: '#3b82f6', monthly: [0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 16, 22] },
+      { name: 'Web Virtual Calls', color: '#3b82f6', monthly: [0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 20, 26] },
+      { name: 'Phone Calls', color: '#3b82f6', monthly: [0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 15, 20] },
     ],
   },
 ];
 
-const cellStyle = (color: string) => ({
-  background: color,
-  color: '#fff',
-  textAlign: 'center' as const,
-  borderRadius: 6,
-  fontWeight: 500,
-  padding: '4px 0',
-  transition: 'background 0.3s',
-});
+const cellStyle = (qName: string, hovered: boolean) => {
+  const key = quarterKey(qName);
+  const pal = PALETTE[key];
+  return {
+    background: `linear-gradient(180deg, ${hovered ? pal.hoverStart : pal.start}, ${hovered ? pal.hoverEnd : pal.end})`,
+    color: '#e5e7eb',
+    textAlign: 'center' as const,
+    borderRadius: 6,
+    fontWeight: 500,
+    padding: '4px 0',
+    border: `1px solid ${pal.border}`,
+    transition: 'background 0.2s, border-color 0.2s, color 0.2s',
+  };
+};
 
 const CampaignManager: React.FC<{
   expanded: Set<string>;
@@ -76,7 +91,7 @@ const CampaignManager: React.FC<{
         <li key={q.name}>
           <button
             className="flex items-center w-full text-left py-2 px-3 rounded-lg transition-colors duration-200 hover:bg-white/10 focus:outline-none"
-            style={{ color: q.color, fontWeight: 600, fontSize: 16 }}
+            style={{ color: PALETTE[quarterKey(q.name)].border, fontWeight: 600, fontSize: 16 }}
             onClick={() => toggle(q.name)}
           >
             {expanded.has(q.name) ? (
@@ -131,16 +146,18 @@ const ActiveCampaignsTable: React.FC<{
       <tbody>
         {quarterData.map((q) => {
           const isExpanded = expanded.has(q.name);
+          const pal = PALETTE[quarterKey(q.name)];
           return (
             <React.Fragment key={q.name}>
               {/* Parent row */}
-              <tr style={{ background: q.color + '22', transition: 'background 0.3s' }}>
+              <tr style={{ background: pal.start, transition: 'background 0.3s' }}>
                 <td colSpan={months.length}
                   style={{
-                    background: q.color,
-                    color: '#fff',
+                    background: `linear-gradient(180deg, ${pal.start}, ${pal.end})`,
+                    color: '#ffffff',
                     textAlign: 'center',
                     borderRadius: 8,
+                    border: `1px solid ${pal.border}`,
                     fontWeight: 500,
                     fontSize: 14,
                     padding: '4px 0',
@@ -155,17 +172,16 @@ const ActiveCampaignsTable: React.FC<{
               {isExpanded && q.activities.map((act) => {
                 const isHovered = hoveredActivity && hoveredActivity.quarter === q.name && hoveredActivity.activity === act.name;
                 return (
-                  <tr key={q.name + '-' + act.name} style={{ backgroundColor: isHovered ? 'rgba(6, 182, 212, 0.2)' : 'transparent' }}>
+                  <tr key={q.name + '-' + act.name} style={{ backgroundColor: 'transparent' }}>
                     {act.monthly.map((val, i) => (
                       <td
                         key={i}
                         style={{
-                          ...cellStyle(act.color),
-                          background: isHovered ? 'rgba(6, 182, 212, 0.3)' : 'rgba(255,255,255,0.04)',
-                          color: isHovered ? '#ffffff' : '#e0e0e0',
-                          fontWeight: isHovered ? 600 : 400,
-                          fontSize: 14,
-                          borderTop: '1px solid rgba(255,255,255,0.04)'
+                          ...(val > 0 ? cellStyle(q.name, !!isHovered) : { background: 'transparent' }),
+                          color: val > 0 ? (isHovered ? '#ffffff' : '#e5e7eb') : 'transparent',
+                          fontWeight: val > 0 ? (isHovered ? 600 : 500) : 400,
+                          fontSize: 13,
+                          borderTop: val > 0 ? `1px solid ${pal.border}` : 'none'
                         }}
                         className="transition-all duration-200 pl-8"
                       >
@@ -184,7 +200,7 @@ const ActiveCampaignsTable: React.FC<{
 );
 
 const CampaignManagement: React.FC = () => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [hoveredActivity, setHoveredActivity] = useState<{ quarter: string; activity: string } | null>(null);
 

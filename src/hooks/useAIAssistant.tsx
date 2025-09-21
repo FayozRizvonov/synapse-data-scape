@@ -53,7 +53,7 @@ interface AIAssistantContextType {
   lastAIResponse: AIResponse | null;
   isLoading: boolean;
   error: string | null;
-  sendMessage: (message: string) => Promise<void>;
+  sendMessage: (message: string, opts?: { chatId?: string; titleHint?: string }) => Promise<{ chatId?: string }>;
   clearChat: () => void;
   getTopChannels: () => Array<{ channel: string; roi: string; spend: string; performance: string; }>;
   getRegionalData: () => Array<{ region: string; performance: string; target: string; gap: string; }>;
@@ -68,9 +68,9 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [lastAIResponse, setLastAIResponse] = useState<AIResponse | null>(null);
-  const { userRole } = useAuth();
+  const { userRole, user } = useAuth();
 
-  const sendMessage = useCallback(async (message: string): Promise<void> => {
+  const sendMessage = useCallback(async (message: string, opts?: { chatId?: string; titleHint?: string }): Promise<{ chatId?: string }> => {
     setIsLoading(true);
     setError(null);
 
@@ -80,6 +80,34 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
       sender: 'user',
     };
     setMessages(prev => [...prev, userMessage]);
+
+    // Ensure chat exists and store user message
+    let chatId = opts?.chatId;
+    try {
+      const fromAny = (supabase as unknown as { from: (t: string) => any }).from;
+
+      // Ensure we have an authenticated user id for RLS
+      let authUserId = user?.id as string | undefined;
+      if (!authUserId) {
+        const { data } = await supabase.auth.getSession();
+        authUserId = data.session?.user?.id as string | undefined;
+      }
+
+      if (!chatId && authUserId) {
+        const { data: created } = await fromAny('chats')
+          .insert({ title: opts?.titleHint || (message.slice(0, 60) || 'New chat'), user_id: authUserId })
+          .select('id')
+          .single();
+        chatId = (created as { id?: string } | undefined)?.id;
+      }
+
+      if (chatId && authUserId) {
+        await fromAny('messages').insert({ chat_id: chatId, sender: 'user', content: message });
+      }
+    } catch (_) {
+      // Best-effort: UI will still work even if persistence fails
+      console.warn('Chat persistence (user message) failed');
+    }
 
     try {
       console.log('Sending message to AI assistant:', message);
@@ -96,7 +124,7 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
       }));
       
       const { data, error: supabaseError } = await supabase.functions.invoke('ai-assistant', {
-        body: { message, kb: compactKb, history: historyPayload, persona: userRole }
+        body: { message, kb: compactKb, history: historyPayload, persona: userRole, chat_id: chatId }
       });
 
       if (supabaseError) {
@@ -125,7 +153,11 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
           sender: 'ai'
         };
         setMessages(prev => [...prev, aiMessage]);
-        return; // stop further parsing
+        try {
+          const fromAny = (supabase as unknown as { from: (t: string) => any }).from;
+          if (chatId) await fromAny('messages').insert({ chat_id: chatId, sender: 'ai', content: errorText, structured: { type: 'text' } });
+        } catch (_) {}
+        return { chatId };
       }
 
       const responseText = data.response || 'Sorry, could not get a response.';
@@ -460,6 +492,27 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
       
       setMessages(prev => [...prev, aiMessage]);
 
+      // Persist AI reply
+      try {
+        const fromAny = (supabase as unknown as { from: (t: string) => any }).from;
+        if (chatId) {
+          await fromAny('messages').insert({
+            chat_id: chatId,
+            sender: 'ai',
+            content: aiResponse.text,
+            structured: {
+              responseType: aiResponse.responseType,
+              report: aiResponse.report,
+              card: aiResponse.card,
+              action: aiResponse.action,
+              metricId: aiResponse.details?.metricId,
+            }
+          });
+        }
+      } catch (_) {
+        console.warn('Chat persistence (AI message) failed');
+      }
+
     } catch (err) {
       console.error('Error in sendMessage:', err);
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
@@ -478,7 +531,8 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, userRole]);
+    return { chatId };
+  }, [messages, userRole, user?.id]);
 
   const clearChat = useCallback(() => {
     setMessages([]);

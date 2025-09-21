@@ -11,6 +11,8 @@ interface AnimatedRadialChartProps {
   className?: string
   showLabels?: boolean
   duration?: number
+  baseline?: number
+  percentMode?: "value" | "delta"
 }
 
 export function AnimatedRadialChart({ 
@@ -19,7 +21,9 @@ export function AnimatedRadialChart({
   strokeWidth: customStrokeWidth,
   className,
   showLabels = true,
-  duration = 2
+  duration = 2,
+  baseline = 47,
+  percentMode = "value"
 }: AnimatedRadialChartProps) {
   // Dynamic stroke width based on size if not provided
   const strokeWidth = customStrokeWidth ?? Math.max(12, size * 0.06)
@@ -153,7 +157,14 @@ export function AnimatedRadialChart({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: duration * 0.85 }}
         >
-          {useTransform(animatedValue, (latest) => `${(latest/100).toFixed(1)}%`)}
+          {useTransform(animatedValue, (latest) => {
+            if (percentMode === "delta") {
+              const delta = baseline === 0 ? 0 : ((latest - baseline) / baseline) * 100
+              const signed = delta >= 0 ? `+${delta.toFixed(1)}%` : `${delta.toFixed(1)}%`
+              return signed
+            }
+            return `${(latest/100).toFixed(1)}%`
+          })}
         </motion.div>
       </div>
 

@@ -17,6 +17,7 @@ import { GlobalLayout } from "@/components/GlobalLayout";
 import { AIAssistantProvider } from "@/hooks/useAIAssistant";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import ChatThread from "@/components/ChatThread";
 
 
 const queryClient = new QueryClient();
@@ -94,6 +95,13 @@ const App = () => (
                   <h2 className="text-2xl font-bold mb-4">CLAIRE AI Dashboard</h2>
                   <p className="text-gray-600">Dashboard component coming soon...</p>
                 </div>
+                  </GlobalLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/chat/:id" element={
+                <ProtectedRoute>
+                  <GlobalLayout>
+                    <ChatThread />
                   </GlobalLayout>
                 </ProtectedRoute>
               } />

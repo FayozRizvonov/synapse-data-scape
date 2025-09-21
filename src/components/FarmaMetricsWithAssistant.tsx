@@ -30,10 +30,11 @@ import { Badge } from '@/components/ui/badge';
 import AnimatedNumber from './AnimatedNumber';
 import { ChevronDown, ChevronUp, Phone, MousePointer, HeartHandshake, MapPin, Smartphone, Send, MessageCircle, Zap, Star, Share2, Download, Expand, ChevronLeft, ChevronRight, Monitor, FileText } from "lucide-react";
 import { useTheme } from '@/hooks/useTheme';
-import { LineChart, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line, Area, ResponsiveContainer } from 'recharts';
+import { LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line, Area, ResponsiveContainer, AreaChart } from 'recharts';
 import { VoiceAssistant } from './VoiceAssistant';
 import ChatView from './ChatView';
 import { usePharmaMetrics, useModelPerformanceStats } from '@/hooks/usePharmaMetrics';
+import type { MetricCard as KBMetricCard } from '@/data/metricsKnowledgeBase';
 
 // Local interface for our component that extends the base MetricCard
 interface LocalMetricCard {
@@ -51,16 +52,27 @@ interface LocalMetricCard {
     description: string;
     breakdown: Array<{ label: string; value: string; }>;
   };
+  chartData?: { type: 'bar' | 'line' | 'pie'; valueKey?: string; data: Array<{ name: string } & { [k: string]: number | string }> };
 }
 
-// Convert LocalMetricCard to the expected MetricCard type for the modal
-const convertToMetricCard = (localCard: LocalMetricCard) => {
-  return {
-    ...localCard,
-    icon: localCard.icon.name || 'Activity', // Convert React component to string
+// Convert LocalMetricCard to a plain object the modal can consume
+const convertToMetricCard = (localCard: LocalMetricCard): KBMetricCard => {
+  const converted: KBMetricCard = {
+    id: localCard.id,
+    title: localCard.title,
+    value: localCard.value,
+    change: localCard.change,
+    changeType: localCard.changeType,
+    comparison: localCard.comparison,
     description: localCard.description,
-    keywords: [] // Add empty keywords array to satisfy MetricCard interface
-  };
+    icon: ((localCard.icon as unknown as { name?: string })?.name || 'Activity') as string,
+    category: localCard.category as KBMetricCard['category'],
+    section: localCard.section,
+    keywords: [],
+    details: localCard.details,
+    chartData: localCard.chartData
+  } as KBMetricCard;
+  return converted;
 };
 
 const FarmaMetricsWithAssistant = () => {
@@ -68,10 +80,13 @@ const FarmaMetricsWithAssistant = () => {
   const [keyMetricsExpanded, setKeyMetricsExpanded] = useState(false);
   const [situationMetricsExpanded, setSituationMetricsExpanded] = useState(false);
   const [selectedCard, setSelectedCard] = useState<LocalMetricCard | null>(null);
-  const [salesVolumeAnalysisExpanded, setSalesVolumeAnalysisExpanded] = useState(false);
-  const [salesVolumeBreakdownExpanded, setSalesVolumeBreakdownExpanded] = useState(false);
+  const [salesVolumeAnalysisExpanded, setSalesVolumeAnalysisExpanded] = useState(true);
+  const [salesVolumeBreakdownExpanded, setSalesVolumeBreakdownExpanded] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState('2022-2024');
   const [selectedBreakdownPeriod, setSelectedBreakdownPeriod] = useState('2022-2024');
+  // Prototype expansion state for a single key metric
+  const [expandedMetricId, setExpandedMetricId] = useState<string | null>(null);
+  const [metricRange, setMetricRange] = useState<'3m' | '6m' | '12m'>('12m');
 
   // Live data from Supabase (MMM outputs)
   const {
@@ -297,7 +312,7 @@ const FarmaMetricsWithAssistant = () => {
 
   const liveKeyMetrics: LocalMetricCard[] = hookKeyMetrics.map(k => ({
     id: k.id,
-    title: k.title,
+    title: k.id === 'digital-dtc-company' ? 'Digital DTC Compaign' : k.title,
     value: k.value,
     change: k.change,
     changeType: k.changeType,
@@ -328,7 +343,7 @@ const FarmaMetricsWithAssistant = () => {
 
   const uiLiveCards: LocalMetricCard[] = (uiKeyMetrics || []).map(k => ({
     id: k.id,
-    title: k.title,
+    title: k.id === 'digital-dtc-company' ? 'Digital DTC Compaign' : k.title,
     value: k.value,
     change: k.change,
     changeType: k.changeType,
@@ -339,7 +354,9 @@ const FarmaMetricsWithAssistant = () => {
     description: k.description ?? ''
   }));
 
-  const keyMetrics: LocalMetricCard[] = uiLiveCards.length > 0 ? uiLiveCards : (liveKeyMetrics.length > 0 ? liveKeyMetrics : [
+  // Key Metrics must show raw activity data (counts), not ROI.
+  // Use UI snapshot if available; otherwise fall back to static raw examples.
+  const keyMetrics: LocalMetricCard[] = uiLiveCards.length > 0 ? uiLiveCards : [
     {
       id: 'revenue',
       title: 'QoQ Revenue Growth',
@@ -463,7 +480,7 @@ const FarmaMetricsWithAssistant = () => {
     },
     {
       id: 'digital-dtc-company',
-      title: 'Digital DTC Company',
+      title: 'Digital DTC Campaign',
       value: '476,405',
       change: '+22.8%',
       changeType: 'positive',
@@ -545,7 +562,7 @@ const FarmaMetricsWithAssistant = () => {
         ]
       }
     }
-  ]);
+  ];
 
   const situationMetrics: LocalMetricCard[] = [
     {
@@ -728,7 +745,7 @@ const FarmaMetricsWithAssistant = () => {
     },
     {
       id: 'web-virtual-calls',
-      title: 'WEB Virtual Calls',
+      title: 'Web Virtual Calls',
       value: '$0.6M',
       change: '+5.2%',
       changeType: 'positive',
@@ -806,9 +823,31 @@ const FarmaMetricsWithAssistant = () => {
   ];
 
   const handleCardClick = (card: LocalMetricCard) => {
-    if (card.category === 'situation') {
-      setSelectedCard(card);
+    // For prototype: clicking Digital DTC Compaign opens a modal with a history chart
+    if (card.id === 'digital-dtc-company' && card.category === 'key') {
+      const baseCard: LocalMetricCard = {
+        ...card,
+        title: 'Digital DTC Campaign',
+        details: {
+          description: 'Digital direct-to-consumer campaign clicks over time.',
+          breakdown: [
+            { label: 'All Channels', value: card.value },
+            { label: 'Growth QoQ', value: card.change },
+            { label: 'Cost', value: card.comparison }
+          ]
+        },
+        chartData: undefined
+      };
+
+      // Attach a small historical series into chartData (demo only)
+      const months = ['Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan'];
+      const clicks = [42000, 43800, 45100, 46800, 48100, 49900, 51200, 52600, 53900, 55200, 56600, 57900];
+      // Attach bar series for modal (clicks per month)
+      baseCard.chartData = { type: 'bar', valueKey: 'clicks', data: months.map((m, i) => ({ clicks: clicks[i], name: m })) };
+      setSelectedCard(baseCard);
+      return;
     }
+    if (card.category === 'situation') setSelectedCard(card);
   };
 
   const renderMetricSection = (metrics: LocalMetricCard[], isExpanded: boolean, setExpanded: (expanded: boolean) => void, title: string, hideShowMoreButton = false) => {
@@ -816,10 +855,20 @@ const FarmaMetricsWithAssistant = () => {
     const visibleCards = isExpanded ? metrics.length : defaultCards;
     const hasMoreCards = metrics.length > defaultCards;
     
-    // Find VRR index to split metrics
-    const vrrIndex = metrics.findIndex(card => card.id === 'vrr');
-    const beforeVRR = vrrIndex >= 0 ? metrics.slice(0, vrrIndex + 1) : [];
-    const afterVRR = vrrIndex >= 0 ? metrics.slice(vrrIndex + 1) : metrics;
+    // Section-specific ordering/grouping
+    let beforeVRR: LocalMetricCard[] = [];
+    let afterVRR: LocalMetricCard[] = [];
+    if (title === 'Channel Impact' || title === 'Model Output Summary') {
+      const topOrder = ['total-sales','base-sales','incremental','promotional-spend','roi','vrr','seasonality','trend'];
+      const modelOrder = ['f2f-calls','web-virtual-calls','symposium','sfmc-emails','mass-email'];
+      const byId = new Map(metrics.map(m => [m.id, m] as const));
+      beforeVRR = topOrder.map(id => byId.get(id)).filter(Boolean) as LocalMetricCard[];
+      afterVRR = modelOrder.map(id => byId.get(id)).filter(Boolean) as LocalMetricCard[];
+    } else {
+      // For Key Metrics and others: single grid; no subsection
+      beforeVRR = [];
+      afterVRR = metrics;
+    }
     
     const renderCards = (cards: LocalMetricCard[], startIndex: number = 0) => {
       return cards.map((card, index) => (
@@ -869,20 +918,20 @@ const FarmaMetricsWithAssistant = () => {
         <div className={`overflow-hidden transition-all duration-500 ease-in-out ${
           isExpanded ? 'max-h-none' : ''
         }`}>
-          {/* Cards before and including VRR */}
-          {vrrIndex >= 0 && beforeVRR.length > 0 && (
+          {/* Channel Impact top grid (ordered) */}
+          { (title === 'Channel Impact' || title === 'Model Output Summary') && beforeVRR.length > 0 && (
             <div className="grid gap-6 transition-all duration-500 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mb-8">
               {renderCards(beforeVRR.slice(0, Math.min(visibleCards, beforeVRR.length)))}
             </div>
           )}
           
-          {/* Model Output section header */}
-          {vrrIndex >= 0 && afterVRR.length > 0 && (isExpanded || visibleCards > beforeVRR.length) && (
+          {/* Model Output (Channel Impact only) */}
+          { (title === 'Channel Impact' || title === 'Model Output Summary') && afterVRR.length > 0 && (isExpanded || visibleCards > beforeVRR.length) && (
             <div className="mb-6">
               <div className="flex items-center gap-4 mb-6">
                 <div className="h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-white/30 to-transparent flex-1"></div>
                 <h3 className="text-lg font-semibold text-gray-700 dark:text-white/80 px-4 py-2 bg-white/5 rounded-lg border border-white/10">
-                  Model Output
+                  ROI Analysis
                 </h3>
                 <div className="h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-white/30 to-transparent flex-1"></div>
               </div>
@@ -896,10 +945,10 @@ const FarmaMetricsWithAssistant = () => {
             </div>
           )}
           
-          {/* Fallback for when VRR is not found */}
-          {vrrIndex < 0 && (
+          {/* Key Metrics and other sections: single grid only */}
+          { !(title === 'Channel Impact' || title === 'Model Output Summary') && (
             <div className="grid gap-6 transition-all duration-500 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-              {renderCards(metrics.slice(0, visibleCards))}
+              {renderCards(afterVRR.slice(0, visibleCards))}
             </div>
           )}
         </div>
@@ -1069,7 +1118,7 @@ const FarmaMetricsWithAssistant = () => {
         {renderMetricSection(keyMetrics, keyMetricsExpanded, setKeyMetricsExpanded, "Key Metrics", true)}
         
         {/* Situation Metrics */}
-        {renderMetricSection(situationMetrics, situationMetricsExpanded, setSituationMetricsExpanded, "Channel Impact", true)}
+        {renderMetricSection(situationMetrics, situationMetricsExpanded, setSituationMetricsExpanded, "Model Output Summary", true)}
 
         {/* Model Performance Stats */}
         <div className="space-y-4">
@@ -1286,7 +1335,7 @@ const FarmaMetricsWithAssistant = () => {
             </div>
             <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
               <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">Growth Trend</div>
-              <div className="text-lg font-semibold text-orange-600 dark:text-orange-400">+47%</div>
+              <div className="text-lg font-semibold text-green-600 dark:text-green-400">+47%</div>
             </div>
           </div>
           
