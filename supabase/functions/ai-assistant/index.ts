@@ -395,8 +395,47 @@ serve(async (req) => {
     }
     console.log('✅ OpenAI API key found');
 
-    const requestBody = await req.json();
+    let requestBody: any;
+    try {
+      const bodyText = await req.text();
+      if (!bodyText || bodyText.trim() === '') {
+        throw new Error('Empty request body');
+      }
+      requestBody = JSON.parse(bodyText);
+    } catch (parseError) {
+      console.error('❌ Failed to parse request body:', parseError);
+      return new Response(JSON.stringify({
+        response: '',
+        error_message: 'Invalid request body',
+        error_debug: {
+          source: 'request-parse',
+          message: (parseError as any)?.message?.toString() || 'Invalid JSON in request body'
+        },
+        timestamp: new Date().toISOString()
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      });
+    }
+
     const { message, kb, history, persona } = requestBody as { message: string; kb?: unknown; history?: any[]; persona?: string };
+    
+    if (!message || typeof message !== 'string' || message.trim() === '') {
+      console.error('❌ Invalid or empty message in request');
+      return new Response(JSON.stringify({
+        response: '',
+        error_message: 'Invalid or empty message',
+        error_debug: {
+          source: 'request-validation',
+          message: 'Message is required and must be a non-empty string'
+        },
+        timestamp: new Date().toISOString()
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      });
+    }
+
     console.log('📨 Received message:', message);
     if (persona) {
       console.log('👤 Persona:', persona);
@@ -420,7 +459,7 @@ serve(async (req) => {
           .from('mmm_model_outputs')
           .select('id, model_id, project_id, output_type, output_data, generated_at')
           .order('generated_at', { ascending: false })
-          .limit(20);
+          .limit(10); // Reduced from 20 to 10 to save tokens
         if (outputsError) {
           console.warn('⚠️ Failed to fetch model outputs:', outputsError.message);
         } else if (outputs && outputs.length > 0) {
@@ -497,12 +536,33 @@ OUTPUT TYPE: Return a single JSON object ONLY — prefer {"type":"card"}; if a c
     })();
 
     console.log('🤖 Calling OpenAI API...');
+    
+    // Ensure API key is a valid string
+    if (!openAIApiKey || typeof openAIApiKey !== 'string' || openAIApiKey.trim() === '') {
+      console.error('❌ Invalid OpenAI API key');
+      return new Response(JSON.stringify({
+        response: '',
+        error_message: 'OpenAI API key is invalid or missing',
+        error_debug: {
+          source: 'config',
+          message: 'OPENAI_API_KEY environment variable is not set or invalid'
+        },
+        timestamp: new Date().toISOString()
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      });
+    }
+
+    // Create headers with proper string values
+    const headers: Record<string, string> = {
+      'Authorization': `Bearer ${String(openAIApiKey).trim()}`,
+      'Content-Type': 'application/json'
+    };
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json'
-      },
+      headers: headers,
       body: JSON.stringify({
         model: 'gpt-4o',
         response_format: { type: 'json_object' },
@@ -515,16 +575,16 @@ OUTPUT TYPE: Return a single JSON object ONLY — prefer {"type":"card"}; if a c
           ...(modelOutputsCompact ? [{
             role: 'system',
             content: 'MODEL_OUTPUTS_DATASET (JSON). Use to ground insights and recommendations. Prefer concrete numbers from this dataset when relevant.\n' +
-              JSON.stringify(modelOutputsCompact).slice(0, 20000)
+              JSON.stringify(modelOutputsCompact).slice(0, 8000) // Reduced from 20000 to 8000 to save tokens
           }] : []),
           ...(kb ? [{
             role: 'system',
             content: `PHARMA_SM_DATASET (JSON). Use as the authoritative source for values, ids, and chart data. Do not speculate beyond it unless explicitly asked.\n` +
-              JSON.stringify(kb).slice(0, 20000)
+              JSON.stringify(kb).slice(0, 8000) // Reduced from 20000 to 8000 to save tokens
           }] : []),
-          ...(Array.isArray(history) ? history.slice(-10).map((h) => ({
+          ...(Array.isArray(history) ? history.slice(-5).map((h) => ({ // Reduced from -10 to -5 messages
             role: h.role === 'assistant' ? 'assistant' : 'user',
-            content: typeof h.content === 'string' ? h.content : JSON.stringify(h.content).slice(0, 4000)
+            content: typeof h.content === 'string' ? h.content : JSON.stringify(h.content).slice(0, 2000) // Reduced from 4000 to 2000 chars per message
           })) : []),
           {
             role: 'user',
@@ -538,15 +598,39 @@ OUTPUT TYPE: Return a single JSON object ONLY — prefer {"type":"card"}; if a c
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`❌ OpenAI API error: ${response.status} ${response.statusText}`, errorText);
+      
+      // Parse error to check for rate limit
+      let errorMessage = 'OpenAI API error';
+      let errorDetails = errorText?.slice(0, 2000) || 'unknown';
+      
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.error) {
+          const error = errorJson.error;
+          if (error.type === 'rate_limit_error' || error.message?.includes('rate limit')) {
+            errorMessage = 'Rate limit exceeded. Please try again in a few moments.';
+            // Extract retry time if available
+            const retryMatch = error.message?.match(/try again in ([\d.]+)s/i);
+            if (retryMatch) {
+              errorMessage += ` (Retry in ${Math.ceil(parseFloat(retryMatch[1]))} seconds)`;
+            }
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+        }
+      } catch (_) {
+        // If parsing fails, use default error message
+      }
+      
       // Return debug to client (status 200) so UI can show cause instead of generic 500
       return new Response(JSON.stringify({
         response: '',
-        error_message: 'OpenAI API error',
+        error_message: errorMessage,
         error_debug: {
           source: 'openai',
           httpStatus: response.status,
           statusText: response.statusText,
-          body: errorText?.slice(0, 2000) || 'unknown'
+          body: errorDetails
         },
         timestamp: new Date().toISOString()
       }), {
@@ -555,16 +639,68 @@ OUTPUT TYPE: Return a single JSON object ONLY — prefer {"type":"card"}; if a c
       });
     }
 
-    const data = await response.json();
-    console.log('✅ OpenAI response received');
+    let data: any;
+    try {
+      const responseText = await response.text();
+      console.log('📥 OpenAI raw response length:', responseText.length);
+      data = JSON.parse(responseText);
+      console.log('✅ OpenAI response parsed successfully');
+    } catch (parseError) {
+      console.error('❌ Failed to parse OpenAI response as JSON:', parseError);
+      return new Response(JSON.stringify({
+        response: '',
+        error_message: 'Failed to parse OpenAI response',
+        error_debug: {
+          source: 'openai-parse',
+          message: (parseError as any)?.message?.toString() || 'Invalid JSON response'
+        },
+        timestamp: new Date().toISOString()
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      });
+    }
     
-    const assistantMessage = data.choices[0].message.content;
+    // Validate response structure
+    if (!data || !data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+      console.error('❌ Invalid OpenAI response structure:', JSON.stringify(data).slice(0, 500));
+      return new Response(JSON.stringify({
+        response: '',
+        error_message: 'Invalid OpenAI response structure',
+        error_debug: {
+          source: 'openai-structure',
+          message: 'Response missing choices array or empty'
+        },
+        timestamp: new Date().toISOString()
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      });
+    }
+
+    const assistantMessage = data.choices[0]?.message?.content;
+    if (!assistantMessage) {
+      console.error('❌ No content in OpenAI response:', JSON.stringify(data.choices[0]).slice(0, 500));
+      return new Response(JSON.stringify({
+        response: '',
+        error_message: 'No content in OpenAI response',
+        error_debug: {
+          source: 'openai-content',
+          message: 'Response missing message content'
+        },
+        timestamp: new Date().toISOString()
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      });
+    }
+
     const result = {
       response: assistantMessage,
       timestamp: new Date().toISOString()
     };
 
-    console.log('📤 Sending response back to client');
+    console.log('📤 Sending response back to client (length:', assistantMessage.length, ')');
     return new Response(JSON.stringify(result), {
       headers: {
         ...corsHeaders,
