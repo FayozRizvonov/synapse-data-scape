@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
 import {
   ChartContainer,
   ChartTooltip,
@@ -77,7 +78,15 @@ const AdminPanelOverview: React.FC = () => {
   };
 
   const approve = async (id: string, approve: boolean) => {
-    await supabase.rpc('admin_approve_member', { p_member: id, p_approve: approve });
+    const { error } = await supabase.rpc('admin_approve_member', { p_member: id, p_approve: approve });
+    if (error) {
+      toast({
+        title: 'Approval failed',
+        description: error.message || 'Could not update member status',
+        variant: 'destructive',
+      });
+      return;
+    }
     load();
   };
 
@@ -144,7 +153,7 @@ const AdminPanelOverview: React.FC = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 pb-28">
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="rounded-xl border border-white/10 bg-white/5 p-4">

@@ -97,6 +97,9 @@ serve(async (req) => {
     }
     console.log('✅ OpenAI API key found');
 
+    // Normalize API key for safe use in HTTP headers
+    const authHeaderValue = `Bearer ${String(openAIApiKey).trim()}`;
+
     const requestBody = await req.json();
     console.log('📨 Received voice request body keys:', Object.keys(requestBody));
     
@@ -193,7 +196,7 @@ serve(async (req) => {
     const transcriptionResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': authHeaderValue,
       },
       body: formData
     });
@@ -226,7 +229,7 @@ serve(async (req) => {
       const fallbackTtsResponse = await fetch('https://api.openai.com/v1/audio/speech', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
+          'Authorization': authHeaderValue,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -271,7 +274,7 @@ serve(async (req) => {
     const chatResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': authHeaderValue,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -340,7 +343,7 @@ serve(async (req) => {
     const ttsResponse = await fetch('https://api.openai.com/v1/audio/speech', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': authHeaderValue,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
