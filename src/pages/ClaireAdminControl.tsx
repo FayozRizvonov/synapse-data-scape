@@ -1224,7 +1224,7 @@ const ClaireAdminControl = () => {
                           }}
                           formatter={(value: any, name: string) => [
                             `${value.toLocaleString()}`,
-                            name === 'actual' ? 'Actual Sales Volume' : 'Predicted Sales Volume'
+                            name,
                           ]}
                         />
                         <Legend />

@@ -1578,7 +1578,7 @@ const FarmaMetricsWithAssistant = () => {
                       labelStyle={{ color: '#f3f4f6' }}
                       formatter={(value: number, name: string) => [
                         value.toLocaleString(),
-                        name === 'actual' ? 'Actual Sales Volume' : 'Predicted Sales Volume'
+                        name,
                       ]}
                     />
                     <Legend />
