@@ -30,8 +30,11 @@ import TailoredPresentation from './TailoredPresentation';
 import CampaignManagement from './CampaignManagement';
 import SOJMContainer from './SOJMContainer';
 import { useTheme } from '@/hooks/useTheme';
+import { usePharmaSmDashboardMetrics } from '@/hooks/usePharmaSmDashboardMetrics';
+import { useModelPerformanceStats } from '@/hooks/usePharmaMetrics';
 import { BauhausBorder } from './ui/bauhaus-border';
 import { LineChart, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line, Area, ResponsiveContainer } from 'recharts';
+import type { MetricCard as KBMetricCard } from '@/data/metricsKnowledgeBase';
 
 interface MetricCard {
   id: string;
@@ -43,9 +46,30 @@ interface MetricCard {
   icon: string;
   category: 'key' | 'situation';
   section: 'key-metrics' | 'situation' | 'scenario-comparison';
+  description?: string;
+  keywords?: string[];
+  chartData?: KBMetricCard['chartData'];
   details?: {
     description: string;
     breakdown: Array<{ label: string; value: string; }>;
+  };
+}
+
+function farmaCardToKbSituationCard(c: MetricCard): KBMetricCard {
+  return {
+    id: c.id,
+    title: c.title,
+    value: c.value,
+    change: c.change,
+    changeType: c.changeType,
+    comparison: c.comparison,
+    description: c.description ?? c.details?.description ?? '',
+    icon: c.icon,
+    category: 'situation',
+    section: 'pharma-sm',
+    keywords: c.keywords ?? [],
+    details: c.details,
+    chartData: c.chartData,
   };
 }
 
@@ -55,357 +79,19 @@ const FarmaMetrics = () => {
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [keyMetricsExpanded, setKeyMetricsExpanded] = useState(false);
   const [situationMetricsExpanded, setSituationMetricsExpanded] = useState(false);
-  const [selectedCard, setSelectedCard] = useState<MetricCard | null>(null);
+  const [selectedCard, setSelectedCard] = useState<KBMetricCard | null>(null);
   const [salesVolumeAnalysisExpanded, setSalesVolumeAnalysisExpanded] = useState(false);
   const [salesVolumeBreakdownExpanded, setSalesVolumeBreakdownExpanded] = useState(false);
+  const { data: dbPharma, loading: dbLoading } = usePharmaSmDashboardMetrics();
+  const modelStats = useModelPerformanceStats({ projectId: '1' });
 
   // Helper to parse value for AnimatedNumber
   const parseValue = (valueStr: string) => {
     return parseFloat(valueStr.replace(/[$,%xM+]/g, ''));
   };
 
-  const keyMetrics: MetricCard[] = [
-    {
-      id: 'revenue',
-      title: 'QoQ Revenue Growth',
-      value: '8.7%',
-      change: '+40.3%',
-      changeType: 'positive',
-      comparison: 'vs. last quarter',
-      icon: 'TrendingUp',
-      category: 'key',
-      section: 'key-metrics',
-      details: {
-        description: 'Quarterly revenue growth showing strong upward trend',
-        breakdown: [
-          { label: 'Q1 Growth', value: '6.2%' },
-          { label: 'Q2 Growth', value: '7.8%' },
-          { label: 'Q3 Growth', value: '8.7%' }
-        ]
-      }
-    },
-    {
-      id: 'prescriptions',
-      title: 'Patient Share / Prescriptions',
-      value: '34.2%',
-      change: '+8.6%',
-      changeType: 'positive',
-      comparison: 'vs. last quarter',
-      icon: 'Users',
-      category: 'key',
-      section: 'key-metrics',
-      details: {
-        description: 'Market share of prescriptions and patient coverage',
-        breakdown: [
-          { label: 'New Patients', value: '12.4%' },
-          { label: 'Recurring', value: '21.8%' },
-          { label: 'Referrals', value: '8.2%' }
-        ]
-      }
-    },
-    {
-      id: 'sample-ratio',
-      title: 'Sample-to-Script Ratio',
-      value: '1.8x',
-      change: '+20.0%',
-      changeType: 'positive',
-      comparison: 'vs. last quarter',
-      icon: 'Pill',
-      category: 'key',
-      section: 'key-metrics',
-      details: {
-        description: 'Efficiency of sample distribution to prescription conversion',
-        breakdown: [
-          { label: 'Samples Distributed', value: '45.2K' },
-          { label: 'Scripts Generated', value: '25.1K' },
-          { label: 'Conversion Rate', value: '55.5%' }
-        ]
-      }
-    },
-    {
-      id: 'roi',
-      title: 'Rebate Spend vs ROI',
-      value: '4.3x',
-      change: '+16.2%',
-      changeType: 'positive',
-      comparison: 'vs. last quarter',
-      icon: 'DollarSign',
-      category: 'key',
-      section: 'key-metrics',
-      details: {
-        description: 'Return on investment for rebate spending programs',
-        breakdown: [
-          { label: 'Total Rebates', value: '$2.4M' },
-          { label: 'Revenue Generated', value: '$10.3M' },
-          { label: 'Net ROI', value: '330%' }
-        ]
-      }
-    },
-    {
-      id: 'market-access',
-      title: 'Market Access Score',
-      value: '87.3',
-      change: '+12.1%',
-      changeType: 'positive',
-      comparison: 'vs. last quarter',
-      icon: 'Target',
-      category: 'key',
-      section: 'key-metrics',
-      details: {
-        description: 'Overall market accessibility and penetration score',
-        breakdown: [
-          { label: 'Formulary Coverage', value: '92%' },
-          { label: 'Prior Auth Rate', value: '18%' },
-          { label: 'Step Therapy', value: '12%' }
-        ]
-      }
-    }
-  ];
-
-  const situationMetrics: MetricCard[] = [
-    {
-      id: 'total-sales',
-      title: 'Total Sales',
-      value: '$19.5M',
-      change: '+85.2%',
-      changeType: 'positive',
-      comparison: 'Total Revenue',
-      icon: 'DollarSign',
-      category: 'situation',
-      section: 'situation',
-      details: {
-        description: 'Total sales revenue including all attributions for the current period.',
-        breakdown: [
-          { label: 'All Channels', value: '$19.5M' },
-          { label: 'Growth YoY', value: '+85.2%' },
-          { label: 'Net Sales', value: '$18.7M' }
-        ]
-      }
-    },
-    {
-      id: 'base-sales',
-      title: 'Base Sales',
-      value: '$12.0M',
-      change: '+93.14%',
-      changeType: 'positive',
-      comparison: 'Revenue Attribution',
-      icon: 'Activity',
-      category: 'situation',
-      section: 'situation',
-      details: {
-        description: 'This base sales component represents the baseline revenue that would occur without any marketing efforts in the marketing mix model.',
-        breakdown: [
-          { label: 'Confidence Interval', value: '85%' },
-          { label: 'P-value', value: '0.01' },
-          { label: 'Historical Impact', value: '2019-2023' }
-        ]
-      }
-    },
-    {
-      id: 'incremental',
-      title: 'Incremental',
-      value: '$2.5M',
-      change: '+18.2%',
-      changeType: 'positive',
-      comparison: 'Incremental Revenue',
-      icon: 'BarChart3',
-      category: 'situation',
-      section: 'situation',
-      details: {
-        description: 'Revenue generated above the baseline due to marketing activities.',
-        breakdown: [
-          { label: 'Marketing Impact', value: '$2.0M' },
-          { label: 'Other Factors', value: '$0.5M' }
-        ]
-      }
-    },
-    {
-      id: 'promotional-spend',
-      title: 'Promotional Spend',
-      value: '$3.7M',
-      change: '+12.5%',
-      changeType: 'positive',
-      comparison: 'Total Promotional Budget',
-      icon: 'BarChart3',
-      category: 'situation',
-      section: 'situation',
-      details: {
-        description: 'Total spend on promotional activities for the current period.',
-        breakdown: [
-          { label: 'Digital', value: '$1.5M' },
-          { label: 'Field Force', value: '$1.7M' },
-          { label: 'Events', value: '$0.5M' }
-        ]
-      }
-    },
-    {
-      id: 'roi',
-      title: 'ROI',
-      value: '6x',
-      change: '+21.7%',
-      changeType: 'positive',
-      comparison: 'Return on Investment',
-      icon: 'TrendingUp',
-      category: 'situation',
-      section: 'situation',
-      details: {
-        description: 'Overall return on investment for all marketing and sales activities.',
-        breakdown: [
-          { label: 'Total Revenue', value: '$19.5M' },
-          { label: 'Total Spend', value: '$3.7M' },
-          { label: 'ROI', value: '6x' }
-        ]
-      }
-    },
-    {
-      id: 'vrr',
-      title: 'VRR',
-      value: '3.6x',
-      change: '+18.2%',
-      changeType: 'positive',
-      comparison: 'Volume Response Rate',
-      icon: 'BarChart3',
-      category: 'situation',
-      section: 'situation',
-      details: {
-        description: 'Volume Response Rate measures the effectiveness of marketing activities in driving volume increases.',
-        breakdown: [
-          { label: 'Volume Impact', value: '+18.2%' },
-          { label: 'Response Rate', value: '3.6x' },
-          { label: 'Efficiency Score', value: '92%' }
-        ]
-      }
-    },
-    {
-      id: 'seasonality',
-      title: 'Seasonality',
-      value: '$1.2M',
-      change: '+6.86%',
-      changeType: 'positive',
-      comparison: 'Revenue Attribution',
-      icon: 'Calendar',
-      category: 'situation',
-      section: 'situation',
-      details: {
-        description: 'Seasonal revenue patterns and cyclical business variations',
-        breakdown: [
-          { label: 'Q1 Seasonal Impact', value: '$0.3M' },
-          { label: 'Q2 Seasonal Impact', value: '$0.4M' },
-          { label: 'Q3 Seasonal Impact', value: '$0.5M' }
-        ]
-      }
-    },
-    {
-      id: 'trend',
-      title: 'Trend',
-      value: '$0.8M',
-      change: '+2.1%',
-      changeType: 'positive',
-      comparison: 'Revenue Attribution',
-      icon: 'TrendingUp',
-      category: 'situation',
-      section: 'situation',
-      details: {
-        description: 'Long-term market trend and growth patterns',
-        breakdown: [
-          { label: 'Market Growth', value: '3.2%' },
-          { label: 'Competitive Impact', value: '-1.1%' },
-          { label: 'Net Trend', value: '+2.1%' }
-        ]
-      }
-    },
-    {
-      id: 'f2f-calls',
-      title: 'F2F Calls',
-      value: '$1.1M',
-      change: '+7.5%',
-      changeType: 'positive',
-      comparison: 'Revenue Attribution',
-      icon: 'Users',
-      category: 'situation',
-      section: 'situation',
-      details: {
-        description: 'Revenue attributed to face-to-face sales calls.',
-        breakdown: [
-          { label: 'Number of Calls', value: '3,200' },
-          { label: 'Conversion Rate', value: '12.5%' }
-        ]
-      }
-    },
-    {
-      id: 'web-virtual-calls',
-      title: 'WEB Virtual Calls',
-      value: '$0.9M',
-      change: '+5.2%',
-      changeType: 'positive',
-      comparison: 'Revenue Attribution',
-      icon: 'Stethoscope',
-      category: 'situation',
-      section: 'situation',
-      details: {
-        description: 'Revenue attributed to web-based virtual sales calls.',
-        breakdown: [
-          { label: 'Virtual Calls', value: '2,100' },
-          { label: 'Engagement Rate', value: '9.8%' }
-        ]
-      }
-    },
-    {
-      id: 'symposium',
-      title: 'Symposium',
-      value: '$0.7M',
-      change: '+3.9%',
-      changeType: 'positive',
-      comparison: 'Revenue Attribution',
-      icon: 'Calendar',
-      category: 'situation',
-      section: 'situation',
-      details: {
-        description: 'Revenue generated from symposium events and conferences.',
-        breakdown: [
-          { label: 'Events Held', value: '8' },
-          { label: 'Attendees', value: '1,200' }
-        ]
-      }
-    },
-    {
-      id: 'sfmc-emails',
-      title: 'SFMC Emails',
-      value: '$0.5M',
-      change: '+2.7%',
-      changeType: 'positive',
-      comparison: 'Revenue Attribution',
-      icon: 'Mail',
-      category: 'situation',
-      section: 'situation',
-      details: {
-        description: 'Revenue attributed to Salesforce Marketing Cloud email campaigns.',
-        breakdown: [
-          { label: 'Emails Sent', value: '45,000' },
-          { label: 'Open Rate', value: '22.1%' }
-        ]
-      }
-    },
-    {
-      id: 'promotion',
-      title: 'Promotion',
-      value: '$2.1M',
-      change: '+15.3%',
-      changeType: 'positive',
-      comparison: 'Revenue Attribution',
-      icon: 'BarChart3',
-      category: 'situation',
-      section: 'situation',
-      details: {
-        description: 'Marketing promotion impact on revenue generation',
-        breakdown: [
-          { label: 'Digital Marketing', value: '$0.8M' },
-          { label: 'Field Force', value: '$1.1M' },
-          { label: 'Events & Samples', value: '$0.2M' }
-        ]
-      }
-    }
-  ];
+  const keyMetrics: MetricCard[] = dbPharma?.key ?? [];
+  const situationMetrics: MetricCard[] = dbPharma?.situation ?? [];
 
   const handleExpand = (cardId: string) => {
     setExpandedCard(expandedCard === cardId ? null : cardId);
@@ -421,7 +107,7 @@ const FarmaMetrics = () => {
 
   const handleCardClick = (card: MetricCard) => {
     if (card.category === 'situation') {
-      setSelectedCard(card);
+      setSelectedCard(farmaCardToKbSituationCard(card));
     } else {
       setExpandedCard(expandedCard === card.id ? null : card.id);
     }
@@ -785,10 +471,42 @@ const FarmaMetrics = () => {
         </div>
 
         {/* Key Metrics */}
-        {renderMetricRow(keyMetrics, keyMetricsExpanded, setKeyMetricsExpanded, "Key Metrics")}
-        
+        {dbLoading ? (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-glow">Key Metrics</h2>
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-36 rounded-xl bg-white/10 animate-pulse" />
+              ))}
+            </div>
+          </div>
+        ) : keyMetrics.length === 0 ? (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-glow">Key Metrics</h2>
+            <p className="text-gray-500 dark:text-slate-500 text-sm">No key metrics available.</p>
+          </div>
+        ) : (
+          renderMetricRow(keyMetrics, keyMetricsExpanded, setKeyMetricsExpanded, "Key Metrics")
+        )}
+
         {/* Situation Metrics */}
-        {renderMetricRow(situationMetrics, situationMetricsExpanded, setSituationMetricsExpanded, "Channel Impact")}
+        {dbLoading ? (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-glow">Channel Impact</h2>
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-36 rounded-xl bg-white/10 animate-pulse" />
+              ))}
+            </div>
+          </div>
+        ) : situationMetrics.length === 0 ? (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-glow">Channel Impact</h2>
+            <p className="text-gray-500 dark:text-slate-500 text-sm">No channel impact metrics available.</p>
+          </div>
+        ) : (
+          renderMetricRow(situationMetrics, situationMetricsExpanded, setSituationMetricsExpanded, "Channel Impact")
+        )}
 
         {/* Model Performance Stats */}
         <div className="space-y-4">
@@ -815,15 +533,39 @@ const FarmaMetrics = () => {
           <div className="grid gap-4 grid-cols-1 md:grid-cols-3 mb-4">
             <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
               <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">Average Error</div>
-              <div className="text-lg font-semibold text-gray-900 dark:text-white">-8.2%</div>
+              <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                {modelStats.loading ? (
+                  <span className="inline-block w-16 h-5 rounded bg-white/10 animate-pulse" />
+                ) : modelStats.mape > 0 ? (
+                  `-${(modelStats.mape * 100).toFixed(1)}%`
+                ) : (
+                  '-8.2%'
+                )}
+              </div>
             </div>
             <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
               <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">Model Accuracy</div>
-              <div className="text-lg font-semibold text-green-600 dark:text-green-400">91.8%</div>
+              <div className="text-lg font-semibold text-green-600 dark:text-green-400">
+                {modelStats.loading ? (
+                  <span className="inline-block w-16 h-5 rounded bg-white/10 animate-pulse" />
+                ) : modelStats.mape > 0 ? (
+                  `${((1 - modelStats.mape) * 100).toFixed(1)}%`
+                ) : (
+                  '91.8%'
+                )}
+              </div>
             </div>
             <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
               <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">Trend Correlation</div>
-              <div className="text-lg font-semibold text-blue-600 dark:text-cyan-400">0.97</div>
+              <div className="text-lg font-semibold text-blue-600 dark:text-cyan-400">
+                {modelStats.loading ? (
+                  <span className="inline-block w-16 h-5 rounded bg-white/10 animate-pulse" />
+                ) : modelStats.rSquared > 0 ? (
+                  modelStats.rSquared.toFixed(2)
+                ) : (
+                  '0.97'
+                )}
+              </div>
             </div>
           </div>
           
@@ -887,7 +629,7 @@ const FarmaMetrics = () => {
                       labelStyle={{ color: theme === 'dark' ? '#f3f4f6' : '#1f2937' }}
                       formatter={(value: number, name: string) => [
                         value.toLocaleString(),
-                        name === 'actual' ? 'Actual Sales Volume' : 'Predicted Sales Volume'
+                        name,
                       ]}
                     />
                     <Legend />

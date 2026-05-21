@@ -4,6 +4,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { CLAIRE_LOGO_SRC } from '@/constants/branding';
 
 interface SidebarProps {
   activeSection: string;
@@ -89,7 +90,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
           <div className="flex justify-center">
             <div className="rounded-lg overflow-hidden">
-              <img src="/images/claire_logo.png" alt="CLAIRE Logo" className="w-12 h-12 object-contain" />
+              <img src={CLAIRE_LOGO_SRC} alt="CLAIRE Logo" className="w-12 h-12 object-contain" />
             </div>
           </div>
           {!isCollapsed && (

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Camera, Mail, User as UserIcon, Lock, ShieldCheck, Smartphone, KeyRound, QrCode, Copy, Check } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { CLAIRE_LOGO_SRC } from '@/constants/branding';
 
 const Profile: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -123,15 +124,18 @@ const Profile: React.FC = () => {
       {/* Avatar and Basic Info */}
       <div className="rounded-2xl border border-gray-200/60 dark:border-white/10 bg-gradient-to-br from-white/80 to-white/50 dark:from-white/[0.06] dark:to-white/[0.03] backdrop-blur-xl shadow-blue-sm p-5">
         <div className="flex flex-col md:flex-row md:items-center gap-5">
-          <div className="relative h-24 w-24">
-            <img
-              src={avatarUrl || '/images/claire_logo.png'}
-              alt="Avatar"
-              className="h-24 w-24 rounded-xl object-cover border border-gray-200/60 dark:border-white/10"
-            />
+          <div className="relative h-24 w-24 shrink-0">
+            <div className="h-24 w-24 rounded-xl border border-gray-200/60 dark:border-white/10 bg-white overflow-hidden flex items-center justify-center">
+              <img
+                src={avatarUrl || CLAIRE_LOGO_SRC}
+                alt="Avatar"
+                className="max-h-full max-w-full object-contain object-center p-1"
+              />
+            </div>
             <button
+              type="button"
               onClick={handleChooseAvatar}
-              className="absolute -bottom-2 -right-2 inline-flex items-center justify-center h-9 w-9 rounded-full border border-cyan-500/30 bg-gradient-to-r from-cyan-500/80 to-blue-500/80 text-white shadow-blue-md hover:from-cyan-500 hover:to-blue-500"
+              className="absolute -top-1 -right-1 inline-flex items-center justify-center h-8 w-8 rounded-full border border-cyan-500/30 bg-gradient-to-r from-cyan-500/80 to-blue-500/80 text-white shadow-blue-md hover:from-cyan-500 hover:to-blue-500 z-10"
               title="Change avatar"
             >
               <Camera className="w-4 h-4" />

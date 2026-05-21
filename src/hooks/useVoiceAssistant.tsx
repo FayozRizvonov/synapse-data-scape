@@ -1,5 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
 interface CardData {
   action: string;
@@ -21,6 +25,8 @@ interface VoiceAssistantState {
 }
 
 export const useVoiceAssistant = () => {
+  const useStreaming = useFeatureFlag('streaming_orchestrator');
+
   const [state, setState] = useState<VoiceAssistantState>({
     isListening: false,
     isTranscribing: false,
@@ -345,58 +351,144 @@ export const useVoiceAssistant = () => {
         status: 'transcribing'
       }));
 
-      // Send audio to voice assistant for full processing
-      console.log('🚀 Sending to voice-assistant function...');
-      
-      // Convert audio blob to base64 for the voice assistant
-      const reader = new FileReader();
+      // Send audio — streaming or non-streaming based on feature flag
+      console.log(`🚀 Sending to ${useStreaming ? 'orchestrator-stream' : 'orchestrator'}...`);
+
+      // Convert audio blob to base64
+      const fileReader = new FileReader();
       const audioBase64 = await new Promise<string>((resolve, reject) => {
-        reader.onload = () => {
-          const result = reader.result as string;
-          const base64 = result.split(',')[1]; // Remove data:audio/webm;base64, prefix
-          resolve(base64);
+        fileReader.onload = () => {
+          const result = fileReader.result as string;
+          resolve(result.split(',')[1]);
         };
-        reader.onerror = reject;
-        reader.readAsDataURL(audioBlob);
+        fileReader.onerror = reject;
+        fileReader.readAsDataURL(audioBlob);
       });
-      
-      const { data, error } = await supabase.functions.invoke('voice-assistant', {
-        body: {
-          audioData: audioBase64,
-          audioFormat: 'webm'
+
+      const correlationId = crypto.randomUUID();
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token ?? SUPABASE_ANON_KEY;
+
+      const voiceRequestBody = {
+        correlation_id: correlationId,
+        modality: 'voice',
+        audioData: audioBase64,
+        audioFormat: 'webm',
+      };
+
+      let transcriptReceived = '';
+      let responseText = '';
+      let cardData: { action: string; metric_id: string } | null = null;
+      let assembledAudio = '';
+
+      if (useStreaming) {
+        // ── Streaming path ─────────────────────────────────────────────────
+        let streamOk = false;
+        try {
+          const streamRes = await fetch(`${SUPABASE_URL}/functions/v1/orchestrator-stream`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${accessToken}`, 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+            body: JSON.stringify(voiceRequestBody),
+          });
+          if (!streamRes.ok || !streamRes.body) throw new Error(`Stream failed: ${streamRes.status}`);
+
+          const audioChunks: string[] = [];
+          const sseReader = streamRes.body.getReader();
+          const decoder = new TextDecoder();
+          let sseBuffer = '';
+          try {
+            while (true) {
+              const { done, value } = await sseReader.read();
+              if (done) break;
+              sseBuffer += decoder.decode(value, { stream: true });
+              const lines = sseBuffer.split('\n');
+              sseBuffer = lines.pop() ?? '';
+              for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                const raw = line.slice(6).trim();
+                if (raw === '[DONE]') break;
+                let evt: any;
+                try { evt = JSON.parse(raw); } catch (_) { continue; }
+                if (evt.type === 'transcript') {
+                  transcriptReceived = evt.transcript ?? '';
+                  setState(prev => ({ ...prev, isTranscribing: false, status: 'processing', transcript: transcriptReceived }));
+                } else if (evt.type === 'token' && evt.delta) {
+                  responseText += evt.delta;
+                  setState(prev => ({ ...prev, response: responseText }));
+                } else if (evt.type === 'audio_chunk' && evt.chunk) {
+                  audioChunks.push(evt.chunk as string);
+                } else if (evt.type === 'done') {
+                  if (evt.card) cardData = evt.card as { action: string; metric_id: string };
+                } else if (evt.type === 'error') {
+                  throw new Error(evt.message ?? 'Stream error');
+                }
+              }
+            }
+          } finally {
+            sseReader.releaseLock();
+          }
+          assembledAudio = audioChunks.join('');
+          streamOk = true;
+        } catch (streamErr) {
+          console.warn('⚠️ Voice stream failed, falling back to orchestrator:', streamErr);
         }
-      });
 
-      if (error) {
-        throw new Error(error.message || 'Server error');
+        if (!streamOk) {
+          // Fallback to non-streaming orchestrator
+          const { data, error: fnErr } = await supabase.functions.invoke('orchestrator', { body: voiceRequestBody });
+          if (fnErr) throw fnErr;
+          transcriptReceived = (data as any)?.transcript ?? '';
+          responseText = (data as any)?.response ?? '';
+          cardData = (data as any)?.card ?? null;
+          assembledAudio = (data as any)?.audio ?? '';
+        }
+      } else {
+        // ── Non-streaming path (default) ───────────────────────────────────
+        let orchOk = false;
+        try {
+          const { data, error: fnErr } = await supabase.functions.invoke('orchestrator', { body: voiceRequestBody });
+          if (fnErr) throw fnErr;
+          transcriptReceived = (data as any)?.transcript ?? '';
+          responseText = (data as any)?.response ?? '';
+          cardData = (data as any)?.card ?? null;
+          assembledAudio = (data as any)?.audio ?? '';
+          orchOk = true;
+        } catch (orchErr) {
+          console.warn('⚠️ Orchestrator failed, falling back to voice-assistant:', orchErr);
+        }
+
+        if (!orchOk) {
+          // Fallback to legacy voice-assistant
+          const { data, error: legacyErr } = await supabase.functions.invoke('voice-assistant', {
+            body: { audioData: audioBase64, audioFormat: 'webm' },
+          });
+          if (legacyErr) throw legacyErr;
+          transcriptReceived = (data as any)?.transcript ?? '';
+          responseText = (data as any)?.answer ?? '';
+          cardData = (data as any)?.card ?? null;
+          assembledAudio = (data as any)?.audio ?? '';
+        }
       }
 
-      console.log('✅ Server response received');
-      
-      if (!data) {
-        throw new Error('No data received from voice assistant');
+      if (!assembledAudio) {
+        throw new Error('No audio data received from server');
       }
 
-      if (!data.audio || data.audio === '') {
-        throw new Error('No audio data in server response');
-      }
+      console.log('✅ Voice processing complete');
 
-      if (data.error) {
-        throw new Error(`Server error: ${data.error}`);
-      }
-      
-      setState(prev => ({ 
-        ...prev, 
+      setState(prev => ({
+        ...prev,
         isTranscribing: false,
         isProcessing: false,
-        transcript: data.transcript || 'Speech not recognized',
-        response: data.answer || 'No response text',
-        cardData: data.card || null,
-        status: 'playing'
+        transcript: transcriptReceived || 'Speech not recognized',
+        response: responseText || 'No response text',
+        cardData,
+        status: 'playing',
       }));
 
-      // Play audio response
-      await playAudioResponse(data.audio);
+      // Play assembled audio
+      await playAudioResponse(assembledAudio);
 
     } catch (error) {
       console.error('❌ Error processing recording:', error);

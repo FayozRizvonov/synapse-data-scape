@@ -1,8 +1,18 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  fetchApprovedCompanyBrain,
+  fetchPharmaSmMetricsMergedRows,
+  formatBrainSystemMessage,
+  getCompanyIdForUser,
+  pharmaMergedRowsToCompactKb,
+} from "../_shared/tenant-brain.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const supabaseUrl = Deno.env.get('SUPABASE_URL');
+const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,27 +24,9 @@ const corsHeaders = {
 const metricsContext = `
 You are CLAIRE AI Assistant, an advanced business intelligence system for pharmaceutical analytics, specializing in Bayer's Xarelto (rivaroxaban) for cardiovascular health, including stroke prevention, atrial fibrillation (AFib), and venous thromboembolism.
 
-AVAILABLE METRICS:
-
-1. KEY METRICS:
-- revenue: QoQ Revenue Growth: 6.4% (+30.1% vs last quarter) - Driven by stroke clinic uptake and AFib adherence
-- prescriptions: Patient Share / Prescriptions: 32.8% (+7.4% vs last quarter) - Strong acquisition in South region
-- sample-ratio: Sample-to-Script Ratio: 1.7x (+18.2% vs last quarter) - Improved sampling in stroke clinics
-- payer-access: Payer Access Score: 85.6 (+10.2% vs last quarter) - Strong formulary positioning
-- roi: Promotion ROI: 2.6x (+20.5% vs last quarter) - Excellent digital and phone channel efficiency
-
-2. SITUATION METRICS:
-- total-sales: Total Sales: $20.8M (+82.4% Total Revenue) - Strong baseline and marketing-driven growth
-- base-sales: Base Sales: $11.5M (+91.2% Revenue Attribution) - Solid baseline without marketing
-- incremental: Incremental Revenue: $2.3M (+17.5% Incremental Revenue) - Marketing-driven growth
-- promotional-spend: Promotional Spend: $3.5M (+11.8% Total Budget) - Balanced allocation
-- seasonality: Seasonality: $1.1M (+6.5% Revenue Attribution) - Q4 peak for AFib awareness
-- trend: Market Trend: $0.7M (+2.0% Revenue Attribution) - Steady upward trend
-- f2f-calls: F2F Calls: $1.0M (+6.8% Revenue Attribution) - Decline in Central region coverage
-- web-virtual-calls: Web Virtual Calls: $1.0M (+2.3x ROI) - Strong in stroke clinics
-- phone-calls: Phone Calls ABC: $1.5M (+2.6x ROI) - Top performer in cardiologist outreach
-- digital-display: Digital Pharma Display: $0.6M (+1.7x ROI) - Moderate performance
-- digital-video: Digital Pharma Video: $1.3M (+2.5x ROI) - Best digital channel for stroke prevention
+METRIC VALUES:
+- When a later system message named PHARMA_SM_DATASET is present, treat it as the authoritative list of metric ids, titles, values, and descriptions. Prefer those numbers in spoken answers and in card.metric_id.
+- If PHARMA_SM_DATASET is absent, rely on general pharmaceutical analytics knowledge and label any illustrative figures as simulated.
 
 VOICE RESPONSE FORMAT REQUIREMENTS:
 
@@ -103,7 +95,11 @@ serve(async (req) => {
     const requestBody = await req.json();
     console.log('📨 Received voice request body keys:', Object.keys(requestBody));
     
-    const { audioData, audioFormat = 'webm' } = requestBody;
+    const { audioData, audioFormat = 'webm', brand_id: brandIdOpt } = requestBody as {
+      audioData?: string;
+      audioFormat?: string;
+      brand_id?: string;
+    };
     
     if (!audioData) {
       console.error('❌ No audio data provided');
@@ -269,6 +265,57 @@ serve(async (req) => {
 
     console.log('🎤 Transcript:', transcript);
 
+    // 1b. Pharma SM KB + Company Brain (JWT + RLS); optional brand filter on brain
+    const gptMessages: Array<{ role: string; content: string }> = [
+      { role: 'system', content: metricsContext },
+    ];
+    try {
+      if (supabaseUrl && supabaseAnonKey) {
+        const authHeader = req.headers.get('Authorization') || '';
+        if (authHeader) {
+          const sb = createClient(supabaseUrl, supabaseAnonKey, {
+            global: { headers: { Authorization: authHeader } },
+          });
+          const { data: userRes } = await sb.auth.getUser();
+          const uid = userRes.user?.id;
+          if (uid) {
+            const companyId = await getCompanyIdForUser(sb, uid);
+            const mergedPharma = await fetchPharmaSmMetricsMergedRows(
+              sb,
+              companyId,
+              brandIdOpt ?? null,
+            );
+            if (mergedPharma.length > 0) {
+              const compact = pharmaMergedRowsToCompactKb(mergedPharma);
+              gptMessages.push({
+                role: 'system',
+                content:
+                  'PHARMA_SM_DATASET (JSON). Authoritative ids and values for metric cards and spoken numbers.\n' +
+                  JSON.stringify(compact).slice(0, 12000),
+              });
+              console.log('📊 PHARMA_SM voice metrics:', mergedPharma.length);
+            }
+            if (companyId) {
+              const brainRows = await fetchApprovedCompanyBrain(
+                sb,
+                companyId,
+                brandIdOpt ?? null,
+              );
+              const brainMsg = formatBrainSystemMessage(brainRows);
+              if (brainMsg) {
+                gptMessages.push({ role: 'system', content: brainMsg });
+                console.log('🧠 Company Brain entries:', brainRows.length);
+              }
+            }
+          }
+        }
+      }
+    } catch (brainErr) {
+      console.warn('⚠️ Supabase context (Pharma SM / Brain) skipped:', brainErr);
+    }
+
+    gptMessages.push({ role: 'user', content: transcript });
+
     // 2. Processing via GPT-4o
     console.log('🤖 Step 2: Processing with GPT-4o...');
     const chatResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -279,16 +326,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: 'gpt-4o',
-        messages: [
-          { 
-            role: 'system', 
-            content: metricsContext
-          },
-          { 
-            role: 'user', 
-            content: transcript 
-          }
-        ],
+        messages: gptMessages,
         temperature: 0.7,
         max_tokens: 1200
       }),

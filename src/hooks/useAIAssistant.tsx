@@ -1,7 +1,25 @@
-import { useState, useCallback, createContext, useContext, ReactNode, useEffect } from 'react';
+import { useState, useCallback, createContext, useContext, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { metricsKnowledgeBase, findMetricByQuery, MetricCard, getTopPerformingChannels, getRegionalPerformance, getMarketingRecommendations, getScenarioComparisons } from '@/data/metricsKnowledgeBase';
+import { metricsKnowledgeBase, MetricCard, getTopPerformingChannels, getRegionalPerformance, getMarketingRecommendations, getScenarioComparisons } from '@/data/metricsKnowledgeBase';
 import { useAuth } from '@/contexts/AuthContext';
+import { loadMergedPharmaMetrics, metricCardsToCompactKbPayload } from '@/lib/pharmaSmMetrics';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+
+/** Call an Edge Function URL directly with SSE streaming support. */
+async function invokeStream(functionName: string, body: unknown, accessToken: string): Promise<Response> {
+  return fetch(`${SUPABASE_URL}/functions/v1/${functionName}`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'apikey': SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+}
 
 export interface Message {
   id: string;
@@ -68,7 +86,8 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [lastAIResponse, setLastAIResponse] = useState<AIResponse | null>(null);
-  const { userRole, user } = useAuth();
+  const { userRole, user, companyId } = useAuth();
+  const useStreaming = useFeatureFlag('streaming_orchestrator');
 
   const sendMessage = useCallback(async (message: string, opts?: { chatId?: string; titleHint?: string }): Promise<{ chatId?: string }> => {
     setIsLoading(true);
@@ -111,11 +130,16 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       console.log('Sending message to AI assistant:', message);
-      
-      // Prepare a richer Pharma SM KB payload: include description and details for grounding
-      const compactKb = metricsKnowledgeBase.map(({ id, title, value, change, changeType, comparison, description, details, chartData, keywords, category }) => ({
-        id, title, value, change, changeType, comparison, description, details, chartData, keywords, category
-      }));
+
+      let activeKb: MetricCard[] = metricsKnowledgeBase;
+      try {
+        const merged = await loadMergedPharmaMetrics(supabase, companyId ?? null, null);
+        if (merged.length > 0) activeKb = merged;
+      } catch (_) {
+        /* keep bundled KB */
+      }
+
+      const compactKb = metricCardsToCompactKbPayload(activeKb);
 
       // Include recent chat history to reduce repetition and improve relevance
       const historyPayload = messages.slice(-8).map(m => ({
@@ -123,44 +147,104 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
         content: m.content
       }));
       
-      const { data, error: supabaseError } = await supabase.functions.invoke('ai-assistant', {
-        body: { message, kb: compactKb, history: historyPayload, persona: userRole, chat_id: chatId }
-      });
+      const correlationId = crypto.randomUUID();
 
-      if (supabaseError) {
-        console.error('Supabase function error:', supabaseError);
-        throw new Error(`Function call error: ${supabaseError.message}`);
-      }
-      
-      console.log('Response from AI assistant:', data);
-      
-      if (!data) {
-        throw new Error('Received empty response from AI assistant');
-      }
+      // Insert a placeholder message (content fills in as tokens arrive, or all at once for non-streaming)
+      const streamingMsgId = (Date.now() + 1).toString();
+      setMessages(prev => [...prev, { id: streamingMsgId, content: '', sender: 'ai' }]);
 
-      // Handle debug/error payloads returned with status 200
-      if ((data as any).error_message) {
-        const dbg = (data as any).error_debug || {};
-        const body: string = (dbg.body || dbg.message || dbg.statusText || '') as string;
-        const snippet = body ? String(body).slice(0, 300) : '';
-        const errorText = `Error from AI service: ${(data as any).error_message}. ${snippet ? `Details: ${snippet}` : ''}`;
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token ?? SUPABASE_ANON_KEY;
 
-        const aiResponse: AIResponse = { text: errorText, responseType: 'text' };
-        setLastAIResponse(aiResponse);
-        const aiMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: errorText,
-          sender: 'ai'
-        };
-        setMessages(prev => [...prev, aiMessage]);
+      const requestBody = {
+        correlation_id: correlationId,
+        modality: 'chat',
+        message,
+        kb: compactKb,
+        history: historyPayload,
+        persona: userRole,
+        chat_id: chatId,
+      };
+
+      let fullResponseText = '';
+
+      if (useStreaming) {
+        // ── Streaming path (feature flag: streaming_orchestrator) ──────────
+        let streamOk = false;
         try {
-          const fromAny = (supabase as unknown as { from: (t: string) => any }).from;
-          if (chatId) await fromAny('messages').insert({ chat_id: chatId, sender: 'ai', content: errorText, structured: { type: 'text' } });
-        } catch (_) {}
-        return { chatId };
+          const streamRes = await invokeStream('orchestrator-stream', requestBody, accessToken);
+          if (!streamRes.ok || !streamRes.body) throw new Error(`Stream failed: ${streamRes.status}`);
+
+          const reader = streamRes.body.getReader();
+          const decoder = new TextDecoder();
+          let sseBuffer = '';
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              sseBuffer += decoder.decode(value, { stream: true });
+              const lines = sseBuffer.split('\n');
+              sseBuffer = lines.pop() ?? '';
+              for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                const raw = line.slice(6).trim();
+                if (raw === '[DONE]') break;
+                let evt: any;
+                try { evt = JSON.parse(raw); } catch (_) { continue; }
+                if (evt.type === 'token' && evt.delta) {
+                  fullResponseText += evt.delta;
+                  setMessages(prev => prev.map(m =>
+                    m.id === streamingMsgId ? { ...m, content: fullResponseText } : m
+                  ));
+                } else if (evt.type === 'error') {
+                  throw new Error(evt.message ?? 'Stream error');
+                }
+              }
+            }
+          } finally {
+            reader.releaseLock();
+          }
+          streamOk = true;
+        } catch (streamErr) {
+          console.warn('⚠️ Streaming failed, falling back to non-streaming orchestrator:', streamErr);
+        }
+
+        if (!streamOk) {
+          // ── Fallback 1: non-streaming orchestrator ──────────────────────
+          const { data, error: fnErr } = await supabase.functions.invoke('orchestrator', { body: requestBody });
+          if (fnErr) throw fnErr;
+          fullResponseText = (data as any)?.response ?? '';
+          setMessages(prev => prev.map(m =>
+            m.id === streamingMsgId ? { ...m, content: fullResponseText } : m
+          ));
+        }
+      } else {
+        // ── Non-streaming path (default / flag off) ─────────────────────
+        let orchOk = false;
+        try {
+          const { data, error: fnErr } = await supabase.functions.invoke('orchestrator', { body: requestBody });
+          if (fnErr) throw fnErr;
+          fullResponseText = (data as any)?.response ?? '';
+          orchOk = true;
+        } catch (orchErr) {
+          console.warn('⚠️ Orchestrator failed, falling back to legacy ai-assistant:', orchErr);
+        }
+
+        if (!orchOk) {
+          // ── Fallback 2: legacy ai-assistant (safe revert) ───────────────
+          const { data, error: legacyErr } = await supabase.functions.invoke('ai-assistant', {
+            body: { message, kb: compactKb, history: historyPayload, persona: userRole, chat_id: chatId },
+          });
+          if (legacyErr) throw legacyErr;
+          fullResponseText = (data as any)?.response ?? '';
+        }
+
+        setMessages(prev => prev.map(m =>
+          m.id === streamingMsgId ? { ...m, content: fullResponseText } : m
+        ));
       }
 
-      const responseText = data.response || 'Sorry, could not get a response.';
+      const responseText = fullResponseText || 'Sorry, could not get a response.';
       
       // Try to parse the new JSON response format
       let report: AIReport | undefined;
@@ -205,7 +289,7 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
             // Prefer AI-provided card fields but merge with KB defaults for styling and metadata
             try {
               const candidateId: string | undefined = parsed.card.id || parsed.card.metricId;
-              const kbMetric = candidateId ? metricsKnowledgeBase.find(m => m.id === candidateId) : undefined;
+              const kbMetric = candidateId ? activeKb.find(m => m.id === candidateId) : undefined;
               if (kbMetric) {
                 card = {
                   ...kbMetric,
@@ -302,7 +386,7 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
               responseType = 'card';
               try {
                 const candidateId: string | undefined = cardPayload.id || cardPayload.metricId;
-                const kbMetric = candidateId ? metricsKnowledgeBase.find(m => m.id === candidateId) : undefined;
+                const kbMetric = candidateId ? activeKb.find(m => m.id === candidateId) : undefined;
                 if (kbMetric) {
                   card = {
                     ...kbMetric,
@@ -440,7 +524,7 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
           }
 
           if (metricId) {
-            metric = metricsKnowledgeBase.find(m => m.id === metricId);
+            metric = activeKb.find(m => m.id === metricId);
           }
 
         } catch (parseError) {
@@ -471,26 +555,28 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
       };
 
       setLastAIResponse(aiResponse);
-      
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: aiResponse.text,
-        sender: 'ai',
-        action: aiResponse.action,
-        metricId: aiResponse.details?.metricId,
-        metric: aiResponse.metric,
-        report: aiResponse.report,
-        card: aiResponse.card,
-        responseType: aiResponse.responseType
-      };
-      
-      console.log('Creating AI message:', {
+
+      console.log('Finalising AI message:', {
         hasReport: !!aiResponse.report,
         reportSections: aiResponse.report?.sections?.length || 0,
         content: aiResponse.text.substring(0, 100) + '...'
       });
-      
-      setMessages(prev => [...prev, aiMessage]);
+
+      // Update the streaming placeholder with the fully-parsed structured message
+      setMessages(prev => prev.map(m =>
+        m.id === streamingMsgId
+          ? {
+              ...m,
+              content: aiResponse.text,
+              action: aiResponse.action,
+              metricId: aiResponse.details?.metricId,
+              metric: aiResponse.metric,
+              report: aiResponse.report,
+              card: aiResponse.card,
+              responseType: aiResponse.responseType,
+            }
+          : m
+      ));
 
       // Persist AI reply
       try {
@@ -532,7 +618,7 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(false);
     }
     return { chatId };
-  }, [messages, userRole, user?.id]);
+  }, [messages, userRole, user?.id, companyId]);
 
   const clearChat = useCallback(() => {
     setMessages([]);

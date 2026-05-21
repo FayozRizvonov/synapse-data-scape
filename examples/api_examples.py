@@ -76,7 +76,7 @@ def test_insights_generation():
     response_en = requests.post(f"{BASE_URL}/insights/generate", json=payload_en)
     print_response(response_en, "English Insights")
     
-for     return response_en.json()
+    return response_en.json()
 
 def test_agent_prompt():
     """Test natural language prompt processing"""

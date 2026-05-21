@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { AnimatedGroup } from '@/components/ui/animated-group';
 import { cn } from '@/lib/utils';
 import { BentoGrid1 } from '@/components/landing/BentoGrid1';
+import { CLAIRE_LOGO_SRC } from '@/constants/branding';
 
 const transitionVariants = {
 	item: {
@@ -239,7 +240,7 @@ const HeroHeader = () => {
 const Logo = ({ className }: { className?: string }) => {
 	return (
 		<div className={cn('flex items-center gap-2', className)}>
-			<img src="/images/claire_logo.png" alt="CLAIRE AI Logo" className="h-6 w-6 object-contain" />
+			<img src={CLAIRE_LOGO_SRC} alt="CLAIRE AI Logo" className="h-6 w-6 object-contain" />
 			<span className="text-sm font-semibold">CLAIRE AI</span>
 		</div>
 	);

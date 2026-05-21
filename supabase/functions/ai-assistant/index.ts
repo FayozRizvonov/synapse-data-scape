@@ -6,6 +6,13 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // @ts-expect-error - Deno remote import types unavailable in Node tooling
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import {
+  fetchApprovedCompanyBrain,
+  fetchPharmaSmMetricsMergedRows,
+  formatBrainSystemMessage,
+  getCompanyIdForUser,
+  pharmaMergedRowsToCompactKb,
+} from '../_shared/tenant-brain.ts';
 
 // eslint-disable
 
@@ -418,7 +425,14 @@ serve(async (req) => {
       });
     }
 
-    const { message, kb, history, persona } = requestBody as { message: string; kb?: unknown; history?: any[]; persona?: string };
+    const { message, kb, history, persona, brand_id: brandIdOpt } = requestBody as {
+      message: string;
+      kb?: unknown;
+      history?: any[];
+      persona?: string;
+      /** Optional brand filter for Company Brain rows */
+      brand_id?: string;
+    };
     
     if (!message || typeof message !== 'string' || message.trim() === '') {
       console.error('❌ Invalid or empty message in request');
@@ -444,16 +458,46 @@ serve(async (req) => {
       console.log('📚 Received Pharma SM KB payload');
     }
 
+    let kbEffective: unknown = kb;
+
     // Initialize Supabase client with the caller's JWT for RLS-safe access
     let modelOutputsCompact: unknown[] | null = null;
+    let companyBrainMessage: string | null = null;
     try {
       if (!supabaseUrl || !supabaseAnonKey) {
-        console.warn('⚠️ Supabase URL or ANON key not configured; skipping model outputs fetch');
+        console.warn('⚠️ Supabase URL or ANON key not configured; skipping Supabase-backed context');
       } else {
         const authHeader = req.headers.get('Authorization') || '';
         const supabase = createClient(supabaseUrl, supabaseAnonKey, {
           global: { headers: authHeader ? { Authorization: authHeader } : {} }
         });
+
+        const { data: authData } = await supabase.auth.getUser();
+        const uid = authData?.user?.id;
+        if (uid) {
+          const companyId = await getCompanyIdForUser(supabase, uid);
+          const mergedPharma = await fetchPharmaSmMetricsMergedRows(
+            supabase,
+            companyId,
+            brandIdOpt ?? null,
+          );
+          if (mergedPharma.length > 0) {
+            kbEffective = pharmaMergedRowsToCompactKb(mergedPharma);
+            console.log(`📊 PHARMA_SM from database: ${mergedPharma.length} metrics`);
+          }
+          if (companyId) {
+            const brainRows = await fetchApprovedCompanyBrain(
+              supabase,
+              companyId,
+              brandIdOpt ?? null,
+            );
+            companyBrainMessage = formatBrainSystemMessage(brainRows) || null;
+            if (companyBrainMessage) {
+              console.log(`🧠 Company Brain: ${brainRows.length} approved entries (company ${companyId})`);
+            }
+          }
+        }
+
         console.log('🔎 Fetching latest model outputs with RLS...');
         const { data: outputs, error: outputsError } = await supabase
           .from('mmm_model_outputs')
@@ -492,7 +536,7 @@ serve(async (req) => {
         }
       }
     } catch (e) {
-      console.warn('⚠️ Error while preparing model outputs for prompt:', e?.message || e);
+      console.warn('⚠️ Error while preparing model outputs / brain for prompt:', e?.message || e);
     }
 
     // Persona-specific formatting rules
@@ -577,10 +621,14 @@ OUTPUT TYPE: Return a single JSON object ONLY — prefer {"type":"card"}; if a c
             content: 'MODEL_OUTPUTS_DATASET (JSON). Use to ground insights and recommendations. Prefer concrete numbers from this dataset when relevant.\n' +
               JSON.stringify(modelOutputsCompact).slice(0, 8000) // Reduced from 20000 to 8000 to save tokens
           }] : []),
-          ...(kb ? [{
+          ...(kbEffective ? [{
             role: 'system',
             content: `PHARMA_SM_DATASET (JSON). Use as the authoritative source for values, ids, and chart data. Do not speculate beyond it unless explicitly asked.\n` +
-              JSON.stringify(kb).slice(0, 8000) // Reduced from 20000 to 8000 to save tokens
+              JSON.stringify(kbEffective).slice(0, 8000) // Reduced from 20000 to 8000 to save tokens
+          }] : []),
+          ...(companyBrainMessage ? [{
+            role: 'system',
+            content: companyBrainMessage,
           }] : []),
           ...(Array.isArray(history) ? history.slice(-5).map((h) => ({ // Reduced from -10 to -5 messages
             role: h.role === 'assistant' ? 'assistant' : 'user',

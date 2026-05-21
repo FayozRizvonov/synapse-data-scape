@@ -25,6 +25,7 @@ import AdminClouds from '@/components/admin/AdminClouds';
 import ClaireAdminControl from '@/pages/ClaireAdminControl';
 import Profile from '@/components/Profile';
 import ChatHistory from '@/components/ChatHistory';
+import { CLAIRE_LOGO_SRC } from '@/constants/branding';
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState('ai-insights');
@@ -103,7 +104,7 @@ const Index = () => {
       <div className="relative z-10 text-center space-y-4 pt-16">
         <div className="flex items-center justify-center gap-3 mb-6">
           <div className="rounded-xl overflow-hidden">
-            <img src="/images/claire_logo.png" alt="CLAIRE Logo" className="w-12 h-12 object-contain" />
+            <img src={CLAIRE_LOGO_SRC} alt="CLAIRE Logo" className="w-12 h-12 object-contain" />
           </div>
           <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-gray-900 dark:text-white">CLAIRE AI</h1>
         </div>
