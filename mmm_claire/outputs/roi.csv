@@ -1,0 +1,7 @@
+media,total_spend,total_contribution_volume,total_contribution_sales,roi_p05,roi_mean,roi_p95,effectiveness,roi_stability
+clm_call,7581530.0,464467.4,9566388.0,0.76,1.26,1.77,6.739,stable
+email_1to1,11469.0,3158.0,65045.0,3.4,5.67,7.94,0.138,stable
+mass_email,239066.0,34747.4,715674.0,1.8,2.99,4.19,0.073,stable
+non_clm_call,5092120.0,369417.3,7608693.0,0.9,1.49,2.09,7.98,stable
+phone_call,94140.0,14935.9,307626.0,1.96,3.27,4.57,1.587,stable
+webinar,166650.0,31920.7,657454.0,2.37,3.95,5.52,28.732,stable

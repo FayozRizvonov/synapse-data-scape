@@ -32,5 +32,13 @@ __pycache__/
 # Local scratch / DB dumps (do not commit)
 tmp/
 
+# Environment variables — never commit secrets
+.env
+.env.*
+!.env.example
+
 # Supabase CLI temp files
 supabase/.temp/
+
+# Large source archives (already extracted to mmm_claire/)
+*.zip
