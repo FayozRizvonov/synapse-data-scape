@@ -122,13 +122,23 @@ Everything else parallelizes once the two remaining items land.
 Measured on a **local M-series Mac**, dataset: **1 region × 1 sub-brand**, 11 variables,
 33 months → 132 weekly periods, 6 media channels. Stability level 0 on the first attempt every run.
 
-| Worker pool | Chains | Wall time (job start → done) |
-|---|---|---|
-| `--pool=solo` (`cores=4`, parallel chains) | 4 | **~65 s** |
-| default prefork (`cores=1`, sequential) | 4 | **~208–220 s** (n=5) |
+A job is two phases: **PyTensor compile + NUTS init**, then **MCMC sampling**. Only the second
+scales with chains, and they have very different sensitivities — size them separately.
 
-**Run the worker with `--pool=solo`** — 3.3x faster for free. Celery's prefork pool runs tasks in
-daemonic processes, which cannot spawn children, so PyMC falls back to sequential chains.
+| Worker pool | Chains | Compile + init | Sampling | Total |
+|---|---|---|---|---|
+| `--pool=solo` (`cores=4`, parallel) | 4 | ~3.5 s | **~57 s** | **~65 s** |
+| default prefork (`cores=1`, sequential) | 4 | ~3.7 s | **~205 s** | ~208–220 s (n=5) |
+| `--pool=solo` on a loaded machine | 4 | **~133 s** ⚠️ | ~56 s | ~217 s |
+
+**Run the worker with `--pool=solo`** — ~3.6x faster sampling for free. Celery's prefork pool runs
+tasks in daemonic processes, which cannot spawn children, so PyMC falls back to sequential chains.
+
+**Compile time is the volatile part.** It is normally ~3.5 s but was measured at **133 s** on a host
+under load (load avg 11.2 on 4 performance cores) — it is single-threaded C++ compilation and
+degrades badly under CPU contention, enough to erase the entire benefit of parallel chains. Under
+multi-tenant load this is a per-job tax, not a one-off: budget headroom for it, keep the PyTensor
+compile cache warm and on fast local disk, and do not co-schedule jobs onto saturated hosts.
 
 Caveats that make these numbers a floor, not a forecast:
 - **Scale is untested.** The tensor is `T × G × SB × media`; geography and sub-brand both multiply

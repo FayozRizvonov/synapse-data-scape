@@ -2,11 +2,10 @@
 const { spawnSync } = require('child_process');
 const { existsSync } = require('fs');
 const path = require('path');
+const { isWindows, venvPython } = require('./lib-env.cjs');
 
 const projectRoot = process.cwd();
-const venvDir = path.join(projectRoot, '.venv');
-const pythonExe = path.join(venvDir, 'Scripts', 'python.exe');
-const pipExe = path.join(venvDir, 'Scripts', 'pip.exe');
+const pythonExe = venvPython(projectRoot);
 
 function run(exe, args = [], opts = {}) {
   const res = spawnSync(exe, args, { stdio: 'inherit', shell: false, ...opts });
@@ -15,23 +14,37 @@ function run(exe, args = [], opts = {}) {
 }
 
 function ensureVenv() {
-  if (!existsSync(pythonExe)) {
+  if (existsSync(pythonExe)) return;
+
+  // `python` is not always on PATH outside Windows; try the usual names in order.
+  const candidates = isWindows
+    ? [['py', ['-3', '-m', 'venv', '.venv']], ['python', ['-m', 'venv', '.venv']]]
+    : [['python3', ['-m', 'venv', '.venv']], ['python', ['-m', 'venv', '.venv']]];
+
+  let lastError;
+  for (const [exe, args] of candidates) {
     try {
-      run('python', ['-m', 'venv', '.venv']);
+      run(exe, args);
+      return;
     } catch (e) {
-      // Try Windows launcher as a fallback
-      run('py', ['-3', '-m', 'venv', '.venv']);
+      lastError = e;
     }
   }
+  throw new Error(
+    `could not create .venv (tried: ${candidates.map(([e]) => e).join(', ')}). ` +
+      `Last error: ${lastError?.message || lastError}`
+  );
 }
 
 function ensureDeps() {
-  const reqs = ['requirements.txt', 'claire-ai-backend/requirements.txt'];
-  run(pipExe, ['install', '--upgrade', 'pip', 'wheel', 'setuptools']);
-  for (const r of reqs) {
+  // Use `python -m pip` rather than the pip executable — one less
+  // platform-specific path to get wrong.
+  run(pythonExe, ['-m', 'pip', 'install', '--upgrade', 'pip', 'wheel', 'setuptools']);
+
+  for (const r of ['requirements.txt', 'claire-ai-backend/requirements.txt']) {
     if (existsSync(path.join(projectRoot, r))) {
       try {
-        run(pipExe, ['install', '-r', r, '--disable-pip-version-check']);
+        run(pythonExe, ['-m', 'pip', 'install', '-r', r, '--disable-pip-version-check']);
       } catch (e) {
         console.warn(`Warning: failed installing ${r}:`, e?.message || e);
       }
@@ -49,5 +62,3 @@ function ensureDeps() {
     process.exit(1);
   }
 })();
-
-

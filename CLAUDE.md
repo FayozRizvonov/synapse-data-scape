@@ -157,9 +157,13 @@ set -a; source ../.env; set +a          # src/database/* read os.environ; they n
 celery -A src.workers.celery_app worker --loglevel=info --pool=solo
 ```
 > **Use `--pool=solo`.** The default *prefork* pool runs tasks in daemonic processes, which cannot
-> spawn children, so PyMC's parallel chains fall back to `cores=1` — roughly 3.3x slower
-> (~65 s vs ~215 s on the sample dataset). `sample_model` detects this and degrades rather than
+> spawn children, so PyMC's parallel chains fall back to `cores=1` — ~3.6x slower sampling
+> (~57 s vs ~205 s on the sample dataset). `sample_model` detects this and degrades rather than
 > crashing; override with `MMM_SAMPLE_CORES`.
+>
+> Note the PyTensor compile + NUTS init phase before sampling is normally ~3.5 s but has been seen
+> at ~133 s on a loaded machine — if a run looks inexplicably slow, check the gap between
+> "Starting sampling" and "Multiprocess sampling" in the worker log before blaming the sampler.
 
 ### 3. Backend API
 ```bash
@@ -171,10 +175,20 @@ celery -A src.workers.celery_app worker --loglevel=info --pool=solo
 npm run dev
 ```
 
-> ⚠️ `npm run dev:all` and `npm run api` are **Windows-only** — `package.json` and
-> `scripts/bootstrap-api.cjs` hardcode `.venv\Scripts\python.exe`. On macOS/Linux start the API
-> with the command above and run `npm run dev` separately. Neither script starts Redis or the
-> Celery worker, so neither is sufficient for training on any platform.
+### One-command alternatives
+```bash
+npm run dev:mmm      # API + frontend + Celery worker (everything except Redis)
+npm run dev:all      # API + frontend only — no worker, so training will never start
+npm run worker       # Celery worker on its own
+npm run api          # FastAPI on its own
+```
+
+`npm run worker` finds the `mmm_cl` conda env itself (override with `MMM_CONDA_PREFIX`), checks
+Redis is reachable, exports `.env` into the worker, and applies `--pool=solo`. **Redis is the one
+thing no npm script starts** — run it yourself first.
+
+> These scripts were Windows-only until 2026-08-18 (`.venv\Scripts\python.exe` was hardcoded in
+> `package.json` and `scripts/bootstrap-api.cjs`); they now resolve the interpreter per platform.
 
 ## Environment Variables
 Copy `env_template.txt` to `.env`. Key variables:

@@ -6,12 +6,14 @@
   "scripts": {
     "dev": "vite",
     "dev:all": "npm run bootstrap:api && concurrently -k -n API,WEB -c blue,green \"npm:api\" \"npm:dev\"",
+    "dev:mmm": "npm run bootstrap:api && concurrently -k -n API,WEB,WORKER -c blue,green,magenta \"npm:api\" \"npm:dev\" \"npm:worker\"",
+    "worker": "node scripts/run-worker.cjs",
     "bootstrap:api": "node scripts/bootstrap-api.cjs",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "api": ".venv\\Scripts\\python.exe -m uvicorn claire_ai_api:app --host 0.0.0.0 --port 8000"
+    "api": "node scripts/run-api.cjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
