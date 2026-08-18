@@ -1,9 +1,23 @@
 # CLAIRE AI — Synapse Data Scape
 
 ## What This Project Is
-CLAIRE AI is an autonomous AI-powered **Marketing Mix Modeling (MMM)** platform for pharmaceutical and CPG companies. It helps optimize marketing budgets using time-varying coefficient models (Orbit-ML DLT/KTR), Bayesian priors, and pharma-specific elasticity constraints. The platform includes a conversational AI interface, voice input, scenario comparison, and bilingual (EN/RU) insights generation.
+CLAIRE AI is an autonomous AI-powered **Marketing Mix Modeling (MMM)** platform for pharmaceutical and CPG companies. It helps optimize marketing budgets using a hierarchical Bayesian MMM (PyMC5) with geometric adstock, Hill saturation, and pharma-specific elasticity constraints. The platform includes a conversational AI interface, voice input, scenario comparison, and bilingual (EN/RU) insights generation.
 
 This is the **demo version** of the **Trigma.ai platform**.
+
+## Migration status — retiring Orbit-ML
+**Direction: move off Orbit-ML entirely.** Training already has; the rest has not.
+
+| Path | Engine | Status |
+|---|---|---|
+| `/model/train`, `/model/retrain`, `/jobs/{id}/status` | **PyMC5** (`mmm_claire/`, async on Celery) | ✅ migrated |
+| `/optimize/scenario`, `/optimize/sales-force` | Orbit-ML via `PharmaMMMAgent` | ⛔ to port |
+| `/insights/generate` | Orbit-ML via `PharmaMMMAgent` | ⛔ to port |
+| `/agent/process` | Orbit-ML via `PharmaMMMAgent` | ⛔ retire (Claude replaces the NL router) |
+
+Until those three are ported, `orbit-ml` stays in `requirements.txt` and `claire_ai_agent.py`
+remains live — **don't delete either yet**. Treat everything Orbit-backed as legacy: fix bugs, but
+build new modeling work in `mmm_claire/`.
 
 ## Strategic Direction — Claude Enterprise Connector
 **Committed direction (2026-06-19):** Expose CLAIRE / Trigma.ai *inside Claude* so clients already on
@@ -28,23 +42,44 @@ Claude Enterprise/Team can run MMM modeling & optimization from the conversation
 
 ### Backend
 - Python FastAPI (`claire_ai_api.py`) on port 8000
-- Core AI agent: `claire_ai_agent.py` (PharmaMMMAgent class)
-- Orbit-ML (DLT/KTR models) with linear regression fallback
-- Supabase Python SDK for database operations (`supabase_client.py`)
+- **Modeling (current):** PyMC5 hierarchical Bayesian MMM in `mmm_claire/`, run asynchronously by a
+  **Celery** worker with **Redis** as broker + result backend
+- **Legacy:** `claire_ai_agent.py` (`PharmaMMMAgent`) on Orbit-ML with a linear-regression fallback —
+  still serves optimize/insights/agent; see *Migration status* above
+- Supabase Python SDK for DB access — `mmm_claire/src/database/` for the PyMC5 path,
+  root `supabase_client.py` for the legacy path
+
+> Two Python environments: the FastAPI app runs on `.venv` (Python 3.11); the Celery worker needs
+> the conda env `mmm_cl` (Python 3.10 + PyMC 5.25), because PyMC/pytensor need conda-forge builds.
 
 ### Database
 - Supabase (PostgreSQL) with Row Level Security (RLS) for multi-tenancy
 - Real-time subscriptions for chat and metrics
-- Storage bucket `rawdata` for CSV datasets
-- Key tables: `mmm_models`, `model_outputs`, `ui_key_metrics`, `chats`, `messages`, `company_members`, `member_permissions`, `user_roles`
+- Storage bucket `rawdata` for CSV datasets (uploads land at `mmm/{project_id}/{data,info,spend}.csv`)
+- Key tables: `mmm_runs` (async job tracking), `mmm_models`, `mmm_model_outputs`, `mmm_ui_key_metrics`, `chats`, `messages`, `company_members`, `member_permissions`, `user_roles`
+
+> **`project_id` must be a UUID.** `mmm_models.project_id` and `mmm_model_outputs.project_id` are
+> `uuid` columns; `mmm_runs.project_id` is `text`. A non-UUID id is now rejected at the API with 422
+> — before that it passed job creation and failed only after a full training run.
 
 ## Project Structure
 
 ```
 synapse-data-scape/
-├── claire_ai_agent.py      # Core PharmaMMMAgent — modeling, optimization, insights
 ├── claire_ai_api.py        # FastAPI REST endpoints
-├── supabase_client.py      # Supabase DB operations
+├── claire_ai_agent.py      # LEGACY PharmaMMMAgent (Orbit-ML) — optimize, insights, NL router
+├── supabase_client.py      # LEGACY Supabase client used by claire_ai_agent.py
+├── mmm_claire/             # PyMC5 MMM backend (current modeling path)
+│   ├── run_mmm_pipeline.py #   pipeline entry point — returns the 12 output types
+│   ├── environment.yml     #   conda spec for the `mmm_cl` worker env
+│   ├── data/               #   sample data.csv / info.csv / spend.csv
+│   └── src/
+│       ├── workers/        #   celery_app.py, model_worker.py (async job execution)
+│       ├── database/       #   supabase_client, run_depository, dataset_repository
+│       ├── model/          #   pymc_mmm, adstock, saturation, sampling, stability_controller
+│       ├── parser/         #   build_tensors.py
+│       ├── preprocessing/  #   monthly_to_weekly.py
+│       └── validation/     #   schema / data / info checks
 ├── src/
 │   ├── pages/              # Full-screen route components
 │   ├── components/         # UI components (ui/ = primitives, rest = features)
@@ -67,47 +102,91 @@ synapse-data-scape/
 | `ClaireAdminControl.tsx` | `/admin` | Admin panel — team, roles, permissions |
 | `ClaireLandingModern.tsx` | `/landing` | Onboarding/landing |
 
-## Key Backend Classes
-- **`PharmaMMMAgent`** (`claire_ai_agent.py`): Main orchestrator — data ingestion, model training, budget optimization, insights generation
-- **`ChannelDetector`**: Auto-detects marketing channels and maps pharma elasticity ranges
+## Key Backend Modules
+
+### PyMC5 path (current)
+- **`run_pipeline()`** (`mmm_claire/run_mmm_pipeline.py`): Full pipeline — validate → build tensors →
+  sample → 12 output types. Returns DataFrames plus `_meta` (`stability_level`, `detected_channels`).
+- **`run_mmm_pipeline_task`** (`src/workers/model_worker.py`): Celery task. Downloads the dataset from
+  Storage, runs the pipeline, persists results, moves `mmm_runs` through its status transitions.
+- **`stability_controller`** (`src/model/`): Escalates draws/levels until the model is stable
+  (4 levels × 3 draw escalations).
+- **`src/database/supabase_client.py`**: Writes `mmm_models` / `mmm_model_outputs`.
+
+### Legacy Orbit path (to be ported)
+- **`PharmaMMMAgent`** (`claire_ai_agent.py`): Deterministic orchestrator (no LLM) — still backs
+  optimization and insights
+- **`ChannelDetector`**: Keyword-based channel classification + pharma elasticity ranges.
+  The PyMC5 path does **not** use this — it groups channels from the `subtype` column of `info.csv`.
 - **`OptimizerEngine`**: ROI calculation, response curves, budget allocation
-- **`SupabaseMMMClient`** (`supabase_client.py`): All DB operations
+- **`SupabaseMMMClient`** (`supabase_client.py`): DB operations for the legacy path
 
 ## API Endpoints (backend on port 8000)
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/model/train` | POST | Train MMM model |
-| `/optimize/scenario` | POST | Budget optimization (TMB/TSV) |
-| `/optimize/sales-force` | POST | Sales force optimization |
-| `/insights/generate` | POST | Generate EN/RU insights |
-| `/agent/process` | POST | Natural language prompt processing |
-| `/projects/{id}/status` | GET | Project status |
-| `/data/upload` | POST | Upload CSV dataset |
+| Endpoint | Method | Purpose | Engine |
+|----------|--------|---------|--------|
+| `/data/upload` | POST | Upload data/info/spend CSVs to Storage | — |
+| `/model/train` | POST | **Enqueue** async training; returns `job_id` immediately | PyMC5 |
+| `/model/retrain` | POST | Re-enqueue an existing project | PyMC5 |
+| `/jobs/{job_id}/status` | GET | Poll job: `queued → running → done \| failed` | PyMC5 |
+| `/optimize/scenario` | POST | Budget optimization (TMB/TSV) | Orbit (legacy) |
+| `/optimize/sales-force` | POST | Sales force optimization | Orbit (legacy) |
+| `/insights/generate` | POST | Generate EN/RU insights | Orbit (legacy) |
+| `/agent/process` | POST | Natural language prompt processing | Orbit (legacy) |
+| `/projects/{id}/status` | GET | Project status | — |
+
+> `/model/train` is **asynchronous** — it returns a `job_id`, not a model. Poll
+> `/jobs/{job_id}/status`. A job reporting `done` means results were persisted; `failed` carries
+> `error_message`.
 
 ## Running the Project
+
+Training needs **three** processes: Redis, the Celery worker, and the API.
+
+### 1. Redis (broker + result backend)
+```bash
+redis-server --port 6379          # verify: redis-cli ping -> PONG
+```
+> The Homebrew-bundled `/opt/homebrew/etc/redis.conf` may abort on a missing `redisbloom` module;
+> plain defaults are fine for local dev.
+
+### 2. Celery worker (conda env `mmm_cl`, NOT `.venv`)
+```bash
+cd mmm_claire
+conda activate mmm_cl
+set -a; source ../.env; set +a          # src/database/* read os.environ; they never load .env
+celery -A src.workers.celery_app worker --loglevel=info --pool=solo
+```
+> **Use `--pool=solo`.** The default *prefork* pool runs tasks in daemonic processes, which cannot
+> spawn children, so PyMC's parallel chains fall back to `cores=1` — roughly 3.3x slower
+> (~65 s vs ~215 s on the sample dataset). `sample_model` detects this and degrades rather than
+> crashing; override with `MMM_SAMPLE_CORES`.
+
+### 3. Backend API
+```bash
+.venv/bin/python -m uvicorn claire_ai_api:app --host 0.0.0.0 --port 8000
+```
 
 ### Frontend only
 ```bash
 npm run dev
 ```
 
-### Frontend + Backend together
-```bash
-npm run dev:all
-```
-
-### Backend only
-```bash
-.venv/bin/python -m uvicorn claire_ai_api:app --host 0.0.0.0 --port 8000
-```
-> Note: On Windows the script path is `.venv\Scripts\python.exe`
+> ⚠️ `npm run dev:all` and `npm run api` are **Windows-only** — `package.json` and
+> `scripts/bootstrap-api.cjs` hardcode `.venv\Scripts\python.exe`. On macOS/Linux start the API
+> with the command above and run `npm run dev` separately. Neither script starts Redis or the
+> Celery worker, so neither is sufficient for training on any platform.
 
 ## Environment Variables
 Copy `env_template.txt` to `.env`. Key variables:
 - `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` — frontend Supabase
 - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — backend Supabase
 - `OPENAI_API_KEY` — optional, for advanced AI features
-- `DEFAULT_MODEL_TYPE` — `DLT`, `KTR`, or `LINEAR`
+- `REDIS_URL` — Celery broker + result backend (default `redis://localhost:6379/0`)
+- `MMM_SAMPLE_CORES` — optional override for PyMC sampling cores
+- `DEFAULT_MODEL_TYPE` — `DLT` / `KTR` / `LINEAR`; **legacy Orbit path only**, does not affect PyMC5
+
+> The worker reads credentials straight from `os.environ` — `mmm_claire/src/database/*` never calls
+> `load_dotenv()`, so export `.env` into the shell before starting Celery.
 
 ## Conventions & Patterns
 
@@ -122,15 +201,32 @@ Copy `env_template.txt` to `.env`. Key variables:
 ### Backend
 - **Async throughout**: All FastAPI endpoints and DB calls are async.
 - **Layered architecture**: Agent logic → API endpoints → DB client. Don't mix layers.
-- **Fallbacks**: Orbit-ML falls back to linear regression if unavailable. Always handle gracefully.
+- **Long-running work goes on Celery**, never inline in a request. Training returns a `job_id`.
+- **Never report success on an unverified write.** The `mmm_claire/src/database` helpers swallow
+  errors and return `None`/`False`; check the return value and fail the job. A job marked `done`
+  must mean the data landed.
+- **`jsonb` columns take native dicts/lists** — the Supabase client serialises them. Calling
+  `json.dumps()` first stores a JSON *string* and silently breaks every consumer.
+- **Fallbacks**: the legacy Orbit path falls back to linear regression if Orbit is unavailable.
 - **Logging**: Use `loguru` logger, not `print`.
 - **Configs**: Use dataclasses (`ModelConfig`, `OptimizationConfig`) for typed configuration.
 
 ### ML/Analytics
 - Channel elasticity ranges are pharma-specific — don't change without business justification.
-- Model types: `DLT` (default), `KTR`, `LINEAR` (fallback only)
+- **PyMC5 (current):** hierarchical funnel model — geometric adstock, Hill saturation, and a
+  funnel hierarchy (`base_beta` / `delta_mid` / `delta_upper`) taken from the `subtype` column of
+  `info.csv` (`upper` / `mid` / `lower`). Channel grouping comes from that declared metadata, not
+  from name-matching.
+- Input contract: `data.csv` (long format: `date,region,sub_brand,variable,value`), `info.csv`
+  (`variable,type,subtype,variation_level,expected_sign`), optional `spend.csv` (enables ROI).
+  Monthly input is converted to weekly before modeling.
+- Outputs: 12 types (coefficients, contributions, ROI, marginal ROI, adstock/saturation curves,
+  predictions, fit metrics, channel efficiency, …) written to `mmm_model_outputs`, one row per type.
+- Sampling: 4 chains, 1000 draws / 1000 tune, `target_accept` 0.95–0.97; the stability controller
+  escalates on failure. Cost scales with `T × regions × sub_brands × media`.
+- **Orbit (legacy):** `DLT` (default), `KTR`, `LINEAR` (fallback only); adstock via
+  `UtilityEngine._apply_adstock()`.
 - Optimization scenarios: `TMB` (Total Media Budget), `TSV` (Total Sales Value)
-- Adstock transformation is applied before modeling — check `UtilityEngine._apply_adstock()`
 
 ## Supabase Project
 - Project ref: `thpnkluejymycxmiavjp`
