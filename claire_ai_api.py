@@ -31,7 +31,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 # ---------------------------------------------------------------------------
 # mmm_claire imports (Celery dispatch + Supabase helpers)
@@ -81,8 +81,32 @@ app.add_middleware(
 # Pydantic models
 # ---------------------------------------------------------------------------
 
+def validate_project_uuid(value: str) -> str:
+    """
+    Return project_id normalised to a canonical UUID string, or raise ValueError.
+
+    mmm_models.project_id and mmm_model_outputs.project_id are `uuid` columns
+    (mmm_runs.project_id is `text`, so job tracking alone does not catch this).
+    A non-UUID id therefore fails only at the final save — after a full PyMC5
+    sampling run — so it is rejected up front instead.
+    """
+    from uuid import UUID
+    try:
+        return str(UUID(str(value).strip()))
+    except (ValueError, AttributeError, TypeError):
+        raise ValueError(
+            f"project_id must be a UUID; got {value!r}. "
+            "Training would otherwise run to completion and then fail to save."
+        )
+
+
 class TrainRequest(BaseModel):
     project_id: str
+
+    @field_validator("project_id")
+    @classmethod
+    def _project_id_is_uuid(cls, v: str) -> str:
+        return validate_project_uuid(v)
 
 
 class OptimizationRequest(BaseModel):
@@ -171,6 +195,14 @@ async def upload_dataset(
     Upload the three input CSVs to Supabase Storage.
     Returns the storage keys; pass project_id to /model/train to kick off training.
     """
+    # Validate before the try below — its `except Exception` would turn the
+    # HTTPException into a 500.  Rejecting a bad id here also stops a dataset
+    # being uploaded under a project that can never be trained.
+    try:
+        project_id = validate_project_uuid(project_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
     try:
         data_bytes  = await data_file.read()
         info_bytes  = await info_file.read()
