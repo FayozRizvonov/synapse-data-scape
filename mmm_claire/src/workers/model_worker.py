@@ -17,10 +17,24 @@ import tempfile
 import traceback
 import logging
 
-# Make sure the mmm_claire package root is on sys.path
+# mmm_claire package root (contains run_mmm_pipeline.py)
 _here = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if _here not in sys.path:
     sys.path.insert(0, _here)
+
+
+def _ensure_root_on_path() -> None:
+    """
+    Put the mmm_claire root back on sys.path.
+
+    Doing this once at import time is not enough: inside the Celery prefork
+    pool the task executes with a sys.path that no longer contains this entry
+    (verified — sys.path holds only interpreter defaults by then), so
+    `import run_mmm_pipeline` fails with ModuleNotFoundError. Call this
+    immediately before importing anything from the package root.
+    """
+    if _here not in sys.path:
+        sys.path.insert(0, _here)
 
 from src.workers.celery_app import celery_app
 from src.database import run_depository as repo
@@ -83,6 +97,7 @@ def run_mmm_pipeline_task(self, job_id: str, project_id: str):
             # 3. Run the PyMC5 pipeline
             # ----------------------------------------------------------------
             # Import here so the heavy PyMC5 imports only happen inside the worker
+            _ensure_root_on_path()
             from run_mmm_pipeline import run_pipeline
 
             outputs = run_pipeline(
@@ -92,12 +107,15 @@ def run_mmm_pipeline_task(self, job_id: str, project_id: str):
                 out_dir=out_dir,
             )
 
-            stability_level = outputs.get("_meta", {}).get("stability_level", -1)
-            fit_metrics     = outputs.get("fit_metrics", {})
+            _meta             = outputs.get("_meta", {})
+            stability_level   = _meta.get("stability_level", -1)
+            detected_channels = _meta.get("detected_channels", {})
+            fit_metrics       = outputs.get("fit_metrics", {})
 
             logger.info(
                 f"[{job_id}] Pipeline complete — stability_level={stability_level} "
-                f"r2={fit_metrics.get('r2')} mape={fit_metrics.get('mape')}"
+                f"r2={fit_metrics.get('r2')} mape={fit_metrics.get('mape')} "
+                f"channel_groups={list(detected_channels)}"
             )
 
             # ----------------------------------------------------------------
@@ -108,12 +126,26 @@ def run_mmm_pipeline_task(self, job_id: str, project_id: str):
                 job_id=job_id,
                 stability_level=stability_level,
                 fit_metrics=fit_metrics,
+                detected_channels=detected_channels,
             )
+            if not model_id:
+                # save_model_record swallows DB errors and returns None; without
+                # this check the job would be marked DONE having persisted nothing.
+                raise RuntimeError(
+                    "save_model_record returned no model_id — the mmm_models insert "
+                    "failed (see preceding 'save_model_record:' warning for the "
+                    "Postgres error). Refusing to mark this job done."
+                )
             logger.info(f"[{job_id}] Model record saved: model_id={model_id}")
 
             # Remove internal meta key before saving outputs
             outputs_to_save = {k: v for k, v in outputs.items() if not k.startswith("_")}
-            db.save_model_outputs(model_id, project_id, outputs_to_save)
+            if not db.save_model_outputs(model_id, project_id, outputs_to_save):
+                raise RuntimeError(
+                    f"save_model_outputs failed for model_id={model_id} — pipeline "
+                    "results were not persisted (see preceding 'save_model_outputs:' "
+                    "warning). Refusing to mark this job done."
+                )
             logger.info(f"[{job_id}] Model outputs saved to Supabase")
 
         # ----------------------------------------------------------------

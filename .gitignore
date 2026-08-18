@@ -42,3 +42,6 @@ supabase/.temp/
 
 # Large source archives (already extracted to mmm_claire/)
 *.zip
+
+# Redis snapshot written by a locally-run redis-server
+dump.rdb

@@ -9,7 +9,6 @@ All public methods are safe to call even when Supabase is unavailable
 (they log a warning and return None/False rather than raising).
 """
 import os
-import json
 import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
@@ -84,7 +83,8 @@ def create_run(project_id: str, dataset_info: Optional[Dict] = None) -> Optional
     try:
         row = {"project_id": str(project_id), "status": "queued"}
         if dataset_info:
-            row["dataset_info"] = json.dumps(dataset_info)
+            # jsonb column — pass the dict itself; supabase-py serialises it.
+            row["dataset_info"] = _make_serialisable(dataset_info)
         result = sb.table("mmm_runs").insert(row).execute()
         return result.data[0]["id"] if result.data else None
     except Exception as exc:
@@ -122,22 +122,53 @@ def get_run(job_id: str) -> Optional[Dict]:
 # mmm_models table helpers
 # ---------------------------------------------------------------------------
 
+def _as_project_uuid(project_id: Any) -> str:
+    """
+    Return project_id as the UUID string the schema expects.
+
+    mmm_models.project_id and mmm_model_outputs.project_id are `uuid` columns
+    (mmm_runs.project_id is `text`, which is why job tracking tolerates
+    non-UUID ids).  Raise on anything that is not a UUID so the failure is
+    visible instead of Postgres rejecting the insert later with 22P02.
+    """
+    from uuid import UUID
+    pid = str(project_id).strip()
+    try:
+        return str(UUID(pid))
+    except (ValueError, AttributeError, TypeError):
+        raise ValueError(
+            f"project_id must be a UUID (mmm_models.project_id is a uuid column); "
+            f"got {project_id!r}"
+        )
+
+
 def save_model_record(project_id: str, job_id: str, stability_level: int,
-                      fit_metrics: Dict) -> Optional[str]:
-    """Insert a row into mmm_models and return its UUID."""
+                      fit_metrics: Dict,
+                      detected_channels: Optional[Dict] = None) -> Optional[str]:
+    """
+    Insert a row into mmm_models and return its UUID.
+
+    detected_channels: {group_name: [variable, ...]} as produced by
+    run_mmm_pipeline.build_detected_channels().  Defaults to {} (an empty
+    *object*, matching the legacy Orbit rows) rather than [].
+    """
     sb = _get_client()
     if sb is None:
         return None
     try:
         now = datetime.now(timezone.utc).isoformat()
         row = {
-            "project_id":      int(project_id) if str(project_id).isdigit() else 0,
+            "project_id":      _as_project_uuid(project_id),
             "model_name":      f"PyMC5_MMM_{project_id}_{now[:10]}",
             "model_type":      "PYMC5",
             "model_version":   "2.0.0",
-            "model_config":    json.dumps({"stability_level": stability_level}),
-            "model_metrics":   json.dumps(fit_metrics),
-            "detected_channels": json.dumps([]),
+            # These are jsonb columns.  Pass native dicts/lists — json.dumps()
+            # here would store a JSON *string* instead of a JSON object, which
+            # is what the legacy Orbit (DLT/KTR) rows contain and what the
+            # frontend expects.
+            "model_config":    {"stability_level": stability_level},
+            "model_metrics":   _make_serialisable(fit_metrics),
+            "detected_channels": _make_serialisable(detected_channels or {}),
             "is_approved":     False,
             "training_date":   now,
         }
@@ -167,7 +198,7 @@ def save_model_outputs(model_id: Optional[str], project_id: str,
     if sb is None:
         return False
 
-    pid_int = int(project_id) if str(project_id).isdigit() else 0
+    pid = _as_project_uuid(project_id)
     rows = []
 
     for output_type, df in outputs.items():
@@ -179,9 +210,9 @@ def save_model_outputs(model_id: Optional[str], project_id: str,
             data = df  # already a dict (fit_metrics)
         rows.append({
             "model_id":    model_id,
-            "project_id":  pid_int,
+            "project_id":  pid,
             "output_type": output_type,
-            "output_data": json.dumps(_make_serialisable(data)),
+            "output_data": _make_serialisable(data),
         })
 
     # Legacy summary row consumed by the frontend usePharmaMetrics hook
@@ -193,16 +224,16 @@ def save_model_outputs(model_id: Optional[str], project_id: str,
             roi_summary[r.media] = float(r.roi_mean)
     rows.append({
         "model_id":    model_id,
-        "project_id":  pid_int,
+        "project_id":  pid,
         "output_type": "outputs",
-        "output_data": json.dumps({
+        "output_data": {
             "model_metrics": {
-                "r_squared": fit.get("r2", 0.0),
-                "mape":      fit.get("mape", 0.0),
-                "rmse":      fit.get("rmse", 0.0),
+                "r_squared": float(fit.get("r2", 0.0)),
+                "mape":      float(fit.get("mape", 0.0)),
+                "rmse":      float(fit.get("rmse", 0.0)),
             },
             "roi": roi_summary,
-        }),
+        },
     })
 
     try:

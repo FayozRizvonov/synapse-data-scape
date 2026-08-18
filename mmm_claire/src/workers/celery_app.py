@@ -6,9 +6,14 @@ Broker + result backend: Redis
 
 Start a worker:
   cd mmm_claire
-  celery -A src.workers.celery_app worker --loglevel=info --concurrency=2
+  celery -A src.workers.celery_app worker --loglevel=info --pool=solo
 
-The concurrency is intentionally low because each PyMC5 run is CPU/memory heavy.
+Use --pool=solo (or --pool=threads).  The default *prefork* pool runs tasks in
+daemonic processes, which may not spawn children, so PyMC's parallel chains die
+with "daemonic processes are not allowed to have children".  Under prefork,
+sample_model falls back to cores=1 and each run is ~4x slower.
+
+The pool is intentionally single-task because each PyMC5 run is CPU/memory heavy.
 """
 import os
 from celery import Celery

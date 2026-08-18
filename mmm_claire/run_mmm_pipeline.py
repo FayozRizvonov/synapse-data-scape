@@ -71,6 +71,40 @@ logger = get_logger("RUNNER")
 # Public callable — used by Celery worker
 # ==========================================================================
 
+def build_detected_channels(info, bundle) -> dict:
+    """
+    Map the variables that actually entered the model to their declared groups.
+
+    Shape matches what the legacy Orbit pipeline wrote to
+    mmm_models.detected_channels — {group_name: [variable, ...]} — so existing
+    consumers (typed `Record<string, string[]>`) keep working.
+
+    Orbit guessed groups from column-name keywords; here the grouping is taken
+    from the `subtype` column of info.csv, which is declared explicitly by the
+    user and is the same funnel hierarchy the model itself uses
+    (base_beta / delta_mid / delta_upper).
+    """
+    subtype_by_var = {
+        str(v): str(s).strip().lower()
+        for v, s in zip(info["variable"], info["subtype"])
+    }
+
+    groups: dict = {}
+    for var in bundle["indexes"]["media"]:
+        subtype = subtype_by_var.get(str(var), "")
+        if subtype in ("", "na", "nan", "none"):
+            key = "unspecified_funnel"
+        else:
+            key = f"{subtype}_funnel"
+        groups.setdefault(key, []).append(str(var))
+
+    control_vars = [str(v) for v in bundle["indexes"].get("control", [])]
+    if control_vars:
+        groups["control"] = control_vars
+
+    return groups
+
+
 def run_pipeline(
     data_path=None,
     info_path=None,
@@ -233,7 +267,12 @@ def run_pipeline(
         "predictions_timeseries": read("predictions_timeseries.csv"),
         "channel_efficiency":    read("channel_efficiency.csv"),
         "fit_metrics":           fit_metrics_dict,
-        "_meta": {"stability_level": int(stability_level)},
+        # Underscore keys are stripped before outputs are persisted as rows,
+        # so _meta carries record-level fields for mmm_models.
+        "_meta": {
+            "stability_level":   int(stability_level),
+            "detected_channels": build_detected_channels(info, bundle),
+        },
     }
 
     return outputs
