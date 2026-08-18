@@ -197,6 +197,7 @@ Copy `env_template.txt` to `.env`. Key variables:
 - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — backend Supabase
 - `OPENAI_API_KEY` — optional, for advanced AI features
 - `REDIS_URL` — Celery broker + result backend (default `redis://localhost:6379/0`)
+- `SUPABASE_JWT_SECRET` — verify user tokens locally instead of calling `/auth/v1/user` per request
 - `MMM_SAMPLE_CORES` — optional override for PyMC sampling cores
 - `DEFAULT_MODEL_TYPE` — `DLT` / `KTR` / `LINEAR`; **legacy Orbit path only**, does not affect PyMC5
 
@@ -242,6 +243,35 @@ Copy `env_template.txt` to `.env`. Key variables:
 - **Orbit (legacy):** `DLT` (default), `KTR`, `LINEAR` (fallback only); adstock via
   `UtilityEngine._apply_adstock()`.
 - Optimization scenarios: `TMB` (Total Media Budget), `TSV` (Total Sales Value)
+
+## Authentication & tenancy (`api_auth.py`)
+
+Every endpoint except `/` and `/health` requires a bearer token. There is **no bypass flag** — an
+auth switch is exactly what ships enabled by accident.
+
+**Accepted tokens**
+- A signed-in user's **Supabase access token** (the frontend forwards `session.access_token`).
+  Verified locally with `SUPABASE_JWT_SECRET` when set, otherwise introspected via
+  `/auth/v1/user` (correct, but a round trip per request — set the secret in production).
+- The **service-role key**, for server-to-server callers. Server-side only; never send it to a browser.
+
+**Tenancy chain — `project_id` is a `brands.id`**
+```
+JWT.sub  -> company_members.user_id -> company_id   (active members only)
+project  -> brands.id               -> brands.company_id
+                    authorised when these intersect
+```
+
+- Unknown project → **404** (not 403), so the API never confirms ids belonging to other tenants.
+- Cross-tenant attempt → **403**, logged with principal, company_ids and project.
+- `/jobs/{id}/status` and `/models/{id}/approve` carry no tenant of their own — they authorise via
+  the run's / model's `project_id`.
+
+> A project **must** exist in `brands` or every call 404s. The frontend's default project
+> `550e8400-…` is registered as the brand "CLAIRE Demo Project" under Capgemini for this reason.
+
+> ⚠️ `VITE_CLAIRE_AI_API_KEY` is gone. It was a build-time constant baked into the bundle and shared
+> by every user — it identified nobody. Don't reintroduce a client-side API key.
 
 ## Supabase Project
 - Project ref: `thpnkluejymycxmiavjp`

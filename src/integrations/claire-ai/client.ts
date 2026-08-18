@@ -85,11 +85,22 @@ export interface ProjectStatusResponse {
 
 class CLAIREAIClient {
   private baseUrl: string;
-  private apiKey: string;
 
   constructor() {
     this.baseUrl = import.meta.env.VITE_CLAIRE_AI_API_URL || 'http://localhost:8000';
-    this.apiKey = import.meta.env.VITE_CLAIRE_AI_API_KEY || '';
+  }
+
+  /**
+   * Bearer token for the API: the signed-in user's Supabase access token.
+   *
+   * This previously sent VITE_CLAIRE_AI_API_KEY — a build-time constant baked
+   * into the bundle and shared by every user, which identifies nobody. The API
+   * now verifies this token and scopes the request to the user's company.
+   */
+  private async authHeader(): Promise<Record<string, string>> {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
   private async request<T>(
@@ -98,15 +109,12 @@ class CLAIREAIClient {
   ): Promise<CLAIREAIResponse<T>> {
     try {
       const url = `${this.baseUrl}${endpoint}`;
-      
+
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
+        ...(await this.authHeader()),
         ...options.headers,
       };
-
-      if (this.apiKey) {
-        headers['Authorization'] = `Bearer ${this.apiKey}`;
-      }
 
       const response = await fetch(url, {
         ...options,

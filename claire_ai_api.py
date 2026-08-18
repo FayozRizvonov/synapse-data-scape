@@ -29,7 +29,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, field_validator
 
@@ -46,6 +46,9 @@ from src.database import run_depository as run_repo                    # noqa: E
 from src.database import dataset_repository as dataset_repo            # noqa: E402
 from src.database import supabase_client as mmm_db                    # noqa: E402
 from src.optimizer import budget_allocator                            # noqa: E402
+
+# Auth + tenant scoping (see api_auth.py)
+from api_auth import Principal, authorize_project, get_principal      # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Legacy Supabase client (root-level, used for scenarios/insights/approve)
@@ -204,6 +207,7 @@ async def upload_dataset(
     data_file:  UploadFile = File(..., description="data.csv"),
     info_file:  UploadFile = File(..., description="info.csv"),
     spend_file: Optional[UploadFile] = File(None, description="spend.csv (optional)"),
+    principal: Principal = Depends(get_principal),
 ):
     """
     Upload the three input CSVs to Supabase Storage.
@@ -216,6 +220,8 @@ async def upload_dataset(
         project_id = validate_project_uuid(project_id)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
+
+    authorize_project(principal, project_id)
 
     try:
         data_bytes  = await data_file.read()
@@ -244,7 +250,7 @@ async def upload_dataset(
 # ---------------------------------------------------------------------------
 
 @app.post("/model/train", response_model=ResponseModel)
-async def train_model(request: TrainRequest):
+async def train_model(request: TrainRequest, principal: Principal = Depends(get_principal)):
     """
     Enqueue an async PyMC5 MMM training job.
 
@@ -252,6 +258,7 @@ async def train_model(request: TrainRequest):
     2. Dispatches a Celery task (run_mmm_pipeline_task)
     3. Returns job_id immediately — poll /jobs/{job_id}/status for progress
     """
+    authorize_project(principal, request.project_id)
     try:
         # Create a tracking row in Supabase
         job_id = run_repo.create_run(project_id=request.project_id)
@@ -292,7 +299,7 @@ async def train_model(request: TrainRequest):
 # ---------------------------------------------------------------------------
 
 @app.get("/jobs/{job_id}/status", response_model=ResponseModel)
-async def get_job_status(job_id: str):
+async def get_job_status(job_id: str, principal: Principal = Depends(get_principal)):
     """
     Poll the status of an async training job.
 
@@ -301,6 +308,9 @@ async def get_job_status(job_id: str):
     # First check Supabase mmm_runs (authoritative)
     run = run_repo.get_run(job_id)
     if run:
+        # A job carries no tenant of its own — authorise via the project it ran for.
+        if run.get("project_id"):
+            authorize_project(principal, str(run["project_id"]))
         return ResponseModel(
             status=run.get("status", "unknown"),
             message=f"Job {job_id} is {run.get('status')}",
@@ -341,9 +351,9 @@ async def get_job_status(job_id: str):
 # ---------------------------------------------------------------------------
 
 @app.post("/model/retrain", response_model=ResponseModel)
-async def retrain_model(request: TrainRequest):
+async def retrain_model(request: TrainRequest, principal: Principal = Depends(get_principal)):
     """Re-enqueue the pipeline for a project (same as /model/train)."""
-    return await train_model(request)
+    return await train_model(request, principal)
 
 
 # ---------------------------------------------------------------------------
@@ -351,7 +361,8 @@ async def retrain_model(request: TrainRequest):
 # ---------------------------------------------------------------------------
 
 @app.get("/projects/{project_id}/status")
-async def get_project_status(project_id: str):
+async def get_project_status(project_id: str, principal: Principal = Depends(get_principal)):
+    authorize_project(principal, project_id)
     if not _legacy_db_available or not supabase_mmm_client.is_connected():
         return {"project_id": project_id, "status": "db_unavailable"}
 
@@ -368,11 +379,30 @@ async def get_project_status(project_id: str):
 # ---------------------------------------------------------------------------
 
 @app.post("/models/{model_id}/approve", response_model=ResponseModel)
-async def approve_model(model_id: str, approval_notes: Optional[str] = None):
+async def approve_model(
+    model_id: str,
+    approval_notes: Optional[str] = None,
+    principal: Principal = Depends(get_principal),
+):
     if not _legacy_db_available or not supabase_mmm_client.is_connected():
         raise HTTPException(status_code=503, detail="Database not connected")
 
-    success = supabase_mmm_client.approve_model(model_id, "admin", approval_notes)
+    # A model carries no tenant of its own — authorise via its project.
+    try:
+        owner = (
+            supabase_mmm_client.client
+            .from_("mmm_models").select("project_id").eq("id", model_id).limit(1).execute()
+        )
+        rows = owner.data or []
+    except Exception as exc:
+        logger.warning(f"approve: model lookup failed for {model_id}: {exc}")
+        raise HTTPException(status_code=503, detail="Could not resolve model owner")
+
+    if not rows:
+        raise HTTPException(status_code=404, detail=f"Model {model_id} not found")
+    authorize_project(principal, str(rows[0]["project_id"]))
+
+    success = supabase_mmm_client.approve_model(model_id, principal.user_id, approval_notes)
     if not success:
         raise HTTPException(status_code=400, detail="Failed to approve model")
 
@@ -384,7 +414,8 @@ async def approve_model(model_id: str, approval_notes: Optional[str] = None):
 
 
 @app.get("/models/{project_id}/latest", response_model=ResponseModel)
-async def get_latest_approved_model(project_id: str):
+async def get_latest_approved_model(project_id: str, principal: Principal = Depends(get_principal)):
+    authorize_project(principal, project_id)
     if not _legacy_db_available or not supabase_mmm_client.is_connected():
         raise HTTPException(status_code=503, detail="Database not connected")
 
@@ -473,10 +504,11 @@ def _model_governance(model_id: Optional[str]) -> dict:
 
 
 @app.post("/optimize/scenario", response_model=ResponseModel)
-async def create_optimization_scenario(request: OptimizationRequest):
+async def create_optimization_scenario(request: OptimizationRequest, principal: Principal = Depends(get_principal)):
     """
     Run budget optimisation using the latest approved model's ROI outputs from Supabase.
     """
+    authorize_project(principal, request.project_id)
     if not _legacy_db_available or not supabase_mmm_client.is_connected():
         raise HTTPException(status_code=503, detail="Database not connected")
     scenario_type = (request.scenario_type or "").strip().lower()
@@ -585,7 +617,8 @@ async def create_optimization_scenario(request: OptimizationRequest):
 
 
 @app.post("/optimize/sales-force", response_model=ResponseModel)
-async def optimize_sales_force(request: SalesForceOptimizationRequest):
+async def optimize_sales_force(request: SalesForceOptimizationRequest, principal: Principal = Depends(get_principal)):
+    authorize_project(principal, request.project_id)
     if not _legacy_db_available or not supabase_mmm_client.is_connected():
         raise HTTPException(status_code=503, detail="Database not connected")
     try:
@@ -625,7 +658,8 @@ async def optimize_sales_force(request: SalesForceOptimizationRequest):
 # ---------------------------------------------------------------------------
 
 @app.post("/insights/generate", response_model=ResponseModel)
-async def generate_insights(request: InsightRequest):
+async def generate_insights(request: InsightRequest, principal: Principal = Depends(get_principal)):
+    authorize_project(principal, request.project_id)
     if not _legacy_db_available or not supabase_mmm_client.is_connected():
         raise HTTPException(status_code=503, detail="Database not connected")
     try:
@@ -689,7 +723,8 @@ def _build_recommendations(roi: Dict[str, float]) -> List[Dict]:
 # ---------------------------------------------------------------------------
 
 @app.post("/agent/process", response_model=ResponseModel)
-async def process_agent_prompt(request: AgentPromptRequest):
+async def process_agent_prompt(request: AgentPromptRequest, principal: Principal = Depends(get_principal)):
+    authorize_project(principal, request.project_id)
     try:
         from claire_ai_agent import PharmaMMMAgent  # type: ignore
         agent = PharmaMMMAgent(request.project_id)
@@ -712,7 +747,8 @@ async def process_agent_prompt(request: AgentPromptRequest):
 # ---------------------------------------------------------------------------
 
 @app.get("/scenarios/{project_id}/optimization", response_model=ResponseModel)
-async def get_optimization_scenarios(project_id: str, scenario_type: Optional[str] = None):
+async def get_optimization_scenarios(project_id: str, scenario_type: Optional[str] = None, principal: Principal = Depends(get_principal)):
+    authorize_project(principal, project_id)
     if not _legacy_db_available or not supabase_mmm_client.is_connected():
         raise HTTPException(status_code=503, detail="Database not connected")
     scenarios = supabase_mmm_client.get_approved_scenarios(project_id, scenario_type)
@@ -724,7 +760,8 @@ async def get_optimization_scenarios(project_id: str, scenario_type: Optional[st
 
 
 @app.get("/scenarios/{project_id}/sales-force", response_model=ResponseModel)
-async def get_sales_force_scenarios(project_id: str):
+async def get_sales_force_scenarios(project_id: str, principal: Principal = Depends(get_principal)):
+    authorize_project(principal, project_id)
     if not _legacy_db_available or not supabase_mmm_client.is_connected():
         raise HTTPException(status_code=503, detail="Database not connected")
     scenarios = supabase_mmm_client.get_approved_sales_force_scenarios(project_id)
