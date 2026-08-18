@@ -1,0 +1,12 @@
+variable,type,subtype,variation_level,expected_sign
+volume,kpi_volume,na,geo_sub_brand,na
+non_clm_call,media,mid,geo_sub_brand,positive
+clm_call,media,upper,geo_sub_brand,positive
+webinar,media,mid,geo_sub_brand,positive
+mass_email,media,lower,geo_sub_brand,positive
+email_1to1,media,lower,geo_sub_brand,positive
+phone_call,media,lower,geo_sub_brand,positive
+comp1,control,na,geo_sub_brand,na
+ex_1,control,na,geo_sub_brand,na
+ex_2,control,na,geo_sub_brand,na
+sales,kpi_revenue,na,geo_sub_brand,na
