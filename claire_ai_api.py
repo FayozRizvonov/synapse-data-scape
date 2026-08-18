@@ -133,6 +133,11 @@ class InsightRequest(BaseModel):
     language: str = "en"
     data_path: Optional[str] = None
 
+    @field_validator("project_id")
+    @classmethod
+    def _project_id_is_uuid(cls, v: str) -> str:
+        return validate_project_uuid(v)
+
 
 class AgentPromptRequest(BaseModel):
     project_id: str
@@ -469,13 +474,15 @@ async def generate_insights(request: InsightRequest):
     if not _legacy_db_available or not supabase_mmm_client.is_connected():
         raise HTTPException(status_code=503, detail="Database not connected")
     try:
-        # Pull the latest 'outputs' summary row written by the Celery worker
+        # Pull the latest 'outputs' summary row written by the Celery worker.
+        # mmm_model_outputs.project_id is a `uuid` column — pass the id through
+        # rather than coercing it to an int, which never matched anything.
         from supabase_client import supabase_mmm_client as _sb  # type: ignore
         result = (
-            _sb.supabase
+            _sb.client
             .from_("mmm_model_outputs")
             .select("output_data, generated_at")
-            .eq("project_id", int(request.project_id) if request.project_id.isdigit() else 0)
+            .eq("project_id", validate_project_uuid(request.project_id))
             .eq("output_type", "outputs")
             .order("generated_at", desc=True)
             .limit(1)
