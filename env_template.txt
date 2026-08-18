@@ -12,7 +12,15 @@ MLFLOW_REGISTRY_URI=http://localhost:5000
 # Supabase Configuration
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_KEY=your_supabase_anon_key
+SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# Verifies user access tokens locally instead of calling /auth/v1/user on every
+# request.  Dashboard > Project Settings > API > JWT Settings > JWT Secret.
+# Without it the API still authenticates correctly, just with a round trip per
+# request — GET /health reports "auth": "local_hs256" once this is set.
+# Server-side only: this secret signs every token for the project.
+SUPABASE_JWT_SECRET=your_supabase_jwt_secret
 
 # API Configuration
 API_HOST=0.0.0.0

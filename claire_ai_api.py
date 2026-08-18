@@ -48,7 +48,10 @@ from src.database import supabase_client as mmm_db                    # noqa: E4
 from src.optimizer import budget_allocator                            # noqa: E402
 
 # Auth + tenant scoping (see api_auth.py)
-from api_auth import Principal, authorize_project, get_principal      # noqa: E402
+from api_auth import (                                                # noqa: E402
+    Principal, authorize_project, get_principal,
+    log_startup_mode, verification_mode,
+)
 
 # ---------------------------------------------------------------------------
 # Legacy Supabase client (root-level, used for scenarios/insights/approve)
@@ -62,6 +65,8 @@ except Exception:
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+log_startup_mode()
 
 # ---------------------------------------------------------------------------
 # App
@@ -193,6 +198,7 @@ async def health_check():
         "service": "CLAIRE AI MMM Agent",
         "version": "2.0.0",
         "celery": celery_status,
+        "auth": verification_mode(),
         "timestamp": datetime.now().isoformat(),
     }
 

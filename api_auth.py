@@ -32,6 +32,7 @@ exactly the kind of thing that ships enabled by accident.
 """
 from __future__ import annotations
 
+import hmac
 import logging
 import os
 import time
@@ -68,23 +69,65 @@ def _env(name: str) -> str:
     return (os.environ.get(name) or "").strip()
 
 
+def verification_mode() -> str:
+    """Which token-verification path is active — surfaced on /health."""
+    if _env("SUPABASE_JWT_SECRET"):
+        return "local_hs256"
+    if _env("SUPABASE_URL") and _env("SUPABASE_ANON_KEY"):
+        return "introspection"
+    return "unconfigured"
+
+
+def log_startup_mode() -> None:
+    mode = verification_mode()
+    if mode == "local_hs256":
+        logger.info("auth: verifying tokens locally (SUPABASE_JWT_SECRET set)")
+    elif mode == "introspection":
+        logger.warning(
+            "auth: SUPABASE_JWT_SECRET not set — every request costs a round trip to "
+            "/auth/v1/user. Set it (Supabase dashboard > Project Settings > API > JWT Secret) "
+            "to verify locally."
+        )
+    else:
+        logger.error(
+            "auth: NOT CONFIGURED — set SUPABASE_JWT_SECRET, or SUPABASE_URL + "
+            "SUPABASE_ANON_KEY. Every authenticated request will fail with 503."
+        )
+
+
 def _decode_local(token: str) -> Optional[dict]:
-    """Verify with the project JWT secret, if one is configured."""
+    """
+    Verify with the project JWT secret, if one is configured.
+
+    Supabase signs the **publishable anon key with this same secret**, and that
+    key ships in the frontend bundle — so a valid signature alone does not mean
+    "an end user".  Only tokens carrying role=authenticated are accepted here;
+    anon and service_role keys are rejected outright rather than relying on
+    their lacking a `sub`.
+    """
     secret = _env("SUPABASE_JWT_SECRET")
     if not secret:
         return None
     try:
-        return jwt.decode(
+        claims = jwt.decode(
             token,
             secret,
-            algorithms=["HS256"],
-            audience="authenticated",
-            options={"verify_aud": False},  # Supabase sets aud=authenticated
+            algorithms=["HS256"],           # pinned: never honour alg from the header
+            options={"verify_aud": False},  # aud is "authenticated"; role is the check below
         )
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
     except jwt.InvalidTokenError as exc:
         raise HTTPException(status_code=401, detail=f"Invalid token: {exc}")
+
+    role = str(claims.get("role") or "").lower()
+    if role != "authenticated":
+        logger.warning(f"rejected non-user token with role={role!r}")
+        raise HTTPException(
+            status_code=401,
+            detail="Token is not an end-user session token",
+        )
+    return claims
 
 
 def _introspect(token: str) -> dict:
@@ -178,8 +221,9 @@ async def get_principal(
     token = creds.credentials.strip()
 
     # Server-to-server: the service-role key acts on behalf of the platform.
+    # compare_digest, not ==, so the comparison does not leak the key by timing.
     service_key = _env("SUPABASE_SERVICE_ROLE_KEY")
-    if service_key and token == service_key:
+    if service_key and hmac.compare_digest(token, service_key):
         logger.info(f"{request.method} {request.url.path} authenticated as service role")
         return Principal(user_id="service-role", is_service=True)
 
