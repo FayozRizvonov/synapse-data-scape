@@ -5,6 +5,17 @@ CLAIRE AI is an autonomous AI-powered **Marketing Mix Modeling (MMM)** platform 
 
 This is the **demo version** of the **Trigma.ai platform**.
 
+## Strategic Direction — Claude Enterprise Connector
+**Committed direction (2026-06-19):** Expose CLAIRE / Trigma.ai *inside Claude* so clients already on
+Claude Enterprise/Team can run MMM modeling & optimization from the conversation, instead of a separate web app.
+- **Distribution:** org-level **Connector = Remote MCP Server** (multi-tenant, IT-provisioned). Not Desktop ext / public directory.
+- **Sequencing:** straight to production build; de-risk via a Week 1–2 production "walking skeleton" (one tool end-to-end), no throwaway POC.
+- **Architecture:** Claude (NL layer) → CLAIRE MCP server (OAuth 2.1, token→`company_id`) → existing FastAPI → training via Celery/PyMC5, optimize+insights via `PharmaMMMAgent`/Orbit-ML → Supabase RLS. MCP tools map ≈1:1 to existing endpoints; retire `/agent/process` (Claude replaces the NL router).
+- **#1 blocker:** FastAPI has **no auth layer** today (scoped only by `project_id` + service role + RLS) — must add OAuth + tenant enforcement.
+- **Critical path:** (1) OAuth/SSO provider (recommend WorkOS/Auth0), (2) API auth + tenant scoping. ~~(3) async job pattern~~ — delivered 2026-08-18 (Celery + Redis, `job_id` + polling).
+- **Timeline:** ~12–16 wks to GA; first live in-Claude demo ~wk 5–6. Compliance (SOC2/DPA, eu-central-1 residency) is the likely long pole — run parallel from Phase 0.
+- **Full roadmap:** `docs/claude-connector-roadmap.md`.
+
 ## Tech Stack
 
 ### Frontend
