@@ -45,6 +45,7 @@ from src.workers.model_worker import run_mmm_pipeline_task             # noqa: E
 from src.database import run_depository as run_repo                    # noqa: E402
 from src.database import dataset_repository as dataset_repo            # noqa: E402
 from src.database import supabase_client as mmm_db                    # noqa: E402
+from src.optimizer import budget_allocator                            # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Legacy Supabase client (root-level, used for scenarios/insights/approve)
@@ -116,6 +117,11 @@ class OptimizationRequest(BaseModel):
     target_sales: Optional[float] = None
     channel_constraints: Optional[Dict[str, List[float]]] = None
     data_path: Optional[str] = None
+
+    @field_validator("project_id")
+    @classmethod
+    def _project_id_is_uuid(cls, v: str) -> str:
+        return validate_project_uuid(v)
 
 
 class SalesForceOptimizationRequest(BaseModel):
@@ -394,6 +400,38 @@ async def get_latest_approved_model(project_id: str):
 # Optimisation endpoints (reads Supabase outputs — no in-memory agent)
 # ---------------------------------------------------------------------------
 
+def _latest_optimizer_inputs(project_id: str):
+    """
+    Fetch marginal_roi_curves + roi_key_points for a project's newest model.
+
+    Both come from the PyMC5 pipeline; ordering by generated_at picks the most
+    recent run rather than requiring an approval step (PyMC5 rows are written
+    with is_approved=False, so get_latest_approved_model never matches them).
+    """
+    from supabase_client import supabase_mmm_client as _sb  # type: ignore
+
+    pid = validate_project_uuid(project_id)
+    rows = (
+        _sb.client
+        .from_("mmm_model_outputs")
+        .select("output_type, output_data, generated_at")
+        .eq("project_id", pid)
+        .in_("output_type", ["marginal_roi_curves", "roi_key_points"])
+        .order("generated_at", desc=True)
+        .limit(2)
+        .execute()
+    )
+
+    curves, key_points = None, None
+    for row in rows.data or []:
+        if row["output_type"] == "marginal_roi_curves" and curves is None:
+            curves = row["output_data"]
+        elif row["output_type"] == "roi_key_points" and key_points is None:
+            key_points = row["output_data"]
+
+    return curves or [], key_points or []
+
+
 @app.post("/optimize/scenario", response_model=ResponseModel)
 async def create_optimization_scenario(request: OptimizationRequest):
     """
@@ -401,29 +439,101 @@ async def create_optimization_scenario(request: OptimizationRequest):
     """
     if not _legacy_db_available or not supabase_mmm_client.is_connected():
         raise HTTPException(status_code=503, detail="Database not connected")
+    scenario_type = (request.scenario_type or "").strip().lower()
+    if scenario_type not in ("tmb", "tsv"):
+        raise HTTPException(
+            status_code=422,
+            detail="scenario_type must be 'tmb' (total media budget) or 'tsv' (total sales value)",
+        )
+    if scenario_type == "tmb" and request.total_budget is None:
+        raise HTTPException(status_code=422, detail="total_budget is required for a 'tmb' scenario")
+    if scenario_type == "tsv" and request.target_sales is None:
+        raise HTTPException(status_code=422, detail="target_sales is required for a 'tsv' scenario")
+
     try:
-        from datetime import datetime
+        curves_rows, key_points = _latest_optimizer_inputs(request.project_id)
+        if not curves_rows:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "No marginal ROI curves for this project — train a model first "
+                    "(POST /model/train) and wait for the job to reach 'done'."
+                ),
+            )
+
+        curves = budget_allocator.build_curves(curves_rows)
+        current = budget_allocator.current_allocation(key_points)
+        base_revenue = budget_allocator.baseline_revenue(key_points) or 0.0
+
+        if scenario_type == "tmb":
+            result = budget_allocator.allocate(
+                curves,
+                total_budget=float(request.total_budget),
+                constraints=request.channel_constraints,
+            )
+        else:
+            # TSV targets total sales; the curves are incremental to baseline.
+            target_incremental = float(request.target_sales) - base_revenue
+            result = budget_allocator.allocate(
+                curves,
+                target_revenue=target_incremental,
+                constraints=request.channel_constraints,
+            )
+
+        expected_sales = base_revenue + result["total_incremental_revenue"]
+        current_total = sum(current.values()) if current else None
+
         scenario_data = {
-            "scenario_name": f"Opt_{request.scenario_type}_{datetime.now():%Y%m%d_%H%M%S}",
-            "scenario_type": request.scenario_type,
+            "scenario_name": f"Opt_{scenario_type}_{datetime.now():%Y%m%d_%H%M%S}",
+            "scenario_type": scenario_type,
             "scenario_config": request.dict(),
-            "optimization_results": {},
-            "total_budget": request.total_budget,
-            "expected_sales": request.target_sales,
-            "roi_metrics": {},
-            "allocation_breakdown": {},
+            "optimization_results": {
+                "allocation":        result["allocation"],
+                "incremental_revenue": result["incremental_revenue"],
+                "binding_limit":     result["binding_limit"],
+                "baseline_revenue":  base_revenue,
+            },
+            "total_budget": result["total_spend"],
+            "expected_sales": expected_sales,
+            "roi_metrics": result["roi"],
+            "allocation_breakdown": {
+                media: {
+                    "recommended_spend": spend,
+                    "current_spend":     current.get(media),
+                    "change":            (spend - current[media]) if media in current else None,
+                    "roi":               result["roi"].get(media),
+                }
+                for media, spend in result["allocation"].items()
+            },
         }
+
         model = supabase_mmm_client.get_latest_approved_model(request.project_id)
         if model:
-            model_id = model.get("id")
-            scenario_id = supabase_mmm_client.save_optimization_scenario(
-                request.project_id, model_id, scenario_data
+            supabase_mmm_client.save_optimization_scenario(
+                request.project_id, model.get("id"), scenario_data
             )
+
         return ResponseModel(
             status="success",
             message="Optimisation scenario created",
-            data={"project_id": request.project_id, "scenario": scenario_data},
+            data={
+                "project_id": request.project_id,
+                "scenario": scenario_data,
+                # Shape consumed by the frontend OptimizationResponse type.
+                "scenario_type":   scenario_type,
+                "total_budget":    result["total_spend"],
+                "allocation":      result["allocation"],
+                "roi":             result["roi"],
+                "expected_sales":  expected_sales,
+                "current_allocation": current or None,
+                "current_total_spend": current_total,
+                "response_curves": {
+                    media: [[s, ir] for s, ir in pts] for media, pts in curves.items()
+                },
+            },
         )
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.error(f"Optimisation error: {exc}")
         raise HTTPException(status_code=500, detail=str(exc))

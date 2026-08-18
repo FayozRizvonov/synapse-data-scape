@@ -11,8 +11,9 @@ This is the **demo version** of the **Trigma.ai platform**.
 | Path | Engine | Status |
 |---|---|---|
 | `/model/train`, `/model/retrain`, `/jobs/{id}/status` | **PyMC5** (`mmm_claire/`, async on Celery) | ✅ migrated |
-| `/optimize/scenario`, `/optimize/sales-force` | Orbit-ML via `PharmaMMMAgent` | ⛔ to port |
-| `/insights/generate` | Orbit-ML via `PharmaMMMAgent` | ⛔ to port |
+| `/optimize/scenario` | **PyMC5** (`src/optimizer/budget_allocator.py`) | ✅ migrated |
+| `/insights/generate` | **PyMC5** (reads `mmm_model_outputs`) | ✅ migrated |
+| `/optimize/sales-force` | stub — echoes its inputs, computes nothing | ⛔ to build |
 | `/agent/process` | Orbit-ML via `PharmaMMMAgent` | ⛔ retire (Claude replaces the NL router) |
 
 Until those three are ported, `orbit-ml` stays in `requirements.txt` and `claire_ai_agent.py`
@@ -128,9 +129,9 @@ synapse-data-scape/
 | `/model/train` | POST | **Enqueue** async training; returns `job_id` immediately | PyMC5 |
 | `/model/retrain` | POST | Re-enqueue an existing project | PyMC5 |
 | `/jobs/{job_id}/status` | GET | Poll job: `queued → running → done \| failed` | PyMC5 |
-| `/optimize/scenario` | POST | Budget optimization (TMB/TSV) | Orbit (legacy) |
-| `/optimize/sales-force` | POST | Sales force optimization | Orbit (legacy) |
-| `/insights/generate` | POST | Generate EN/RU insights | Orbit (legacy) |
+| `/optimize/scenario` | POST | Budget optimization (TMB/TSV) | PyMC5 |
+| `/optimize/sales-force` | POST | Sales force optimization | stub |
+| `/insights/generate` | POST | Generate EN/RU insights | PyMC5 |
 | `/agent/process` | POST | Natural language prompt processing | Orbit (legacy) |
 | `/projects/{id}/status` | GET | Project status | — |
 
