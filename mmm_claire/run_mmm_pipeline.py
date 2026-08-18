@@ -105,6 +105,47 @@ def build_detected_channels(info, bundle) -> dict:
     return groups
 
 
+def build_governance(diag: dict) -> dict:
+    """
+    Convergence evidence for the approval gate, plus a pass/fail verdict.
+
+    Thresholds come from the Model Governance & Validation Framework:
+    divergences < 100, ESS > 100, R-hat < 1.05.  A model must pass these
+    before it can be approved, so the numbers have to be persisted with the
+    model rather than only logged.
+    """
+    diag = diag or {}
+
+    def _num(value):
+        try:
+            return None if value is None else float(value)
+        except (TypeError, ValueError):
+            return None
+
+    max_rhat = _num(diag.get("max_rhat"))
+    min_ess = _num(diag.get("min_ess"))
+    divergences = _num(diag.get("n_divergences"))
+
+    checks = {
+        "rhat":        None if max_rhat is None else max_rhat < 1.05,
+        "ess":         None if min_ess is None else min_ess > 100,
+        "divergences": None if divergences is None else divergences < 100,
+    }
+    known = [v for v in checks.values() if v is not None]
+
+    return {
+        "max_rhat":      max_rhat,
+        "min_ess":       min_ess,
+        "n_divergences": None if divergences is None else int(divergences),
+        "n_bad_rhat":    diag.get("n_bad_rhat"),
+        "n_bad_ess":     diag.get("n_bad_ess"),
+        "thresholds":    {"max_rhat": 1.05, "min_ess": 100, "n_divergences": 100},
+        "checks":        checks,
+        # Unknown metrics must not silently pass a governance gate.
+        "passed":        bool(known) and all(known) and len(known) == len(checks),
+    }
+
+
 def run_pipeline(
     data_path=None,
     info_path=None,
@@ -272,6 +313,7 @@ def run_pipeline(
         "_meta": {
             "stability_level":   int(stability_level),
             "detected_channels": build_detected_channels(info, bundle),
+            "governance":        build_governance(diag),
         },
     }
 

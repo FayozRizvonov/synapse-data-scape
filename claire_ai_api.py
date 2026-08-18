@@ -27,7 +27,7 @@ import logging
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -115,7 +115,10 @@ class OptimizationRequest(BaseModel):
     scenario_type: str           # 'tmb' | 'tsv'
     total_budget: Optional[float] = None
     target_sales: Optional[float] = None
-    channel_constraints: Optional[Dict[str, List[float]]] = None
+    # Either the documented rule form — {"min_ratio": .., "max_ratio": ..,
+    # "fixed_spend": .., "min_spend": .., "max_spend": ..} — or a plain
+    # [min_spend, max_spend] pair.
+    channel_constraints: Optional[Dict[str, Union[Dict[str, float], List[float]]]] = None
     data_path: Optional[str] = None
 
     @field_validator("project_id")
@@ -414,22 +417,59 @@ def _latest_optimizer_inputs(project_id: str):
     rows = (
         _sb.client
         .from_("mmm_model_outputs")
-        .select("output_type, output_data, generated_at")
+        .select("output_type, output_data, model_id, generated_at")
         .eq("project_id", pid)
-        .in_("output_type", ["marginal_roi_curves", "roi_key_points"])
+        .in_("output_type", ["marginal_roi_curves", "roi_key_points", "roi"])
         .order("generated_at", desc=True)
-        .limit(2)
+        .limit(3)
         .execute()
     )
 
-    curves, key_points = None, None
+    curves, key_points, roi_rows, model_id = None, None, None, None
     for row in rows.data or []:
+        model_id = model_id or row.get("model_id")
         if row["output_type"] == "marginal_roi_curves" and curves is None:
             curves = row["output_data"]
         elif row["output_type"] == "roi_key_points" and key_points is None:
             key_points = row["output_data"]
+        elif row["output_type"] == "roi" and roi_rows is None:
+            roi_rows = row["output_data"]
 
-    return curves or [], key_points or []
+    return curves or [], key_points or [], roi_rows or [], model_id
+
+
+def _model_governance(model_id: Optional[str]) -> dict:
+    """
+    Approval state and convergence evidence for a model.
+
+    Governance requires a model to pass diagnostics and business validation
+    before approval, so callers are told when a scenario was built on an
+    unapproved model rather than silently receiving one.
+    """
+    if not model_id:
+        return {"model_id": None, "approved": False, "governance": None}
+    try:
+        from supabase_client import supabase_mmm_client as _sb  # type: ignore
+        res = (
+            _sb.client
+            .from_("mmm_models")
+            .select("id, is_approved, model_config")
+            .eq("id", model_id)
+            .limit(1)
+            .execute()
+        )
+        row = (res.data or [{}])[0]
+        config = row.get("model_config") or {}
+        if isinstance(config, str):
+            config = json.loads(config or "{}")
+        return {
+            "model_id": model_id,
+            "approved": bool(row.get("is_approved")),
+            "governance": config.get("governance"),
+        }
+    except Exception as exc:  # never fail a scenario over metadata
+        logger.warning(f"governance lookup failed for {model_id}: {exc}")
+        return {"model_id": model_id, "approved": False, "governance": None}
 
 
 @app.post("/optimize/scenario", response_model=ResponseModel)
@@ -451,7 +491,7 @@ async def create_optimization_scenario(request: OptimizationRequest):
         raise HTTPException(status_code=422, detail="target_sales is required for a 'tsv' scenario")
 
     try:
-        curves_rows, key_points = _latest_optimizer_inputs(request.project_id)
+        curves_rows, key_points, roi_rows, model_id = _latest_optimizer_inputs(request.project_id)
         if not curves_rows:
             raise HTTPException(
                 status_code=409,
@@ -463,21 +503,23 @@ async def create_optimization_scenario(request: OptimizationRequest):
 
         curves = budget_allocator.build_curves(curves_rows)
         current = budget_allocator.current_allocation(key_points)
+        stability = budget_allocator.build_stability(roi_rows)
         base_revenue = budget_allocator.baseline_revenue(key_points) or 0.0
 
+        common = {
+            "constraints":   request.channel_constraints,
+            "stability":     stability,
+            "current_spend": current,
+        }
         if scenario_type == "tmb":
             result = budget_allocator.allocate(
-                curves,
-                total_budget=float(request.total_budget),
-                constraints=request.channel_constraints,
+                curves, total_budget=float(request.total_budget), **common
             )
         else:
             # TSV targets total sales; the curves are incremental to baseline.
             target_incremental = float(request.target_sales) - base_revenue
             result = budget_allocator.allocate(
-                curves,
-                target_revenue=target_incremental,
-                constraints=request.channel_constraints,
+                curves, target_revenue=target_incremental, **common
             )
 
         expected_sales = base_revenue + result["total_incremental_revenue"]
@@ -488,10 +530,12 @@ async def create_optimization_scenario(request: OptimizationRequest):
             "scenario_type": scenario_type,
             "scenario_config": request.dict(),
             "optimization_results": {
-                "allocation":        result["allocation"],
+                "allocation":          result["allocation"],
                 "incremental_revenue": result["incremental_revenue"],
-                "binding_limit":     result["binding_limit"],
-                "baseline_revenue":  base_revenue,
+                "binding_limit":       result["binding_limit"],
+                "minimum_representable_spend": result.get("minimum_representable_spend"),
+                "baseline_revenue":    base_revenue,
+                "stability_weights":   result.get("stability_weights", {}),
             },
             "total_budget": result["total_spend"],
             "expected_sales": expected_sales,
@@ -527,6 +571,7 @@ async def create_optimization_scenario(request: OptimizationRequest):
                 "expected_sales":  expected_sales,
                 "current_allocation": current or None,
                 "current_total_spend": current_total,
+                "model": _model_governance(model_id),
                 "response_curves": {
                     media: [[s, ir] for s, ir in pts] for media, pts in curves.items()
                 },

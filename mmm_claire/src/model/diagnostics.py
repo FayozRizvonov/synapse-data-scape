@@ -44,12 +44,21 @@ def run_diagnostics(
     # ESS checks
     bad_ess = summary[summary["ess_bulk"] < ess_threshold]
 
+    # HMC divergences — a governance gate (threshold 100), so count them even
+    # though they do not affect `passed` here.
+    n_divergences = None
+    try:
+        n_divergences = int(trace.sample_stats["diverging"].sum())
+    except (AttributeError, KeyError, TypeError, ValueError):
+        logger.warning("Divergence count unavailable from trace sample_stats")
+
     diagnostics = {
         "passed": True,
         "max_rhat": summary["r_hat"].max(),
         "min_ess": summary["ess_bulk"].min(),
         "n_bad_rhat": len(bad_rhat),
         "n_bad_ess": len(bad_ess),
+        "n_divergences": n_divergences,
     }
 
     if len(bad_rhat) > 0:

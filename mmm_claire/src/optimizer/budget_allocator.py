@@ -31,6 +31,96 @@ from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 # (spend, incremental_revenue) ascending by spend
 Curve = List[Tuple[float, float]]
 
+# Optimizer design doc: effective_mroi = mroi * stability_weight.  Channels
+# whose ROI posterior is wide get discounted so the allocator does not chase
+# returns the model is not confident in.
+STABILITY_WEIGHTS = {"stable": 1.0, "moderate": 0.8, "unstable": 0.5}
+DEFAULT_STABILITY_WEIGHT = 1.0
+
+
+def build_stability(roi_rows: Iterable[Mapping]) -> Dict[str, str]:
+    """Map media -> roi_stability flag from the `roi` output."""
+    out: Dict[str, str] = {}
+    for row in roi_rows or []:
+        if not isinstance(row, Mapping):
+            continue
+        media, flag = row.get("media"), row.get("roi_stability")
+        if media is not None and flag:
+            out[str(media)] = str(flag).strip().lower()
+    return out
+
+
+def _stability_weight(media: str, stability: Optional[Mapping[str, str]]) -> float:
+    """
+    Weight for a channel's marginal ROI.
+
+    An unknown or missing flag is not penalised — absent evidence should not
+    quietly reshape an allocation — but an explicitly bad flag is.
+    """
+    if not stability:
+        return DEFAULT_STABILITY_WEIGHT
+    return STABILITY_WEIGHTS.get(
+        str(stability.get(media, "")).strip().lower(), DEFAULT_STABILITY_WEIGHT
+    )
+
+
+def resolve_bounds(
+    constraint,
+    current_spend: Optional[float],
+) -> Optional[Tuple[float, float]]:
+    """
+    Normalise a channel constraint to an absolute (min, max) spend window.
+
+    Accepts the documented constraint vocabulary —
+
+        min_ratio / max_ratio   relative to the channel's current spend
+        fixed_spend             lock the channel at a value
+        min_spend / max_spend   absolute bounds
+
+    — as a mapping, and also the plain ``[min, max]`` pair.  Ratio rules are
+    ignored when current spend is unknown, since they are meaningless without
+    a reference point.
+    """
+    if constraint is None:
+        return None
+
+    # Plain [min, max]
+    if isinstance(constraint, (list, tuple)):
+        if len(constraint) != 2:
+            return None
+        try:
+            return float(constraint[0]), float(constraint[1])
+        except (TypeError, ValueError):
+            return None
+
+    if not isinstance(constraint, Mapping):
+        return None
+
+    def _num(key):
+        try:
+            value = constraint.get(key)
+            return None if value is None else float(value)
+        except (TypeError, ValueError):
+            return None
+
+    fixed = _num("fixed_spend")
+    if fixed is not None:
+        return fixed, fixed
+
+    lo, hi = _num("min_spend"), _num("max_spend")
+
+    if current_spend:
+        min_ratio, max_ratio = _num("min_ratio"), _num("max_ratio")
+        if min_ratio is not None:
+            lo = max(lo, current_spend * min_ratio) if lo is not None else current_spend * min_ratio
+        if max_ratio is not None:
+            hi = min(hi, current_spend * max_ratio) if hi is not None else current_spend * max_ratio
+
+    if lo is None and hi is None:
+        return None
+    return (lo if lo is not None else 0.0,
+            hi if hi is not None else float("inf"))
+
 
 def build_curves(rows: Iterable[Mapping]) -> Dict[str, Curve]:
     """
@@ -60,6 +150,29 @@ def build_curves(rows: Iterable[Mapping]) -> Dict[str, Curve]:
     return by_media
 
 
+def _interpolate(curve: Curve, spend: float) -> Tuple[float, float]:
+    """
+    Incremental revenue at an arbitrary spend, linearly between grid points.
+
+    The response curve is continuous, so a requested spend that falls between
+    grid points should be evaluated there rather than snapped to a neighbour —
+    otherwise `fixed_spend` silently returns a different number than asked for.
+    Outside the modelled range the nearest endpoint is used.
+    """
+    if spend <= curve[0][0]:
+        return curve[0]
+    if spend >= curve[-1][0]:
+        return curve[-1]
+
+    for (s0, r0), (s1, r1) in zip(curve, curve[1:]):
+        if s0 <= spend <= s1:
+            if s1 == s0:
+                return (spend, r0)
+            frac = (spend - s0) / (s1 - s0)
+            return (spend, r0 + frac * (r1 - r0))
+    return curve[-1]
+
+
 def _feasible_points(curve: Curve, bounds: Optional[Sequence[float]]) -> Curve:
     """Restrict a curve to a [min, max] spend window, never returning empty."""
     if not curve:
@@ -71,21 +184,30 @@ def _feasible_points(curve: Curve, bounds: Optional[Sequence[float]]) -> Curve:
     if lo > hi:
         lo, hi = hi, lo
 
-    points = [p for p in curve if lo <= p[0] <= hi]
-    if points:
-        return points
+    # A locked channel (fixed_spend, or min==max) must land on exactly the
+    # requested figure, so evaluate the curve there instead of snapping.
+    if lo == hi:
+        return [_interpolate(curve, lo)]
 
-    # The window falls between grid points (or outside the modelled range):
-    # fall back to the single closest point so the channel stays representable.
-    target = min(max(curve[0][0], lo), curve[-1][0])
-    return [min(curve, key=lambda p: abs(p[0] - target))]
+    points = [p for p in curve if lo <= p[0] <= hi]
+
+    # Pin the window edges so a bound between grid points is still honoured
+    # exactly rather than rounded inward.
+    if lo > curve[0][0] and (not points or points[0][0] > lo):
+        points.insert(0, _interpolate(curve, lo))
+    if hi < curve[-1][0] and (not points or points[-1][0] < hi):
+        points.append(_interpolate(curve, hi))
+
+    return points or [_interpolate(curve, min(max(curve[0][0], lo), curve[-1][0]))]
 
 
 def allocate(
     curves: Mapping[str, Curve],
     total_budget: Optional[float] = None,
-    constraints: Optional[Mapping[str, Sequence[float]]] = None,
+    constraints: Optional[Mapping] = None,
     target_revenue: Optional[float] = None,
+    stability: Optional[Mapping[str, str]] = None,
+    current_spend: Optional[Mapping[str, float]] = None,
 ) -> dict:
     """
     Allocate budget across channels.
@@ -93,17 +215,26 @@ def allocate(
     total_budget    — TMB: maximise incremental revenue subject to this cap.
     target_revenue  — TSV: spend as little as possible to reach this much
                       incremental revenue.  Ignored when total_budget is set.
-    constraints     — {media: [min_spend, max_spend]}, clamped to the modelled
-                      spend range.
+    constraints     — {media: {...}} using min_ratio / max_ratio /
+                      fixed_spend / min_spend / max_spend, or {media: [lo, hi]}.
+    stability       — {media: roi_stability}; discounts a channel's marginal
+                      ROI when ranking (see STABILITY_WEIGHTS).
+    current_spend   — {media: spend}; required to resolve ratio constraints.
 
     Returns allocation, per-channel roi, incremental revenue, and the
     binding limit ("budget", "target", "curve_max" or "infeasible_minimum").
     """
     feasible: Dict[str, Curve] = {}
     for media, curve in (curves or {}).items():
-        pts = _feasible_points(list(curve), (constraints or {}).get(media))
+        bounds = resolve_bounds(
+            (constraints or {}).get(media),
+            (current_spend or {}).get(media),
+        )
+        pts = _feasible_points(list(curve), bounds)
         if pts:
             feasible[media] = pts
+
+    weights = {m: _stability_weight(m, stability) for m in feasible}
 
     if not feasible:
         return {
@@ -113,6 +244,7 @@ def allocate(
             "total_spend": 0.0,
             "total_incremental_revenue": 0.0,
             "binding_limit": "no_curves",
+            "stability_weights": {},
         }
 
     # Start every channel at its lowest feasible spend.
@@ -134,6 +266,7 @@ def allocate(
             "total_incremental_revenue": 0.0,
             "binding_limit": "infeasible_minimum",
             "minimum_representable_spend": float(spend),
+            "stability_weights": weights,
         }
 
     while True:
@@ -151,7 +284,9 @@ def allocate(
             if total_budget is not None and spend + cost > total_budget:
                 continue
 
-            ratio = gain / cost
+            # Rank on risk-adjusted marginal ROI, but bank the true gain —
+            # the weight expresses confidence, not a revenue forecast.
+            ratio = (gain / cost) * weights[media]
             if best is None or ratio > best[0]:
                 best = (ratio, media, cost, gain)
 
@@ -186,6 +321,7 @@ def allocate(
         "total_spend": float(spend),
         "total_incremental_revenue": float(revenue),
         "binding_limit": binding,
+        "stability_weights": weights,
     }
 
 

@@ -144,7 +144,8 @@ def _as_project_uuid(project_id: Any) -> str:
 
 def save_model_record(project_id: str, job_id: str, stability_level: int,
                       fit_metrics: Dict,
-                      detected_channels: Optional[Dict] = None) -> Optional[str]:
+                      detected_channels: Optional[Dict] = None,
+                      governance: Optional[Dict] = None) -> Optional[str]:
     """
     Insert a row into mmm_models and return its UUID.
 
@@ -166,7 +167,12 @@ def save_model_record(project_id: str, job_id: str, stability_level: int,
             # here would store a JSON *string* instead of a JSON object, which
             # is what the legacy Orbit (DLT/KTR) rows contain and what the
             # frontend expects.
-            "model_config":    {"stability_level": stability_level},
+            # Governance evidence (R-hat / ESS / divergences) lives with the
+            # model: the approval gate cannot be applied without it.
+            "model_config":    _make_serialisable({
+                "stability_level": stability_level,
+                "governance":      governance or {},
+            }),
             "model_metrics":   _make_serialisable(fit_metrics),
             "detected_channels": _make_serialisable(detected_channels or {}),
             "is_approved":     False,

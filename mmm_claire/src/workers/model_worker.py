@@ -110,12 +110,17 @@ def run_mmm_pipeline_task(self, job_id: str, project_id: str):
             _meta             = outputs.get("_meta", {})
             stability_level   = _meta.get("stability_level", -1)
             detected_channels = _meta.get("detected_channels", {})
+            governance        = _meta.get("governance", {})
             fit_metrics       = outputs.get("fit_metrics", {})
 
             logger.info(
                 f"[{job_id}] Pipeline complete — stability_level={stability_level} "
                 f"r2={fit_metrics.get('r2')} mape={fit_metrics.get('mape')} "
-                f"channel_groups={list(detected_channels)}"
+                f"channel_groups={list(detected_channels)} "
+                f"governance_passed={governance.get('passed')} "
+                f"max_rhat={governance.get('max_rhat')} "
+                f"min_ess={governance.get('min_ess')} "
+                f"divergences={governance.get('n_divergences')}"
             )
 
             # ----------------------------------------------------------------
@@ -127,6 +132,7 @@ def run_mmm_pipeline_task(self, job_id: str, project_id: str):
                 stability_level=stability_level,
                 fit_metrics=fit_metrics,
                 detected_channels=detected_channels,
+                governance=governance,
             )
             if not model_id:
                 # save_model_record swallows DB errors and returns None; without
