@@ -1,0 +1,96 @@
+name: CI
+
+# Runs on PRs into main (the gate) and on pushes to dev (early signal).
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [dev]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: frontend (build + typecheck)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      # This is the check that matters: it is what Vercel runs. If it fails
+      # here, the production deploy would have failed too.
+      - name: Build
+        run: npm run build
+
+  lint:
+    name: lint (advisory)
+    runs-on: ubuntu-latest
+    # Not a merge gate: the repo currently has ~146 pre-existing eslint errors
+    # (mostly @typescript-eslint/no-explicit-any).  Reported so the count can
+    # be driven down; make this blocking once it reaches zero.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  backend:
+    name: backend (syntax)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # Deliberately no dependency install: the worker needs PyMC/pytensor from
+      # conda-forge, which is far too slow for a PR gate.  This catches syntax
+      # errors and bad imports at parse time, which is what actually breaks a
+      # deploy.
+      - name: Compile all Python sources
+        run: |
+          python -m compileall -q claire_ai_api.py api_auth.py supabase_client.py claire_ai_agent.py
+          python -m compileall -q mmm_claire/src mmm_claire/run_mmm_pipeline.py
+
+      - name: Check scripts parse
+        run: node --check scripts/run-api.cjs && node --check scripts/run-worker.cjs && node --check scripts/lib-env.cjs && node --check scripts/bootstrap-api.cjs
+
+  secrets:
+    name: secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # A committed .env is how the service-role key ended up in this repo's
+      # history.  Fail loudly rather than let it happen twice.
+      - name: Reject committed .env and obvious keys
+        run: |
+          if git ls-files --error-unmatch .env 2>/dev/null; then
+            echo "::error::.env is tracked by git — it must stay ignored"
+            exit 1
+          fi
+          # Match a real key, not a placeholder: Supabase keys are JWTs and
+          # always begin "eyJ".  Matching on length alone flagged
+          # env_supabase_template.txt's "your-service-role-key-here".
+          if git grep -nE '(SERVICE_ROLE_KEY|JWT_SECRET)[[:space:]]*[=:][[:space:]]*"?eyJ[A-Za-z0-9._-]{20,}'; then
+            echo "::error::a real service-role key or JWT looks committed"
+            exit 1
+          fi
+          echo "no tracked .env, no committed keys"
