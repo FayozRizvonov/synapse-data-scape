@@ -327,23 +327,35 @@ async def get_job_status(job_id: str, principal: Principal = Depends(get_princip
         # A job carries no tenant of its own — authorise via the project it ran for.
         if run.get("project_id"):
             authorize_project(principal, str(run["project_id"]))
+        def _str_or_none(value):
+            # str(None) yields the literal "None", which clients then treat as
+            # a value rather than as absent.
+            return None if value in (None, "") else str(value)
+
         return ResponseModel(
             status=run.get("status", "unknown"),
             message=f"Job {job_id} is {run.get('status')}",
             data={
                 "job_id":          job_id,
-                "project_id":      run.get("project_id"),
+                "project_id":      _str_or_none(run.get("project_id")),
                 "status":          run.get("status"),
-                "created_at":      str(run.get("created_at", "")),
-                "started_at":      str(run.get("started_at", "")),
-                "finished_at":     str(run.get("finished_at", "")),
+                "created_at":      _str_or_none(run.get("created_at")),
+                "started_at":      _str_or_none(run.get("started_at")),
+                "finished_at":     _str_or_none(run.get("finished_at")),
                 "stability_level": run.get("stability_level"),
-                "model_id":        str(run.get("model_id", "")),
+                "model_id":        _str_or_none(run.get("model_id")),
                 "error_message":   run.get("error_message"),
             },
         )
 
-    # Fallback: check Celery result backend
+    # Fallback: the mmm_runs row could not be read (missing job, or a transient
+    # database failure).  Celery knows the task state but not which project it
+    # belongs to, so tenancy cannot be established here — only a service
+    # principal may use this path.  Everyone else gets 404 rather than being
+    # told the state of a job that might belong to another organisation.
+    if not principal.is_service:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+
     result = celery_app.AsyncResult(job_id)
     celery_state = result.state  # PENDING | STARTED | SUCCESS | FAILURE
 
@@ -358,7 +370,12 @@ async def get_job_status(job_id: str, principal: Principal = Depends(get_princip
     return ResponseModel(
         status=status,
         message=f"Job {job_id} is {status} (Celery backend)",
-        data={"job_id": job_id, "celery_state": celery_state},
+        data={
+            # Same shape as the mmm_runs branch: clients read data.status.
+            "job_id":       job_id,
+            "status":       status,
+            "celery_state": celery_state,
+        },
     )
 
 

@@ -175,7 +175,7 @@ const ClaireAdminControl = () => {
     try {
       await new Promise(resolve => setTimeout(resolve, 2000));
       setCurrentStep(2);
-      await claireAI.trainModel(1, dataPath);
+      await claireAI.trainModel();
       setCurrentStep(3);
     } catch (error) {
       console.error('Data connection failed:', error);
@@ -226,7 +226,7 @@ const ClaireAdminControl = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Call backend API
-      const response = await claireAI.trainModel(1, dataPath);
+      const response = await claireAI.trainModel();
       
       // Update model metrics with real data
       const metrics = response.data?.model_metrics || {

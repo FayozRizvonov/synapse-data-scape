@@ -9,23 +9,43 @@ export interface CLAIREAIResponse<T = any> {
 }
 
 export interface ModelTrainingRequest {
-  project_id: string | number;
-  data_path?: string;
-  model_config?: {
-    model_type: 'DLT' | 'KTR' | 'LINEAR';
-    seasonality?: number;
-    regressor_col?: string[];
-  };
+  /** Must be a brand id (brands.id). The API rejects non-UUIDs with 422. */
+  project_id: string;
+}
+
+/**
+ * POST /model/train is asynchronous: it returns a job id immediately and the
+ * PyMC5 pipeline runs on a Celery worker. Poll /jobs/{job_id}/status — see
+ * `waitForJob`.
+ */
+export interface JobEnqueuedResponse {
+  job_id: string;
+  project_id: string;
+  poll_url: string;
+}
+
+export type JobState = 'queued' | 'running' | 'done' | 'failed';
+
+export interface JobStatus {
+  job_id: string;
+  project_id: string;
+  status: JobState;
+  created_at?: string;
+  started_at?: string;
+  finished_at?: string;
+  stability_level?: number | null;
+  model_id?: string | null;
+  error_message?: string | null;
 }
 
 export interface ModelTrainingResponse {
   model_metrics: {
     r_squared: number;
     mape: number;
-    coefficients: Record<string, number>;
+    rmse?: number;
   };
-  detected_channels: Record<string, string[]>;
-  elasticity_norms: Record<string, [number, number]>;
+  /** Funnel groups from info.csv `subtype`, e.g. { upper_funnel: [...] }. */
+  detected_channels?: Record<string, string[]>;
 }
 
 export interface OptimizationRequest {
@@ -122,7 +142,24 @@ class CLAIREAIClient {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        // FastAPI puts the useful part in `detail` — "project_id must be a
+        // UUID", "Project ... not found", "Missing bearer token". Surfacing
+        // only "HTTP 422" would throw that away. Validation errors arrive as
+        // a list of {loc, msg} objects.
+        let detail = response.statusText;
+        try {
+          const body = await response.json();
+          if (typeof body?.detail === 'string') {
+            detail = body.detail;
+          } else if (Array.isArray(body?.detail)) {
+            detail = body.detail
+              .map((d: any) => `${(d.loc ?? []).slice(1).join('.') || 'request'}: ${d.msg}`)
+              .join('; ');
+          }
+        } catch {
+          /* not JSON — keep statusText */
+        }
+        throw new Error(`HTTP ${response.status}: ${detail}`);
       }
 
       const data = await response.json();
@@ -142,12 +179,100 @@ class CLAIREAIClient {
     return this.request('/health');
   }
 
-  // Model training
-  async trainModel(request: ModelTrainingRequest): Promise<CLAIREAIResponse<ModelTrainingResponse>> {
+  /**
+   * Enqueue a training job. Returns a job id immediately — it does NOT wait for
+   * the model. Use `waitForJob`, or `trainAndWait` for both steps.
+   */
+  async trainModel(request: ModelTrainingRequest): Promise<CLAIREAIResponse<JobEnqueuedResponse>> {
     return this.request('/model/train', {
       method: 'POST',
       body: JSON.stringify(request),
     });
+  }
+
+  async getJobStatus(jobId: string): Promise<CLAIREAIResponse<JobStatus>> {
+    return this.request(`/jobs/${encodeURIComponent(jobId)}/status`);
+  }
+
+  /**
+   * Poll a job until it reaches a terminal state.
+   *
+   * Training is minutes-long (roughly 1-4 on the sample dataset, longer on real
+   * client data), so this deliberately has a generous timeout and reports
+   * progress rather than blocking silently.
+   */
+  async waitForJob(
+    jobId: string,
+    opts: {
+      intervalMs?: number;
+      timeoutMs?: number;
+      signal?: AbortSignal;
+      onProgress?: (status: JobStatus) => void;
+    } = {}
+  ): Promise<CLAIREAIResponse<JobStatus>> {
+    const intervalMs = opts.intervalMs ?? 3000;
+    // The worker's own hard limit is 70 min; give up a little before that.
+    const timeoutMs = opts.timeoutMs ?? 30 * 60 * 1000;
+    const startedAt = Date.now();
+
+    for (;;) {
+      if (opts.signal?.aborted) {
+        return { status: 'error', message: 'Polling cancelled', data: undefined };
+      }
+
+      const res = await this.getJobStatus(jobId);
+      const job = res.data;
+
+      if (!job) {
+        // A transient read failure should not abandon a job that may still be
+        // running; keep polling until the timeout.
+        if (Date.now() - startedAt > timeoutMs) {
+          return { status: 'error', message: res.message || 'Job status unavailable' };
+        }
+      } else {
+        opts.onProgress?.(job);
+
+        if (job.status === 'done') {
+          return { status: 'success', message: `Job ${jobId} completed`, data: job };
+        }
+        if (job.status === 'failed') {
+          return {
+            status: 'error',
+            message: job.error_message || `Job ${jobId} failed`,
+            data: job,
+          };
+        }
+      }
+
+      if (Date.now() - startedAt > timeoutMs) {
+        return {
+          status: 'error',
+          message: `Job ${jobId} did not finish within ${Math.round(timeoutMs / 60000)} minutes`,
+          data: job,
+        };
+      }
+
+      await new Promise((r) => setTimeout(r, intervalMs));
+    }
+  }
+
+  /** Enqueue training and resolve only once the job finishes. */
+  async trainAndWait(
+    request: ModelTrainingRequest,
+    opts: Parameters<CLAIREAIClient['waitForJob']>[1] = {}
+  ): Promise<CLAIREAIResponse<JobStatus>> {
+    const enqueued = await this.trainModel(request);
+    const jobId = enqueued.data?.job_id;
+
+    // The API answers 'accepted', not 'success', when a job is queued.
+    if (!jobId) {
+      return {
+        status: 'error',
+        message: enqueued.message || 'Training was not started',
+        error: enqueued.error,
+      };
+    }
+    return this.waitForJob(jobId, opts);
   }
 
   // Budget optimization

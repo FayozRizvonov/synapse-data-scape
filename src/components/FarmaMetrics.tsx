@@ -350,7 +350,7 @@ const FarmaMetrics = () => {
           {/* CLAIRE AI Backend Control Panel */}
           <div className="flex items-center justify-center gap-4 mt-6">
             <Button 
-              onClick={() => claireAI.trainModel(1, 'examples/sample_data.csv')} 
+              onClick={() => claireAI.trainModel()} 
               disabled={claireAI.isLoading}
               variant="outline"
               size="sm"

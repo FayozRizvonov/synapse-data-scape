@@ -1,12 +1,18 @@
 // CLAIRE AI Backend Integration Hook for Existing UI Components
 import { useState, useCallback, useEffect } from 'react';
-import { claireAIClient, type CLAIREAIResponse } from '../integrations/claire-ai/client';
+import {
+  claireAIClient,
+  type CLAIREAIResponse,
+  type JobStatus,
+} from '../integrations/claire-ai/client';
 
 export interface UseClaireAIBackendState {
   isLoading: boolean;
   error: string | null;
   data: any | null;
   isConnected: boolean;
+  /** Latest status of an in-flight training job, or null when none is running. */
+  jobStatus: JobStatus | null;
 }
 
 export interface UseClaireAIBackend {
@@ -15,10 +21,15 @@ export interface UseClaireAIBackend {
   error: string | null;
   data: any | null;
   isConnected: boolean;
+  jobStatus: JobStatus | null;
   
   // Backend Actions
   healthCheck: () => Promise<CLAIREAIResponse>;
-  trainModel: (projectId: string | number, dataPath?: string) => Promise<CLAIREAIResponse>;
+  /** Enqueues training and resolves when the job finishes (minutes). */
+  trainModel: (
+    projectId?: string | number,
+    opts?: { onProgress?: (status: JobStatus) => void; signal?: AbortSignal }
+  ) => Promise<CLAIREAIResponse>;
   optimizeBudget: (projectId: string | number, budget: number, scenarioType?: 'tmb' | 'tsv') => Promise<CLAIREAIResponse>;
   optimizeSalesForce: (projectId: string | number, config: any) => Promise<CLAIREAIResponse>;
   generateInsights: (projectId: string | number, language?: 'en' | 'ru') => Promise<CLAIREAIResponse>;
@@ -94,7 +105,12 @@ export function useClaireAIBackend(projectId: string | number = "550e8400-e29b-4
     error: null,
     data: null,
     isConnected: false,
+    jobStatus: null,
   });
+
+  const setJobStatus = useCallback((jobStatus: JobStatus | null) => {
+    setState(prev => ({ ...prev, jobStatus }));
+  }, []);
 
   const setLoading = useCallback((loading: boolean) => {
     setState(prev => ({ ...prev, isLoading: loading }));
@@ -165,9 +181,19 @@ export function useClaireAIBackend(projectId: string | number = "550e8400-e29b-4
     }
   }, [setLoading, setData, setError, setConnected]);
 
+  /**
+   * Train a model and resolve only when the job finishes.
+   *
+   * /model/train is asynchronous — it answers 'accepted' with a job_id, not a
+   * trained model. This enqueues, polls to completion, then loads the metrics
+   * so callers still receive `data.model_metrics`.
+   *
+   * `projectId` defaults to the project this hook was created with; it must be
+   * a brand id (the API rejects non-UUIDs with 422).
+   */
   const trainModel = useCallback(async (
-    projectId: string | number, 
-    dataPath?: string
+    overrideProjectId?: string | number,
+    opts: { onProgress?: (status: JobStatus) => void; signal?: AbortSignal } = {}
   ): Promise<CLAIREAIResponse> => {
     if (!state.isConnected) {
       return {
@@ -177,23 +203,42 @@ export function useClaireAIBackend(projectId: string | number = "550e8400-e29b-4
       };
     }
 
+    const targetProject = String(overrideProjectId ?? projectId);
+
     setLoading(true);
+    setJobStatus(null);
     try {
-      const response = await claireAIClient.trainModel({
-        project_id: projectId,
-        data_path: dataPath,
-        model_config: {
-          model_type: 'DLT',
-          seasonality: 12,
-        },
-      });
-      
-      if (response.status === 'success') {
-        setData(response.data);
-      } else {
-        setError(response.message);
+      const result = await claireAIClient.trainAndWait(
+        { project_id: targetProject },
+        {
+          signal: opts.signal,
+          onProgress: (status) => {
+            setJobStatus(status);
+            opts.onProgress?.(status);
+          },
+        }
+      );
+
+      if (result.status !== 'success') {
+        setError(result.message);
+        return result;
       }
-      return response;
+
+      // The job only reports that training finished; metrics live in the
+      // model outputs, which /insights/generate reads.
+      const insights = await claireAIClient.generateInsights({
+        project_id: targetProject,
+      });
+
+      const merged = {
+        job: result.data,
+        model_metrics: insights.data?.insights?.model_metrics
+          ?? insights.data?.model_metrics,
+        roi: insights.data?.insights?.roi_summary,
+      };
+      setData(merged);
+
+      return { status: 'success', message: 'Model trained', data: merged };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Model training failed';
       setError(errorMessage);
@@ -202,7 +247,7 @@ export function useClaireAIBackend(projectId: string | number = "550e8400-e29b-4
         message: errorMessage,
       };
     }
-  }, [setLoading, setData, setError, state.isConnected]);
+  }, [setLoading, setData, setError, setJobStatus, state.isConnected, projectId]);
 
   const optimizeBudget = useCallback(async (
     projectId: string | number, 
@@ -487,6 +532,7 @@ export function useClaireAIBackend(projectId: string | number = "550e8400-e29b-4
     error: state.error,
     data: state.data,
     isConnected: state.isConnected,
+    jobStatus: state.jobStatus,
     
     // Backend Actions
     healthCheck,
