@@ -52,6 +52,10 @@ _bearer = HTTPBearer(auto_error=False)
 _project_company_cache: dict[str, tuple[Optional[str], float]] = {}
 _CACHE_TTL_SECONDS = 300
 
+# Mirrors the mmm_runs RLS policy (see supabase/migrations/…_fix_mmm_runs_rls.sql):
+# only active members are granted access; 'pending' is not.
+ACTIVE_MEMBER_STATUS = "active"
+
 
 @dataclass
 class Principal:
@@ -170,9 +174,10 @@ def _company_ids_for_user(user_id: str) -> Set[str]:
 
     out: Set[str] = set()
     for row in res.data or []:
-        status = str(row.get("status") or "").lower()
-        # Only active members carry access; invited/suspended must not.
-        if status and status not in ("active", "accepted"):
+        # company_members.status is 'active' | 'pending'.  Require 'active'
+        # explicitly: an absent or unrecognised status must NOT grant access,
+        # and a future status value must not inherit it by default.
+        if str(row.get("status") or "").lower() != ACTIVE_MEMBER_STATUS:
             continue
         if row.get("company_id"):
             out.add(str(row["company_id"]))
