@@ -94,10 +94,10 @@ def validate_project_uuid(value: str) -> str:
     """
     Return project_id normalised to a canonical UUID string, or raise ValueError.
 
-    mmm_models.project_id and mmm_model_outputs.project_id are `uuid` columns
-    (mmm_runs.project_id is `text`, so job tracking alone does not catch this).
-    A non-UUID id therefore fails only at the final save — after a full PyMC5
-    sampling run — so it is rejected up front instead.
+    project_id is a `uuid` throughout — mmm_models, mmm_model_outputs and
+    mmm_runs — and mmm_runs.project_id is a foreign key to brands(id).
+    Rejecting a bad id here keeps the failure at the API boundary rather than
+    surfacing it as a database error mid-request.
     """
     from uuid import UUID
     try:
@@ -270,12 +270,18 @@ async def train_model(request: TrainRequest, principal: Principal = Depends(get_
         job_id = run_repo.create_run(project_id=request.project_id)
 
         if job_id is None:
-            # Supabase not connected — generate a local ID so Celery can still run
-            import uuid
-            job_id = str(uuid.uuid4())
-            logger.warning(
-                "Supabase not connected — job_id generated locally, "
-                "status polling will not work."
+            # create_run swallows DB errors and returns None, so this covers
+            # both "Supabase unreachable" and a rejected insert (e.g. the
+            # project_id foreign key).  Previously a local uuid was fabricated
+            # and the task enqueued anyway — which burned a full sampling run
+            # that could never be tracked or saved.  Refuse instead; the
+            # preceding "create_run:" warning carries the Postgres error.
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "Could not create the job record, so training was not started. "
+                    "Check that the project exists and the database is reachable."
+                ),
             )
 
         # Enqueue Celery task with job_id as the Celery task id
@@ -295,6 +301,10 @@ async def train_model(request: TrainRequest, principal: Principal = Depends(get_
                 "poll_url": f"/jobs/{job_id}/status",
             },
         )
+    except HTTPException:
+        # Deliberate status codes (503 above, 401/403/404 from auth) must not be
+        # rewritten as 500 by the catch-all below.
+        raise
     except Exception as exc:
         logger.error(f"Failed to enqueue training job: {exc}")
         raise HTTPException(status_code=500, detail=str(exc))

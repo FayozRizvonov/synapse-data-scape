@@ -59,9 +59,11 @@ Claude Enterprise/Team can run MMM modeling & optimization from the conversation
 - Storage bucket `rawdata` for CSV datasets (uploads land at `mmm/{project_id}/{data,info,spend}.csv`)
 - Key tables: `mmm_runs` (async job tracking), `mmm_models`, `mmm_model_outputs`, `mmm_ui_key_metrics`, `chats`, `messages`, `company_members`, `member_permissions`, `user_roles`
 
-> **`project_id` must be a UUID.** `mmm_models.project_id` and `mmm_model_outputs.project_id` are
-> `uuid` columns; `mmm_runs.project_id` is `text`. A non-UUID id is now rejected at the API with 422
-> — before that it passed job creation and failed only after a full training run.
+> **`project_id` is a `uuid` and must be a real `brands.id`.** All three of `mmm_models`,
+> `mmm_model_outputs` and `mmm_runs` type it as `uuid`, and `mmm_runs.project_id` is a foreign key
+> to `brands(id)` (`on delete restrict`). The API rejects a non-UUID with 422 and an unknown
+> project with 404. Until 2026-08-18 `mmm_runs.project_id` was `text`, which let a bogus id pass
+> job creation and fail only after a full training run.
 
 ## Project Structure
 

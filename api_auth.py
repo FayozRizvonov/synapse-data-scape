@@ -251,11 +251,14 @@ def authorize_project(principal: Principal, project_id: str) -> None:
 
     An unknown project is reported as 404 rather than 403 so the endpoint does
     not confirm the existence of ids belonging to other tenants.
+
+    A service principal skips the *tenant* check but not the existence check:
+    it acts for the platform, not for a project that does not exist.
     """
-    if principal.is_service:
+    owner = _company_for_project(project_id)
+    if owner is not None and principal.is_service:
         return
 
-    owner = _company_for_project(project_id)
     if owner is None:
         raise HTTPException(
             status_code=404,

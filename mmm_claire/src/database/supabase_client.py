@@ -126,10 +126,9 @@ def _as_project_uuid(project_id: Any) -> str:
     """
     Return project_id as the UUID string the schema expects.
 
-    mmm_models.project_id and mmm_model_outputs.project_id are `uuid` columns
-    (mmm_runs.project_id is `text`, which is why job tracking tolerates
-    non-UUID ids).  Raise on anything that is not a UUID so the failure is
-    visible instead of Postgres rejecting the insert later with 22P02.
+    project_id is a `uuid` column in mmm_models, mmm_model_outputs and
+    mmm_runs alike.  Raise on anything that is not a UUID so the failure is
+    visible here instead of Postgres rejecting the insert later with 22P02.
     """
     from uuid import UUID
     pid = str(project_id).strip()
