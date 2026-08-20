@@ -1,0 +1,6 @@
+interface:
+  display_name: "Synapse Data Scape"
+  short_description: "Repo-specific patterns and workflows for synapse-data-scape"
+  default_prompt: "Use the synapse-data-scape repo skill to follow existing architecture, testing, and workflow conventions."
+policy:
+  allow_implicit_invocation: true
