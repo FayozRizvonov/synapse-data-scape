@@ -1,9 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '@/integrations/supabase/client';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+// See useAIAssistant: these were read from import.meta.env, which is unset in
+// Vercel, so they resolved to `undefined` in production.
+const SUPABASE_ANON_KEY = SUPABASE_PUBLISHABLE_KEY;
 
 interface CardData {
   action: string;

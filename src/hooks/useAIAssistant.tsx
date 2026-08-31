@@ -1,12 +1,15 @@
 import { useState, useCallback, createContext, useContext, ReactNode } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '@/integrations/supabase/client';
 import { metricsKnowledgeBase, MetricCard, getTopPerformingChannels, getRegionalPerformance, getMarketingRecommendations, getScenarioComparisons } from '@/data/metricsKnowledgeBase';
 import { useAuth } from '@/contexts/AuthContext';
 import { loadMergedPharmaMetrics, metricCardsToCompactKbPayload } from '@/lib/pharmaSmMetrics';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+// Share the client's resolved config rather than re-reading import.meta.env:
+// these variables are not set in Vercel, so reading them here produced
+// `undefined` in production — every Edge Function call became
+// fetch("undefined/functions/v1/...") with an undefined apikey.
+const SUPABASE_ANON_KEY = SUPABASE_PUBLISHABLE_KEY;
 
 /** Call an Edge Function URL directly with SSE streaming support. */
 async function invokeStream(functionName: string, body: unknown, accessToken: string): Promise<Response> {
