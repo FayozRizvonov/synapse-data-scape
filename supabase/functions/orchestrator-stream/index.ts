@@ -28,6 +28,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 // @ts-expect-error
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getPublishableKey, getSecretKey } from "../_shared/supabase-keys.ts";
 import {
   fetchApprovedCompanyBrain,
   fetchPharmaSmMetricsMergedRows,
@@ -45,8 +46,8 @@ declare const Deno: { env: { get: (key: string) => string | undefined } };
 
 const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
-const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
-const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const supabaseAnonKey = getPublishableKey();
+const supabaseServiceRoleKey = getSecretKey();
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
