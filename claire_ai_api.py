@@ -15,6 +15,7 @@
 # GET   /scenarios/{project_id}/...   Scenario queries
 # POST  /models/{model_id}/approve    Approve a model
 # POST  /optimize/scenario            Budget optimisation (reads Supabase outputs)
+# POST  /optimize/scenarios           Budget scenario sweep (-20/-10/optimal/+10/+20)
 # POST  /optimize/sales-force         Sales force optimisation
 # POST  /insights/generate            Generate insights from Supabase results
 # POST  /agent/process                Natural-language prompt (CLAIRE AI)
@@ -46,6 +47,7 @@ from src.database import run_depository as run_repo                    # noqa: E
 from src.database import dataset_repository as dataset_repo            # noqa: E402
 from src.database import supabase_client as mmm_db                    # noqa: E402
 from src.optimizer import budget_allocator                            # noqa: E402
+from src.optimizer import scenarios as budget_scenarios               # noqa: E402
 
 # Auth + tenant scoping (see api_auth.py)
 from api_auth import (                                                # noqa: E402
@@ -128,6 +130,20 @@ class OptimizationRequest(BaseModel):
     # [min_spend, max_spend] pair.
     channel_constraints: Optional[Dict[str, Union[Dict[str, float], List[float]]]] = None
     data_path: Optional[str] = None
+
+    @field_validator("project_id")
+    @classmethod
+    def _project_id_is_uuid(cls, v: str) -> str:
+        return validate_project_uuid(v)
+
+
+class ScenarioSweepRequest(BaseModel):
+    """Budget scenario sweep — see the Budget Optimizer design doc."""
+    project_id: str
+    # Multipliers on today's total budget. Default is the documented set:
+    # -20%, -10%, same budget optimised, +10%, +20%.
+    factors: Optional[List[float]] = None
+    channel_constraints: Optional[Dict[str, Union[Dict[str, float], List[float]]]] = None
 
     @field_validator("project_id")
     @classmethod
@@ -646,6 +662,70 @@ async def create_optimization_scenario(request: OptimizationRequest, principal: 
         raise
     except Exception as exc:
         logger.error(f"Optimisation error: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.post("/optimize/scenarios", response_model=ResponseModel)
+async def budget_scenario_sweep(
+    request: ScenarioSweepRequest,
+    principal: Principal = Depends(get_principal),
+):
+    """
+    Budget scenario sweep: what today's plan earns, versus the same money
+    allocated optimally, versus +/-10% and +/-20%.
+
+    `current` is the reference row and is deliberately NOT optimised — the
+    gap between it and `optimal` is the value of reallocating alone, which
+    needs no extra budget approval.
+    """
+    authorize_project(principal, request.project_id)
+    try:
+        curves_rows, key_points, roi_rows, model_id = _latest_optimizer_inputs(request.project_id)
+        if not curves_rows:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "No marginal ROI curves for this project — train a model first "
+                    "(POST /model/train) and wait for the job to reach 'done'."
+                ),
+            )
+
+        curves = budget_allocator.build_curves(curves_rows)
+        current = budget_allocator.current_allocation(key_points)
+        base_revenue = budget_allocator.baseline_revenue(key_points) or 0.0
+        stability = budget_allocator.build_stability(roi_rows)
+
+        kwargs = {}
+        if request.factors:
+            kwargs["factors"] = request.factors
+
+        result = budget_scenarios.build_scenarios(
+            curves,
+            current,
+            base_revenue,
+            constraints=request.channel_constraints,
+            stability=stability,
+            **kwargs,
+        )
+
+        return ResponseModel(
+            status="success",
+            message="Budget scenarios generated",
+            data={
+                "project_id": request.project_id,
+                # budget_summary.csv / budget_scenarios.csv from the design doc
+                "summary": result["summary"],
+                "allocations": result["allocations"],
+                "reallocation_gain": budget_scenarios.reallocation_gain(result),
+                "current_total_budget": result["current_total_budget"],
+                "baseline_revenue": result["baseline_revenue"],
+                "model": _model_governance(model_id),
+            },
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error(f"Scenario sweep error: {exc}")
         raise HTTPException(status_code=500, detail=str(exc))
 
 
