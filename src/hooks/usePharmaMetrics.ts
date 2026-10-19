@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { isValidProjectId } from '@/constants/project';
 
 export interface RoiCard {
   id: string;
@@ -60,6 +61,17 @@ export function usePharmaMetrics(params: { projectId: string; period?: string; a
   const [uiRow, setUiRow] = useState<any | null>(null);
 
   const fetchLatest = async () => {
+    // `project_id` is a uuid column — a non-uuid makes Postgres reject the whole
+    // query (22P02), which previously surfaced as an empty dashboard rather than
+    // an error anyone noticed.
+    if (!isValidProjectId(projectId)) {
+      setError(`Invalid project id ${JSON.stringify(projectId)} — expected a UUID`);
+      setRow(null);
+      setUiRow(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -202,6 +214,12 @@ export function useModelPerformanceStats(params: { projectId: string }) {
 
   useEffect(() => {
     const load = async () => {
+      if (!isValidProjectId(projectId)) {
+        setError(`Invalid project id ${JSON.stringify(projectId)} — expected a UUID`);
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);

@@ -32,6 +32,7 @@ import SOJMContainer from './SOJMContainer';
 import { useTheme } from '@/hooks/useTheme';
 import { usePharmaSmDashboardMetrics } from '@/hooks/usePharmaSmDashboardMetrics';
 import { useModelPerformanceStats } from '@/hooks/usePharmaMetrics';
+import { DEMO_PROJECT_ID } from '@/constants/project';
 import { BauhausBorder } from './ui/bauhaus-border';
 import { LineChart, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line, Area, ResponsiveContainer } from 'recharts';
 import type { MetricCard as KBMetricCard } from '@/data/metricsKnowledgeBase';
@@ -75,7 +76,7 @@ function farmaCardToKbSituationCard(c: MetricCard): KBMetricCard {
 
 const FarmaMetrics = () => {
   const { theme } = useTheme();
-  const claireAI = useClaireAIBackend(1); // Use project ID 1
+  const claireAI = useClaireAIBackend(DEMO_PROJECT_ID);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [keyMetricsExpanded, setKeyMetricsExpanded] = useState(false);
   const [situationMetricsExpanded, setSituationMetricsExpanded] = useState(false);
@@ -83,7 +84,7 @@ const FarmaMetrics = () => {
   const [salesVolumeAnalysisExpanded, setSalesVolumeAnalysisExpanded] = useState(false);
   const [salesVolumeBreakdownExpanded, setSalesVolumeBreakdownExpanded] = useState(false);
   const { data: dbPharma, loading: dbLoading } = usePharmaSmDashboardMetrics();
-  const modelStats = useModelPerformanceStats({ projectId: '1' });
+  const modelStats = useModelPerformanceStats({ projectId: DEMO_PROJECT_ID });
 
   // Helper to parse value for AnimatedNumber
   const parseValue = (valueStr: string) => {

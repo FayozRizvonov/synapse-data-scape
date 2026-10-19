@@ -282,6 +282,40 @@ project  -> brands.id               -> brands.company_id
 > ⚠️ `VITE_CLAIRE_AI_API_KEY` is gone. It was a build-time constant baked into the bundle and shared
 > by every user — it identified nobody. Don't reintroduce a client-side API key.
 
+## Client demo — what must not drift
+
+A pharma-brand demo (dovato, 33 months, 2023-01 → 2025-09) is being shown to a prospective
+client. **The client has no Admin Panel access** — they see the dashboard, AI chat and voice only.
+
+**What the client-facing surface actually depends on:**
+
+| Surface | Backend |
+|---|---|
+| Dashboard metric cards | Supabase tables, direct |
+| Model performance / ROI | Supabase `mmm_model_outputs`, direct |
+| AI chat, voice | Supabase Edge Functions (`orchestrator`, `voice-assistant`) |
+
+**Nothing the client touches goes through FastAPI** — it's needed only for training and
+optimization, both Admin-only. The demo therefore runs on Supabase + Vercel alone.
+
+**The pinned model:** `83e46e03-051f-4bb7-9854-6a0385439ee0` (trained 2026-10-16),
+r² 0.398 / MAPE 0.2326 / RMSE 5225.4716. The dashboard reads the **newest**
+`mmm_model_outputs` row by `generated_at`, so a retrain *shadows* this model rather than
+replacing it. Two guards:
+
+- `MMM_UPSAMPLE_MONTHLY=1` in `.env` makes an accidental retrain reproduce the fit bit-identically
+- `backups/demo-model-83e46e03.json` is a full snapshot (all 13 output types + the `mmm_models` row)
+
+```bash
+python scripts/restore-demo-model.py --check     # is the demo model still the one on screen?
+python scripts/restore-demo-model.py --restore   # put the snapshotted rows back
+```
+
+> `project_id` must be a UUID. `FarmaMetrics` passed `'1'` until 2026-10-19, which Postgres
+> rejected with `22P02 invalid input syntax for type uuid` on every poll — the dashboard showed
+> no model metrics at all rather than erroring visibly. Use `DEMO_PROJECT_ID` from
+> `src/constants/project.ts`; `isValidProjectId()` now guards both query paths.
+
 ## Supabase Project
 - Project ref: `thpnkluejymycxmiavjp`
 - Region: AWS eu-central-1

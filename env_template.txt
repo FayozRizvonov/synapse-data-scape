@@ -42,6 +42,17 @@ CORS_ORIGINS=["http://localhost:3000", "https://yourdomain.com"]
 
 # Redis Configuration (for caching)
 REDIS_URL=redis://localhost:6379
+
+# Optional override for PyMC sampling cores
+# MMM_SAMPLE_CORES=4
+
+# Legacy monthly->weekly upsampling. Off by default: it fabricates a +/-30%
+# within-month sawtooth in every variable and inflates r2 (see CLAUDE.md ->
+# ML/Analytics). Set to 1 ONLY to reproduce the pinned client-demo fit.
+# MMM_UPSAMPLE_MONTHLY=1
+
+# The project the demo UI reads from. Must be a real brands.id uuid.
+# VITE_DEMO_PROJECT_ID=550e8400-e29b-41d4-a716-446655440000
 REDIS_PASSWORD=your_redis_password
 
 # Background Tasks
