@@ -201,6 +201,7 @@ Copy `env_template.txt` to `.env`. Key variables:
 - `REDIS_URL` — Celery broker + result backend (default `redis://localhost:6379/0`)
 - `SUPABASE_JWT_SECRET` — verify user tokens locally instead of calling `/auth/v1/user` per request
 - `MMM_SAMPLE_CORES` — optional override for PyMC sampling cores
+- `MMM_UPSAMPLE_MONTHLY` — legacy monthly→weekly expansion; off by default, see *ML/Analytics*
 - `DEFAULT_MODEL_TYPE` — `DLT` / `KTR` / `LINEAR`; **legacy Orbit path only**, does not affect PyMC5
 
 > The worker reads credentials straight from `os.environ` — `mmm_claire/src/database/*` never calls
@@ -237,7 +238,13 @@ Copy `env_template.txt` to `.env`. Key variables:
   from name-matching.
 - Input contract: `data.csv` (long format: `date,region,sub_brand,variable,value`), `info.csv`
   (`variable,type,subtype,variation_level,expected_sign`), optional `spend.csv` (enables ROI).
-  Monthly input is converted to weekly before modeling.
+  **The model fits the data's native frequency** — monthly input is modelled monthly.
+  `MMM_UPSAMPLE_MONTHLY=1` restores the legacy monthly→weekly expansion, but don't: its
+  `1 + 0.3*sin(2πi/4)` split fabricates a ±30% within-month sawtooth in *every* variable, which
+  was 42.5% of weekly target variance and inflated weekly r² to 0.398 while the same predictions
+  scored 0.052 on real months. It also quadrupled the row count (33→132), understating posterior
+  sd ~2× so the R-hat/ESS gates passed on fabricated volume. Any `fit_metrics` r² stored before
+  2026-10-19 came from that path and is not comparable.
 - Outputs: 12 types (coefficients, contributions, ROI, marginal ROI, adstock/saturation curves,
   predictions, fit metrics, channel efficiency, …) written to `mmm_model_outputs`, one row per type.
 - Sampling: 4 chains, 1000 draws / 1000 tune, `target_accept` 0.95–0.97; the stability controller

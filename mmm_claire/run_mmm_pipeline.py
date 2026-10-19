@@ -29,7 +29,12 @@ from src.validation.small_data_checks import small_data_warnings
 from src.logger import get_logger
 from src.parser.build_tensors import build_tensors, build_spend_tensor
 from src.config import SPEND_FILE
-from src.preprocessing.monthly_to_weekly import convert_monthly_to_weekly
+from src.preprocessing.monthly_to_weekly import (
+    resolve_model_frequency,
+    convert_monthly_to_weekly,
+    aggregate_to_monthly,
+    detect_frequency,
+)
 from src.io.load_spend import load_spend
 from src.model.economic_sanity_checks import run_economic_sanity_checks
 from src.model.stability_controller import run_stable_model
@@ -190,14 +195,21 @@ def run_pipeline(
     # -----------------------------------------------------------------------
     # 2. BUILD TENSORS
     # -----------------------------------------------------------------------
-    data, original_freq, model_freq = convert_monthly_to_weekly(data)
+    data, original_freq, model_freq = resolve_model_frequency(data)
 
     bundle = build_tensors(data, info)
     bundle["original_frequency"] = original_freq
     bundle["model_frequency"]    = model_freq
 
-    assert bundle["model_frequency"] == "weekly", \
-        "Model frequency is not weekly. Conversion failed."
+    if model_freq not in ("weekly", "monthly"):
+        raise ValueError(
+            f"Unsupported model frequency {model_freq!r}; expected 'weekly' or 'monthly'."
+        )
+
+    logger.info(
+        f"Modeling at {model_freq} frequency "
+        f"(source data was {original_freq}, T={bundle['shapes']['T']})"
+    )
 
     small_data_warnings(bundle)
 
@@ -210,9 +222,23 @@ def run_pipeline(
         spend_df = load_spend(_spend_path)
         spend_df = spend_df.rename(columns={"media": "variable", "spend": "value"})
 
-        if bundle["model_frequency"] == "weekly":
+        # Spend must share the model's frequency, or ROI divides mismatched grids.
+        spend_freq = detect_frequency(spend_df)
+
+        if spend_freq == bundle["model_frequency"]:
+            logger.info(f"Spend already {spend_freq}; no conversion needed")
+
+        elif bundle["model_frequency"] == "weekly" and spend_freq == "monthly":
+            logger.warning(
+                "Spend is monthly but the model is weekly — expanding spend with the "
+                "harmonic split. ROI and the saturation curves the optimizer reads "
+                "will carry that synthetic within-month pattern."
+            )
             spend_df, _, _ = convert_monthly_to_weekly(spend_df)
-            logger.info("Spend converted to weekly frequency")
+
+        elif bundle["model_frequency"] == "monthly" and spend_freq == "weekly":
+            spend_df = aggregate_to_monthly(spend_df)
+            logger.info("Weekly spend aggregated to monthly to match the model")
 
         spend_df = spend_df.rename(columns={"variable": "media", "value": "spend"})
         bundle   = build_spend_tensor(spend_df, bundle)
