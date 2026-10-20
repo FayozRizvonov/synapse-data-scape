@@ -67,6 +67,11 @@ def build_pymc_model(bundle, prior_config=None):
         else:
             spend_share = np.ones_like(total_spend) / len(total_spend)
     else:
+        # No spend data: every channel is treated as equally informative. total_spend
+        # must still be defined — it is used unconditionally further down for the
+        # spend-strength regulariser, and omitting it raised UnboundLocalError on every
+        # no-spend build, making the pipeline's own "ROI disabled" path unreachable.
+        total_spend = np.ones(C)
         spend_share = np.ones(C) / C
 
     spend_share_tensor = pt.as_tensor_variable(spend_share)

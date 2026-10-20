@@ -25,6 +25,11 @@ from src.validation.validate_info import validate_info
 from src.validation.validate_data import validate_data
 from src.validation.cross_checks import validate_variation_levels
 from src.validation.small_data_checks import small_data_warnings
+from src.validation.holdout import (
+    split_bundle,
+    score_holdout,
+    verify_forward_model,
+)
 
 from src.logger import get_logger
 from src.parser.build_tensors import build_tensors, build_spend_tensor
@@ -151,6 +156,85 @@ def build_governance(diag: dict) -> dict:
     }
 
 
+def holdout_periods_requested() -> int:
+    """
+    How many trailing periods to hold out, from MMM_HOLDOUT_PERIODS.
+
+    Defaults to 0 (disabled), so existing runs are untouched. A malformed value is a
+    configuration mistake and must not silently disable validation.
+    """
+    raw = os.environ.get("MMM_HOLDOUT_PERIODS", "").strip()
+    if not raw:
+        return 0
+    try:
+        n = int(raw)
+    except ValueError:
+        raise ValueError(
+            f"MMM_HOLDOUT_PERIODS must be an integer, got {raw!r}"
+        )
+    if n < 0:
+        raise ValueError(f"MMM_HOLDOUT_PERIODS must not be negative, got {n}")
+    return n
+
+
+def run_holdout_validation(bundle: dict, model_freq: str):
+    """
+    Fit a second model on the earlier periods only and score it on the most recent ones.
+
+    Returns None when disabled or not feasible. Never raises into the main pipeline — a
+    failed validation must not destroy a production model that already sampled fine, so
+    problems are reported in the payload under "error" instead.
+    """
+    n_holdout = holdout_periods_requested()
+    if n_holdout == 0:
+        return None
+
+    T = bundle["shapes"]["T"]
+    if n_holdout >= T:
+        logger.error(
+            f"MMM_HOLDOUT_PERIODS={n_holdout} leaves no training data (T={T}); "
+            "skipping out-of-sample validation."
+        )
+        return {"enabled": True, "error": f"n_holdout {n_holdout} >= T {T}"}
+
+    logger.info(
+        f"Out-of-sample validation enabled: holding out the last {n_holdout} "
+        f"of {T} periods (this fits a second model)"
+    )
+
+    try:
+        train_bundle, split_info = split_bundle(bundle, n_holdout)
+        train_bundle["original_frequency"] = bundle.get("original_frequency")
+        train_bundle["model_frequency"] = bundle.get("model_frequency")
+
+        trace_tr, _diag_tr, _pred_tr, level_tr = run_stable_model(
+            bundle=train_bundle,
+            debug_mode=DEBUG_MODE,
+        )
+
+        # The NumPy forward pass must still mirror pymc_mmm.py, or the scores below are
+        # measuring the wrong model.
+        check = verify_forward_model(trace_tr, train_bundle, model_freq)
+
+        metrics = score_holdout(trace_tr, bundle, split_info, model_freq)
+        metrics["enabled"] = True
+        metrics["train_stability_level"] = int(level_tr)
+        metrics["forward_model_check"] = check
+        metrics["trustworthy"] = bool(check["matches"])
+
+        if not check["matches"]:
+            logger.error(
+                "Holdout scores computed with a forward model that no longer matches "
+                "the PyMC model — treat them as invalid."
+            )
+
+        return metrics
+
+    except Exception as exc:  # noqa: BLE001 - must not fail the production model
+        logger.exception("Out-of-sample validation failed")
+        return {"enabled": True, "error": f"{type(exc).__name__}: {exc}"}
+
+
 def run_pipeline(
     data_path=None,
     info_path=None,
@@ -271,6 +355,15 @@ def run_pipeline(
     logger.info(f"MODEL ACCEPTED at stability level {stability_level}")
 
     # -----------------------------------------------------------------------
+    # 4b. OPTIONAL OUT-OF-SAMPLE VALIDATION
+    # -----------------------------------------------------------------------
+    # Off by default: with MMM_HOLDOUT_PERIODS unset this block does nothing and every
+    # output below is bit-identical to a run without it. When enabled it fits a SECOND
+    # model on the earlier periods only and scores it on the most recent ones; the
+    # production model above still sees all the data, so no existing output changes.
+    holdout_metrics = run_holdout_validation(bundle, model_freq)
+
+    # -----------------------------------------------------------------------
     # 5. POSTERIOR EXTRACTION
     # -----------------------------------------------------------------------
     contrib         = extract_media_contributions(trace=trace, bundle=bundle)
@@ -342,6 +435,9 @@ def run_pipeline(
             "governance":        build_governance(diag),
         },
     }
+
+    if holdout_metrics is not None:
+        outputs["holdout_metrics"] = holdout_metrics
 
     return outputs
 
