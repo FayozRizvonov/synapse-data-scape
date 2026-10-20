@@ -202,6 +202,8 @@ Copy `env_template.txt` to `.env`. Key variables:
 - `SUPABASE_JWT_SECRET` — verify user tokens locally instead of calling `/auth/v1/user` per request
 - `MMM_SAMPLE_CORES` — optional override for PyMC sampling cores
 - `MMM_UPSAMPLE_MONTHLY` — legacy monthly→weekly expansion; off by default, see *ML/Analytics*
+- `MMM_HOLDOUT_PERIODS` — trailing periods to hold out for out-of-sample scoring; `0` (off)
+  by default, see *Out-of-sample validation*
 - `DEFAULT_MODEL_TYPE` — `DLT` / `KTR` / `LINEAR`; **legacy Orbit path only**, does not affect PyMC5
 
 > The worker reads credentials straight from `os.environ` — `mmm_claire/src/database/*` never calls
@@ -281,6 +283,30 @@ project  -> brands.id               -> brands.company_id
 
 > ⚠️ `VITE_CLAIRE_AI_API_KEY` is gone. It was a build-time constant baked into the bundle and shared
 > by every user — it identified nobody. Don't reintroduce a client-side API key.
+
+## Out-of-sample validation
+
+**Every `fit_metrics` number is in-sample.** `r2`, `mape`, `rmse` and `bayesian_r2` all describe
+how well the model reproduces the periods it was fitted to. They say nothing about whether a
+specification generalises, and an agent that searches specifications while scoring itself
+in-sample will converge on overfitting, because that is what in-sample scoring rewards.
+
+`MMM_HOLDOUT_PERIODS=N` (default `0`) holds out the last N periods, fits a **second** model on
+the remainder, and scores it on periods it never saw. The production model still trains on
+everything, so all 13 existing outputs are byte-identical to a run with the flag unset — verified.
+Results land in a new `holdout_metrics` output.
+
+Read `skill_vs_naive` first: it is `1 - rmse/rmse_of_predicting_the_training_mean`. At or below
+zero the model carries no out-of-sample information whatever its r² says. `coverage_90` is the
+share of actuals falling inside the 90% predictive interval — well under 0.9 means the model is
+overconfident. On the 33-month dovato data with `N=6`: skill `+0.065`, coverage `0.50`.
+
+> Scoring needs a forward pass outside PyMC, because adstock is a recursive scan whose length is
+> compiled into the graph. `src/validation/holdout.py` reimplements the model's deterministic
+> forward computation in NumPy and carries adstock across the train/test boundary.
+> `verify_forward_model()` recomputes `mu` for the training window and checks it against the
+> trace's own `mu` (matches to ~1e-16). **If you change the forward model in `pymc_mmm.py`, mirror
+> it in `holdout.py`** — otherwise that check fails and `holdout_metrics.trustworthy` goes false.
 
 ## Client demo — what must not drift
 
