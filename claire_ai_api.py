@@ -431,6 +431,7 @@ async def get_project_status(project_id: str, principal: Principal = Depends(get
 async def approve_model(
     model_id: str,
     approval_notes: Optional[str] = None,
+    override_reason: Optional[str] = None,
     principal: Principal = Depends(get_principal),
 ):
     if not _legacy_db_available or not supabase_mmm_client.is_connected():
@@ -451,14 +452,93 @@ async def approve_model(
         raise HTTPException(status_code=404, detail=f"Model {model_id} not found")
     authorize_project(principal, str(rows[0]["project_id"]))
 
-    success = supabase_mmm_client.approve_model(model_id, principal.user_id, approval_notes)
-    if not success:
-        raise HTTPException(status_code=400, detail="Failed to approve model")
+    gate = supabase_mmm_client.model_gate_status(model_id)
+
+    ok, error = supabase_mmm_client.approve_model(
+        model_id, principal.user_id, approval_notes, override_reason
+    )
+    if not ok:
+        # The database enforces admin membership before it looks at the evidence, so
+        # check that first — otherwise a caller who simply isn't an admin is told the
+        # model failed its gate, which is both wrong and leaks the model's state.
+        if error and "admin" in error.lower():
+            raise HTTPException(
+                status_code=403,
+                detail=(
+                    "Approval requires a signed-in admin of this model's company. "
+                    "A service-role token cannot approve models."
+                ),
+            )
+
+        # A model refused by the governance gate is not a malformed request and not a
+        # server fault — it is a conflict with the model's own evidence. 409 lets a
+        # caller tell "you may not approve this" apart from "something broke".
+        if gate and gate.get("can_approve") is False:
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "message": "Model failed its approval gate",
+                    "blockers": gate.get("blockers", []),
+                    "governance": gate.get("governance"),
+                    "holdout_present": gate.get("holdout_present", False),
+                    "hint": "Pass override_reason to approve anyway; the override is recorded.",
+                },
+            )
+        raise HTTPException(status_code=400, detail=error or "Failed to approve model")
+
+    overridden = bool(override_reason) and bool(gate and gate.get("can_approve") is False)
+    if overridden:
+        logger.warning(
+            f"Model {model_id} approved by {principal.user_id} OVERRIDING gate: "
+            f"{gate.get('blockers')} — reason: {override_reason}"
+        )
 
     return ResponseModel(
         status="success",
-        message="Model approved successfully",
-        data={"model_id": model_id},
+        message=(
+            "Model approved with override" if overridden else "Model approved successfully"
+        ),
+        data={"model_id": model_id, "overridden": overridden},
+    )
+
+
+@app.get("/models/{model_id}/gate-status", response_model=ResponseModel)
+async def model_gate_status(
+    model_id: str,
+    principal: Principal = Depends(get_principal),
+):
+    """
+    Would this model pass its approval gate, and if not, why. Changes nothing.
+    """
+    if not _legacy_db_available or not supabase_mmm_client.is_connected():
+        raise HTTPException(status_code=503, detail="Database not connected")
+
+    try:
+        owner = (
+            supabase_mmm_client.client
+            .from_("mmm_models").select("project_id").eq("id", model_id).limit(1).execute()
+        )
+        rows = owner.data or []
+    except Exception as exc:
+        logger.warning(f"gate-status: model lookup failed for {model_id}: {exc}")
+        raise HTTPException(status_code=503, detail="Could not resolve model owner")
+
+    if not rows:
+        raise HTTPException(status_code=404, detail=f"Model {model_id} not found")
+    authorize_project(principal, str(rows[0]["project_id"]))
+
+    gate = supabase_mmm_client.model_gate_status(model_id)
+    if gate is None:
+        raise HTTPException(status_code=503, detail="Could not read gate status")
+
+    return ResponseModel(
+        status="success",
+        message=(
+            "Model passes its approval gate"
+            if gate.get("can_approve")
+            else "Model is blocked from approval"
+        ),
+        data=gate,
     )
 
 

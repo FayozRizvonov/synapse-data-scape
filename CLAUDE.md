@@ -284,6 +284,37 @@ project  -> brands.id               -> brands.company_id
 > ⚠️ `VITE_CLAIRE_AI_API_KEY` is gone. It was a build-time constant baked into the bundle and shared
 > by every user — it identified nobody. Don't reintroduce a client-side API key.
 
+## Model approval — a gate that binds
+
+`approve_mmm_model` refuses a model whose evidence says no. Before 2026-10-21 it did two
+things wrong: it joined `company_members.company_id = mmm_models.project_id`, but `project_id`
+is a **brands.id**, so the join never matched and approval was impossible for everyone (142
+models, 0 approved, 0 approval records); and the governance verdict the pipeline computed was
+read by nothing.
+
+**Blocking conditions** — missing evidence counts as failure, not as a pass:
+
+| condition | blocked |
+|---|---|
+| no `model_config.governance` | yes — 129 of 142 existing models, all legacy |
+| `governance.passed` ≠ true | yes |
+| holdout present and `trustworthy` ≠ true | yes |
+| holdout present and `skill_vs_naive` ≤ 0 | yes |
+| no holdout at all | allowed — `MMM_HOLDOUT_PERIODS` defaults to 0 |
+
+Holdout evidence is optional but **binding when present**. Pass `override_reason` to approve
+anyway; the override and the blockers it bypassed are recorded in `model_approvals.evidence`.
+
+```bash
+GET  /models/{model_id}/gate-status          # would it pass, and why not — changes nothing
+POST /models/{model_id}/approve              # 409 + blockers when the gate refuses
+POST /models/{model_id}/approve?override_reason=...
+```
+
+> Approval needs a **signed-in admin** of the model's company. A service-role token gets 403 —
+> `auth.uid()` is null for it, and the DB check is deliberately a second layer behind
+> `authorize_project`. Automation cannot self-approve.
+
 ## Out-of-sample validation
 
 **Every `fit_metrics` number is in-sample.** `r2`, `mape`, `rmse` and `bayesian_r2` all describe
