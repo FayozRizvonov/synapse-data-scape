@@ -602,9 +602,9 @@ export const getScenarioComparisons = (): MetricCard[] => [
     details: {
       description: 'Baseline scenario based on current marketing plan',
       breakdown: [
-        { label: 'Total Spend', value: '$265K' },
+        { label: 'Media Spend', value: '$1.20M' },
         { label: 'Projected Sales', value: '$21.3M' },
-        { label: 'ROI Multiple', value: '2.7x' },
+        { label: 'Incremental ROI', value: '2.7x' },
         { label: 'Profit Margin', value: '18%' }
       ]
     }
@@ -624,9 +624,9 @@ export const getScenarioComparisons = (): MetricCard[] => [
     details: {
       description: 'Optimistic scenario with increased marketing investment',
       breakdown: [
-        { label: 'Total Spend', value: '$305K (+15%)' },
+        { label: 'Media Spend', value: '$1.38M (+15%)' },
         { label: 'Projected Sales', value: '$24.5M' },
-        { label: 'ROI Multiple', value: '2.9x' },
+        { label: 'Incremental ROI', value: '2.9x' },
         { label: 'Profit Margin', value: '21%' }
       ]
     }
@@ -646,9 +646,9 @@ export const getScenarioComparisons = (): MetricCard[] => [
     details: {
       description: 'Conservative scenario with reduced marketing spend',
       breakdown: [
-        { label: 'Total Spend', value: '$239K (-10%)' },
+        { label: 'Media Spend', value: '$1.08M (-10%)' },
         { label: 'Projected Sales', value: '$19.17M' },
-        { label: 'ROI Multiple', value: '2.4x' },
+        { label: 'Incremental ROI', value: '2.4x' },
         { label: 'Profit Margin', value: '15%' }
       ]
     }

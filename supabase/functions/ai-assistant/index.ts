@@ -200,7 +200,8 @@ REPORT SECTIONS SCHEMA
 }
 
 CRITICAL RULES
-1) English only.
+1) Reply in the SAME language the user wrote in. English and Russian are both fully supported: if the user writes in Russian, answer entirely in Russian. This applies to every piece of prose you produce — the top-level "text", section titles, "short" lines, snapshot points, recommendations, and chart axis and series labels.
+   JSON FIELD NAMES ARE NOT PROSE. Keys such as "type", "report", "sections", "title", "short", "full", "snapshot", "chart", "recommendations", "x", "y", "categories", "series", "name", "data", "style" and the values of "type" ("text" | "report" | "card") must stay exactly as specified, in English — the client parses them and will fail if they are translated.
 2) **Max 2 sections** per report (prefer 1 if it answers the question).
 3) Each section: **max 2 snapshot points** and **max 2 recommendations**.
 4) Include a 'Forecast (Optimized)' series ONLY when the user asks for a forecast; otherwise prefer 2–4 series that best answer the question (e.g., Actual vs Baseline vs Target vs Competitor; or top vs bottom Regions/Channels; or YoY vs QoQ).
