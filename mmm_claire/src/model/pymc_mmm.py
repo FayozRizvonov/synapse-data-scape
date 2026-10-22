@@ -118,18 +118,49 @@ def build_pymc_model(bundle, prior_config=None):
 
         intercept = pm.Normal("intercept", 0, 1)
 
-        if geometry_mode == "monthly_constrained":
-            beta_trend = pm.Normal("beta_trend", 0, 0.05)
-        else:
-            beta_trend = pm.Normal("beta_trend", 0, 0.1)
+        # A search may switch the trend off or change the number of seasonal harmonics.
+        # PyMC consumes random draws in declaration order, so a spec that is
+        # mathematically identical but declared differently samples differently —
+        # the default spec therefore takes the original blocks verbatim and only a
+        # genuinely different spec reaches the generalised code below.
+        _spec = bundle.get("spec")
+        _default_harmonics = 2 if model_frequency == "weekly" else 1
+        _use_trend = True if _spec is None else bool(_spec.trend)
+        _harmonics = (
+            _default_harmonics if _spec is None else int(_spec.seasonality_harmonics)
+        )
 
-        trend = beta_trend * pt.arange(T)[:, None, None]
+        if _use_trend:
+            if geometry_mode == "monthly_constrained":
+                beta_trend = pm.Normal("beta_trend", 0, 0.05)
+            else:
+                beta_trend = pm.Normal("beta_trend", 0, 0.1)
+
+            trend = beta_trend * pt.arange(T)[:, None, None]
+        else:
+            trend = pt.zeros((T, 1, 1))
 
         # --------------------------------------------------------
         # SEASONALITY (frequency aware)
         # --------------------------------------------------------
 
-        if model_frequency == "weekly":
+        if _harmonics != _default_harmonics:
+            # Generalised path — only reached for a non-default spec.
+            _period = 52.0 if model_frequency == "weekly" else 12.0
+            _t = pt.arange(T)
+            _terms = []
+            for _k in range(1, _harmonics + 1):
+                _s = pm.Normal(f"seasonality_sin{_k}", 0, 0.3)
+                _c = pm.Normal(f"seasonality_cos{_k}", 0, 0.3)
+                _terms.append(
+                    _s * pt.sin(2 * _k * np.pi * _t / _period)
+                    + _c * pt.cos(2 * _k * np.pi * _t / _period)
+                )
+            season = (
+                sum(_terms)[:, None, None] if _terms else pt.zeros((T, 1, 1))
+            )
+
+        elif model_frequency == "weekly":
 
             # Weekly seasonality (52-week cycle)
             week = pt.arange(T)

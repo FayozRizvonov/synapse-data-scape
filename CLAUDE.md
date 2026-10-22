@@ -202,6 +202,9 @@ Copy `env_template.txt` to `.env`. Key variables:
 - `SUPABASE_JWT_SECRET` — verify user tokens locally instead of calling `/auth/v1/user` per request
 - `MMM_SAMPLE_CORES` — optional override for PyMC sampling cores
 - `MMM_UPSAMPLE_MONTHLY` — legacy monthly→weekly expansion; off by default, see *ML/Analytics*
+- `MMM_SPEC_SEARCH` — search model specifications, scored out-of-sample; off by default,
+  requires `MMM_HOLDOUT_PERIODS`. Tune with `MMM_SEARCH_DRAWS` / `MMM_SEARCH_CHAINS` /
+  `MMM_SEARCH_ROUNDS` / `MMM_SEARCH_MAX_FITS`
 - `MMM_HOLDOUT_PERIODS` — trailing periods to hold out for out-of-sample scoring; `0` (off)
   by default, see *Out-of-sample validation*
 - `DEFAULT_MODEL_TYPE` — `DLT` / `KTR` / `LINEAR`; **legacy Orbit path only**, does not affect PyMC5
@@ -283,6 +286,43 @@ project  -> brands.id               -> brands.company_id
 
 > ⚠️ `VITE_CLAIRE_AI_API_KEY` is gone. It was a build-time constant baked into the bundle and shared
 > by every user — it identified nobody. Don't reintroduce a client-side API key.
+
+## Specification search
+
+The specification used to be fixed in code: every control in `info.csv` included,
+seasonality one harmonic monthly / two weekly, a linear trend always on. Those are
+modelling choices, not facts.
+
+`MMM_SPEC_SEARCH=1` (needs `MMM_HOLDOUT_PERIODS > 0`, and refuses to run without it)
+searches one-step changes to the specification — which controls, how many seasonal
+harmonics, trend on/off — fitting each candidate and scoring it on periods the model
+never saw. It optimises `skill_vs_naive`, never in-sample fit, because in-sample fit is
+the score a search will exploit: it rewards adding parameters, and on 33 observations
+there is ample room to add parameters that explain nothing.
+
+A candidate must beat the incumbent by `min_improvement` (default 0.01). **A tie keeps
+the incumbent.** An earlier version also moved to the simpler of two tied specs, which
+seemed principled and was not — each tie licensed another step, so on flat ground the
+search stripped the model down round after round and the winner depended on the round
+budget rather than the evidence.
+
+Everything tried is recorded in the `spec_search` output with its score, so a conclusion
+can be interrogated rather than taken on trust. The winner is then refitted at full
+sampling settings; search fits use `MMM_SEARCH_DRAWS` (400) and `MMM_SEARCH_CHAINS` (2).
+
+On the 33-month dovato data, holdout 6 — it dropped the competitor control and added a
+harmonic, nearly quadrupling out-of-sample skill and fixing most of the overconfidence:
+
+| | skill_vs_naive | coverage_90 |
+|---|---|---|
+| default `controls=[comp1,ex_1,ex_2] harmonics=1 trend=on` | +0.0621 | 0.50 |
+| **winner** `controls=[ex_1,ex_2] harmonics=2 trend=on` | **+0.2294** | **0.83** |
+
+> **The default spec must stay bit-identical.** PyMC consumes random draws in declaration
+> order, so a mathematically identical spec declared differently samples differently.
+> `build_pymc_model` keeps the original trend and seasonality blocks verbatim and only a
+> genuinely different spec reaches the generalised path. Verified: with the flag unset all
+> 12 output CSVs are byte-identical to a pre-change baseline.
 
 ## Model approval — a gate that binds
 
