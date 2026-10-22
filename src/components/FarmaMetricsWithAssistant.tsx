@@ -647,20 +647,24 @@ const FarmaMetricsWithAssistant = () => {
     {
       id: 'roi',
       title: 'ROI',
-      value: '6x',
+      value: '2.7x',
       change: '+21.7%',
       changeType: 'positive',
-      comparison: 'Return on Investment',
+      comparison: 'Incremental Return on Investment',
       icon: TrendingUp,
       category: 'situation',
       section: 'situation',
-      description: 'Overall return on investment for all marketing and sales activities.',
+      description: 'Media-driven revenue per dollar of media spend.',
       details: {
-        description: 'Overall return on investment for all marketing and sales activities.',
+        // Was Revenue $21.3M / Spend $0.7M / ROI 6x — no two of those agreed
+        // (21.3/0.7 = 30x). Aligned to the scenario story: incremental ROI, so
+        // media-driven revenue = spend x ROI and the three figures reconcile.
+        description: 'Media-driven revenue per dollar of media spend. Total revenue also includes base (non-media) demand.',
         breakdown: [
           { label: 'Total Revenue', value: '$21.3M' },
-          { label: 'Total Spend', value: '$0.7M' },
-          { label: 'ROI', value: '6x' }
+          { label: 'Media Spend', value: '$1.20M' },
+          { label: 'Media-driven Revenue', value: '$3.24M' },
+          { label: 'Incremental ROI', value: '2.7x' }
         ]
       }
     },
