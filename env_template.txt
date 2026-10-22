@@ -98,3 +98,9 @@ ENABLE_CORS=true
 PRODUCTION=false
 SSL_CERT_FILE=
 SSL_KEY_FILE=
+
+# Dataset watcher: project uuids to retrain when their data changes in Storage.
+# Empty disables it entirely. Needs the worker started with embedded beat:
+#   npm run worker:watch
+# MMM_WATCH_PROJECTS=
+# MMM_WATCH_INTERVAL_SECONDS=900

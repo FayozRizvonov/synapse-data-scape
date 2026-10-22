@@ -24,8 +24,14 @@ celery_app = Celery(
     "mmm_claire",
     broker=REDIS_URL,
     backend=REDIS_URL,
-    include=["src.workers.model_worker"],
+    include=["src.workers.model_worker", "src.workers.scheduler"],
 )
+
+# Watch datasets for changes and retrain when they move. The schedule is registered
+# unconditionally, but it only does anything when a beat process is running AND
+# MMM_WATCH_PROJECTS lists something — so a plain worker is unaffected:
+#   celery -A src.workers.celery_app beat --loglevel=info
+_WATCH_INTERVAL = float(os.environ.get("MMM_WATCH_INTERVAL_SECONDS", "900"))
 
 celery_app.conf.update(
     task_serializer="json",
@@ -40,4 +46,13 @@ celery_app.conf.update(
     task_time_limit=4200,        # 70 min hard kill
     worker_prefetch_multiplier=1,
     task_acks_late=True,         # ack only after task completes (safe re-queue on crash)
+    beat_schedule={
+        "watch-datasets": {
+            "task": "mmm_claire.workers.scheduler.check_datasets",
+            "schedule": _WATCH_INTERVAL,
+            # A check that has been waiting longer than the interval is stale — the next
+            # one will see the same state, so running both achieves nothing.
+            "options": {"expires": _WATCH_INTERVAL},
+        }
+    },
 )
