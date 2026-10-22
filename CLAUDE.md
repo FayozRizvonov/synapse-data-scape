@@ -205,6 +205,8 @@ Copy `env_template.txt` to `.env`. Key variables:
 - `MMM_SPEC_SEARCH` — search model specifications, scored out-of-sample; off by default,
   requires `MMM_HOLDOUT_PERIODS`. Tune with `MMM_SEARCH_DRAWS` / `MMM_SEARCH_CHAINS` /
   `MMM_SEARCH_ROUNDS` / `MMM_SEARCH_MAX_FITS`
+- `MMM_WATCH_PROJECTS` — project uuids to watch for new data and retrain; empty (off) by
+  default. `MMM_WATCH_INTERVAL_SECONDS` sets the poll interval (900)
 - `MMM_HOLDOUT_PERIODS` — trailing periods to hold out for out-of-sample scoring; `0` (off)
   by default, see *Out-of-sample validation*
 - `DEFAULT_MODEL_TYPE` — `DLT` / `KTR` / `LINEAR`; **legacy Orbit path only**, does not affect PyMC5
@@ -323,6 +325,45 @@ harmonic, nearly quadrupling out-of-sample skill and fixing most of the overconf
 > `build_pymc_model` keeps the original trend and seasonality blocks verbatim and only a
 > genuinely different spec reaches the generalised path. Verified: with the flag unset all
 > 12 output CSVs are byte-identical to a pre-change baseline.
+
+## Automatic retraining — triggered by data, not by the clock
+
+Until 2026-10-22 nothing ever started a training run on its own: every model in the
+database exists because a person asked for it.
+
+`src/workers/scheduler.py` closes that. It deliberately does **not** retrain on a
+schedule — a nightly retrain of an unchanged dataset burns 10–30 minutes of MCMC to
+reproduce the model you already had, and buries the runs that mattered among hundreds
+that did not. It watches for *new data* instead, and enqueues training only when a
+project's dataset fingerprint moves.
+
+Fingerprinting costs one Storage `list()` per project and **no downloads**: Supabase
+exposes each object's `eTag`, which is the md5 of its contents (verified against
+`download()` for all three dataset files). Polling every few minutes is therefore cheap.
+
+```bash
+# worker with embedded beat — one process does both
+MMM_WATCH_PROJECTS=<uuid>[,<uuid>…] npm run worker:watch
+```
+
+| guard | behaviour |
+|---|---|
+| `MMM_WATCH_PROJECTS` empty (default) | does nothing at all — **the demo cannot be retrained by accident** |
+| project seen for the first time | records a baseline, enqueues **nothing**; fires on the *next* change |
+| dataset unchanged | nothing |
+| a run already queued/running | deferred, fingerprint left pending so the next poll retries |
+| dataset unreadable | skipped — **not** treated as unchanged, and never adopted as the baseline |
+| run record could not be created | fingerprint not advanced, so the change stays pending |
+| one project fails | the others still run |
+
+The fingerprint advances **only after** work is actually queued; advancing it earlier
+would remember a failure as "handled" and the change would never be retried.
+`has_active_run` answers True when it cannot tell, because refusing to enqueue is the safe
+failure — two PyMC5 runs on one machine is not.
+
+Interval is `MMM_WATCH_INTERVAL_SECONDS` (default 900). The run records why it fired in
+`mmm_runs.dataset_info` (`trigger: dataset_changed` plus the per-file eTags).
+
 
 ## Model approval — a gate that binds
 

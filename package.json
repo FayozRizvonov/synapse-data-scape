@@ -8,6 +8,7 @@
     "dev:all": "npm run bootstrap:api && concurrently -k -n API,WEB -c blue,green \"npm:api\" \"npm:dev\"",
     "dev:mmm": "npm run bootstrap:api && concurrently -k -n API,WEB,WORKER -c blue,green,magenta \"npm:api\" \"npm:dev\" \"npm:worker\"",
     "worker": "node scripts/run-worker.cjs",
+    "worker:watch": "node scripts/run-worker.cjs -B",
     "bootstrap:api": "node scripts/bootstrap-api.cjs",
     "build": "vite build",
     "build:dev": "vite build --mode development",
