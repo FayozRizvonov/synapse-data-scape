@@ -50,6 +50,19 @@ const corsHeaders = {
 // Types (mirrors src/types/agent-contract.ts for runtime use)
 // ---------------------------------------------------------------------------
 
+// Voice latency is the sum of three serial OpenAI calls — Whisper, GPT-4o, TTS —
+// and nothing is heard until all three finish. Two of them are tunable here.
+//
+// tts-1-hd optimises for audio quality; tts-1 is the latency-optimised model and is the
+// better default when someone is sitting waiting to hear the answer. Override with
+// TTS_MODEL to compare without a redeploy.
+const TTS_MODEL = Deno.env.get("TTS_MODEL") ?? "tts-1";
+
+// TTS time scales with how much text it is given, so the cap on the spoken answer is a
+// latency control, not just a cost one. 1200 tokens is roughly 900 words — about six
+// minutes of speech. The prompt asks for concision; this enforces it.
+const VOICE_MAX_TOKENS = Number(Deno.env.get("VOICE_MAX_TOKENS") ?? "300");
+
 type AgentModality = "chat" | "voice";
 
 interface AgentRequest {
@@ -473,6 +486,9 @@ async function runVoicePipeline(
   const audioBlob = new Blob([binaryData], { type: `audio/${audioFormat}` });
 
   // Step 2: Whisper transcription
+  // Per-stage timings. Voice latency is the sum of three serial calls and it was
+  // not previously visible which one dominated.
+  const tVoiceStart = Date.now();
   console.log("🎤 Voice: transcribing with Whisper...");
   const formData = new FormData();
   formData.append("file", audioBlob, `audio.${fileExt}`);
@@ -519,7 +535,7 @@ async function runVoicePipeline(
     const ttsFallback = await fetch("https://api.openai.com/v1/audio/speech", {
       method: "POST",
       headers: { Authorization: authHeaderValue, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "tts-1-hd", voice: "ash", input: fallbackText, response_format: "mp3" }),
+      body: JSON.stringify({ model: TTS_MODEL, voice: "ash", input: fallbackText, response_format: "mp3" }),
     });
     let fallbackAudio = "";
     if (ttsFallback.ok) {
@@ -547,7 +563,8 @@ async function runVoicePipeline(
     };
   }
 
-  console.log("🎤 Transcript:", transcript);
+  const tSttMs = Date.now() - tVoiceStart;
+  console.log(`🎤 Transcript (${tSttMs}ms):`, transcript);
 
   // Step 3: GPT-4o analysis
   const gptMessages: Array<{ role: string; content: string }> = [
@@ -565,11 +582,12 @@ async function runVoicePipeline(
   }
   gptMessages.push({ role: "user", content: transcript });
 
+  const tGptStart = Date.now();
   console.log("🤖 Voice: calling GPT-4o...");
   const gptRes = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: authHeaderValue, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "gpt-4o", messages: gptMessages, temperature: 0.7, max_tokens: 1200 }),
+    body: JSON.stringify({ model: "gpt-4o", messages: gptMessages, temperature: 0.7, max_tokens: VOICE_MAX_TOKENS }),
   });
 
   if (!gptRes.ok) {
@@ -611,12 +629,14 @@ async function runVoicePipeline(
   }
 
   // Step 4: TTS
-  console.log("🔊 Voice: generating TTS audio...");
+  const tGptMs = Date.now() - tGptStart;
+  const tTtsStart = Date.now();
+  console.log(`🔊 Voice: generating TTS audio (${TTS_MODEL}, ${answerText.length} chars to speak)...`);
   const ttsText = answerText.length > 4000 ? answerText.slice(0, 4000) + "..." : answerText;
   const ttsRes = await fetch("https://api.openai.com/v1/audio/speech", {
     method: "POST",
     headers: { Authorization: authHeaderValue, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "tts-1-hd", voice: "ash", input: ttsText, response_format: "mp3" }),
+    body: JSON.stringify({ model: TTS_MODEL, voice: "ash", input: ttsText, response_format: "mp3" }),
   });
 
   if (!ttsRes.ok) {
@@ -626,7 +646,7 @@ async function runVoicePipeline(
       companyId: ctx.companyId,
       modality: "voice",
       functionName: "orchestrator/voice",
-      modelName: "tts-1-hd",
+      modelName: TTS_MODEL,
       status: "error",
       errorCode: String(ttsRes.status),
       errorMessage: "TTS generation failed",
@@ -646,6 +666,14 @@ async function runVoicePipeline(
   const audioBuffer = await ttsRes.arrayBuffer();
   const audioBase64 = base64Encode(new Uint8Array(audioBuffer));
   const latencyMs = Date.now() - startTime;
+
+  // The breakdown, so the next person tuning this starts from numbers. All three stages
+  // are serial: nothing is heard until the last one finishes.
+  const tTtsMs = Date.now() - tTtsStart;
+  console.log(
+    `⏱️  Voice latency ${latencyMs}ms = whisper ${tSttMs}ms + gpt ${tGptMs}ms + ` +
+    `tts ${tTtsMs}ms (${TTS_MODEL}, ${ttsText.length} chars) + ${latencyMs - tSttMs - tGptMs - tTtsMs}ms other`,
+  );
 
   await logInvocation({
     correlationId: reqBody.correlation_id,
