@@ -32,6 +32,9 @@ from src.logger import get_logger
 
 logger = get_logger(__name__)
 
+# Highest indexed seasonal harmonic the model can declare (see search/spec.py).
+MAX_SEASONAL_HARMONICS = 2
+
 
 # ---------------------------------------------------------------------------
 # splitting
@@ -106,28 +109,43 @@ def _thin(trace, max_draws: int):
 
 
 def _seasonality(params, T: int, model_frequency: str) -> np.ndarray:
-    """Mirror of the season term in pymc_mmm.py. Returns (draws, T)."""
+    """
+    Mirror of the season term in pymc_mmm.py. Returns (draws, T).
+
+    Reads whichever seasonality variables the trace actually contains rather than
+    assuming a layout, because the model names them two ways: the monthly default
+    declares `seasonality_sin`/`seasonality_cos`, while the weekly default and every
+    searched spec use the indexed `seasonality_sin{k}`/`seasonality_cos{k}`. A spec
+    with zero harmonics declares none at all.
+    """
     t = np.arange(T)
+    period = 52.0 if model_frequency == "weekly" else 12.0
 
     def g(name):
         return params[name].values.reshape(-1, 1) if name in params else None
 
-    if model_frequency == "weekly":
-        s1, c1 = g("seasonality_sin1"), g("seasonality_cos1")
-        s2, c2 = g("seasonality_sin2"), g("seasonality_cos2")
-        if s1 is None:
-            return np.zeros((1, T))
-        return (
-            s1 * np.sin(2 * np.pi * t / 52)
-            + c1 * np.cos(2 * np.pi * t / 52)
-            + s2 * np.sin(4 * np.pi * t / 52)
-            + c2 * np.cos(4 * np.pi * t / 52)
+    total = None
+
+    def add(term):
+        nonlocal total
+        total = term if total is None else total + term
+
+    # unindexed pair (the monthly default) is the first harmonic
+    s, c = g("seasonality_sin"), g("seasonality_cos")
+    if s is not None and c is not None:
+        add(s * np.sin(2 * np.pi * t / period) + c * np.cos(2 * np.pi * t / period))
+
+    # indexed harmonics
+    for k in range(1, MAX_SEASONAL_HARMONICS + 1):
+        sk, ck = g(f"seasonality_sin{k}"), g(f"seasonality_cos{k}")
+        if sk is None or ck is None:
+            continue
+        add(
+            sk * np.sin(2 * k * np.pi * t / period)
+            + ck * np.cos(2 * k * np.pi * t / period)
         )
 
-    s, c = g("seasonality_sin"), g("seasonality_cos")
-    if s is None:
-        return np.zeros((1, T))
-    return s * np.sin(2 * np.pi * t / 12) + c * np.cos(2 * np.pi * t / 12)
+    return np.zeros((1, T)) if total is None else total
 
 
 def forward_mu(
@@ -172,10 +190,14 @@ def forward_mu(
 
     # --- base ---
     intercept = params["intercept"].values.reshape(-1, 1, 1, 1)
-    trend = (
-        params["beta_trend"].values.reshape(-1, 1)
-        * np.arange(T)[None, :]
-    )[:, :, None, None]
+
+    # A spec may switch the trend off, in which case beta_trend is never declared.
+    if "beta_trend" in params:
+        trend = (
+            params["beta_trend"].values.reshape(-1, 1) * np.arange(T)[None, :]
+        )[:, :, None, None]
+    else:
+        trend = np.zeros((1, T, 1, 1))
     season = _seasonality(params, T, model_frequency)[:, :, None, None]
 
     beta_c = params["beta_control"].values.T                                # (draws, K)

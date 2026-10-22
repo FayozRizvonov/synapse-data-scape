@@ -177,6 +177,74 @@ def holdout_periods_requested() -> int:
     return n
 
 
+def spec_search_requested() -> bool:
+    """MMM_SPEC_SEARCH enables the specification search. Off by default."""
+    return os.environ.get("MMM_SPEC_SEARCH", "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def run_spec_search(bundle: dict, model_freq: str):
+    """
+    Search for a specification that forecasts held-out periods better than the default.
+
+    Returns ``(search_record, winning_bundle)``. When disabled or not feasible the
+    bundle comes back unchanged, so the caller can always use what it is handed.
+
+    The search needs somewhere to stand: without held-out periods there is no referee,
+    and a search scored in-sample would simply add parameters until it overfit. So this
+    refuses to run rather than silently optimising the wrong thing.
+    """
+    if not spec_search_requested():
+        return None, bundle
+
+    n_holdout = holdout_periods_requested()
+    if n_holdout <= 0:
+        logger.error(
+            "MMM_SPEC_SEARCH is set but MMM_HOLDOUT_PERIODS is not. A specification "
+            "search scored in-sample optimises for overfitting. Skipping the search."
+        )
+        return {
+            "enabled": True,
+            "error": "MMM_SPEC_SEARCH requires MMM_HOLDOUT_PERIODS > 0",
+        }, bundle
+
+    try:
+        from src.model.pymc_mmm import build_pymc_model
+        from src.model.sample_model import sample_model
+        from src.search.search import search_specification
+        from src.search.spec import ModelSpec, apply_to_bundle
+
+        draws = int(os.environ.get("MMM_SEARCH_DRAWS", "400"))
+        chains = int(os.environ.get("MMM_SEARCH_CHAINS", "2"))
+
+        def _fit(candidate_bundle):
+            model = build_pymc_model(candidate_bundle)
+            return sample_model(
+                model, draws=draws, tune=draws, chains=chains, target_accept=0.95
+            )
+
+        record = search_specification(
+            bundle,
+            _fit,
+            n_holdout=n_holdout,
+            model_frequency=model_freq,
+            max_rounds=int(os.environ.get("MMM_SEARCH_ROUNDS", "3")),
+            max_fits=int(os.environ.get("MMM_SEARCH_MAX_FITS", "20")),
+        )
+
+        if record.get("error") or record.get("kept_default", True):
+            return record, bundle
+
+        winner = ModelSpec.from_dict(record["winner"])
+        logger.info(
+            f"SPEC SEARCH | refitting at full draws with {winner.label()}"
+        )
+        return record, apply_to_bundle(bundle, winner)
+
+    except Exception as exc:  # noqa: BLE001 - the default spec must still be fittable
+        logger.exception("Specification search failed; falling back to the default spec")
+        return {"enabled": True, "error": f"{type(exc).__name__}: {exc}"}, bundle
+
+
 def run_holdout_validation(bundle: dict, model_freq: str):
     """
     Fit a second model on the earlier periods only and score it on the most recent ones.
@@ -343,6 +411,10 @@ def run_pipeline(
     # -----------------------------------------------------------------------
     # 4. MODEL EXECUTION
     # -----------------------------------------------------------------------
+    # Optional specification search. Off by default; when on, the winning spec is what
+    # the production model below is then fitted with, at full sampling settings.
+    spec_search, bundle = run_spec_search(bundle, model_freq)
+
     try:
         trace, diag, pred_diag, stability_level = run_stable_model(
             bundle=bundle,
@@ -438,6 +510,12 @@ def run_pipeline(
 
     if holdout_metrics is not None:
         outputs["holdout_metrics"] = holdout_metrics
+
+    if spec_search is not None:
+        outputs["spec_search"] = spec_search
+        outputs["_meta"]["model_spec"] = (
+            bundle["spec"].to_dict() if "spec" in bundle else None
+        )
 
     return outputs
 
