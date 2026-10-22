@@ -2,8 +2,17 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.search.search import Evaluation, search_specification
+from src.search.search import (
+    Evaluation,
+    RollingOriginReferee,
+    SingleHoldoutReferee,
+    plan_search_split,
+    search_specification,
+    selection_independence,
+)
+from src.validation.backtest import aggregate
 from src.search.spec import ModelSpec, apply_to_bundle, default_harmonics, neighbours
+from src.validation.holdout import split_bundle
 
 CONTROLS = ["comp1", "ex_1", "ex_2"]
 
@@ -263,3 +272,235 @@ def test_an_untrustworthy_candidate_is_skipped_not_selected():
 
     assert r["winner"] != target.to_dict()
     assert r["kept_default"] is True
+
+
+# ---------------------------------------------------------------------------
+# the search must not select on the periods its winner is judged on
+# ---------------------------------------------------------------------------
+
+def test_split_plan_reserves_two_windows():
+    """The dovato shape: T=33, report on 6, select on 6, train on 21."""
+    plan = plan_search_split(33, 6, 6)
+    assert plan["feasible"] is True
+    assert plan["reason"] is None
+    assert (plan["n_report"], plan["n_search_holdout"], plan["n_search_train"]) == (6, 6, 21)
+
+
+def test_split_plan_refuses_when_the_series_cannot_carry_both_windows():
+    plan = plan_search_split(18, 6, 6)          # 6 left to train on, under 2x6
+    assert plan["feasible"] is False
+    assert "two holdout windows" in plan["reason"]
+    assert plan["n_search_train"] == 6
+
+
+@pytest.mark.parametrize("n_report,n_search", [(0, 6), (6, 0)])
+def test_split_plan_refuses_a_missing_window(n_report, n_search):
+    """Either window missing means one set of periods would do both jobs."""
+    assert plan_search_split(33, n_report, n_search)["feasible"] is False
+
+
+def test_the_search_never_sees_the_reserved_periods():
+    """
+    The whole point of the reserve: no bundle the search scores may contain a period
+    that holdout_metrics will later report on.
+    """
+    b = make_bundle(T=24)
+    n_report = 6
+
+    search_bundle, reserved = split_bundle(b, n_report)
+    withheld = set(reserved["holdout_periods"])
+    assert withheld, "nothing was reserved"
+
+    seen: set = set()
+
+    def spy(spec, bundle_full, n_holdout, model_frequency, fit):
+        seen.update(str(p) for p in bundle_full["coords"]["time"])
+        assert bundle_full["shapes"]["T"] == 24 - n_report
+        return Evaluation(spec=spec, skill=0.0, rmse=1.0, r2=0.1, coverage_90=0.9,
+                          trustworthy=True)
+
+    import src.search.search as mod
+    original = mod.evaluate_spec
+    mod.evaluate_spec = spy
+    try:
+        search_specification(search_bundle, fit=lambda x: None, n_holdout=4,
+                             model_frequency="monthly")
+    finally:
+        mod.evaluate_spec = original
+
+    assert seen, "the search scored nothing"
+    assert not (seen & withheld), f"the search saw reserved periods: {seen & withheld}"
+
+
+# ---------------------------------------------------------------------------
+# selection_independence — what the approval gate reads
+# ---------------------------------------------------------------------------
+
+def test_no_search_means_the_holdout_is_independent():
+    v = selection_independence(None)
+    assert v["selection_independent"] is True
+    assert "no specification search" in v["selection_note"]
+
+
+def test_a_search_that_failed_leaves_the_holdout_independent():
+    v = selection_independence({"enabled": True, "error": "n_holdout 40 >= T 33"})
+    assert v["selection_independent"] is True
+
+
+def test_keeping_the_default_leaves_the_holdout_independent():
+    """The incumbent's score is its own score, not the maximum over the candidates."""
+    v = selection_independence({"enabled": True, "kept_default": True})
+    assert v["selection_independent"] is True
+
+
+def test_a_reserved_window_makes_a_searched_spec_independent():
+    v = selection_independence(
+        {"enabled": True, "kept_default": False, "evaluation_reserved": True}
+    )
+    assert v["selection_independent"] is True
+    assert "withheld" in v["selection_note"]
+
+
+def test_a_shared_window_is_not_independent():
+    """The defect this guards: selected on the periods reported as its evidence."""
+    v = selection_independence({"enabled": True, "kept_default": False})
+    assert v["selection_independent"] is False
+    assert "maximum over the candidates" in v["selection_note"]
+
+
+# ---------------------------------------------------------------------------
+# the rolling-origin referee inside the search loop
+# ---------------------------------------------------------------------------
+
+def _detail(errors_by_origin, naive_err=10.0, y=100.0):
+    """A backtest payload with known forecast errors, so pairing can be checked."""
+    pts = []
+    for o, errs in errors_by_origin.items():
+        for i, e in enumerate(errs):
+            pts.append({
+                "origin": o, "t": o + i, "step": i + 1, "g": 0, "sb": 0,
+                "period": f"p{o}-{i}", "y": y, "pred": y - e,
+                "naive": y - naive_err, "in_mu_90": True, "in_pred_90": True,
+            })
+    d = aggregate(pts)
+    d.update({"points": pts, "trustworthy": True, "origins": sorted(errors_by_origin),
+              "horizon": 1, "per_origin": []})
+    return d
+
+
+class _StubRolling(RollingOriginReferee):
+    """Real pairing, real decision rule, fabricated forecasts instead of MCMC."""
+
+    def __init__(self, errors_by_label, default_errors, min_improvement=0.01):
+        super().__init__(
+            bundle_full=None, fit=None,
+            plan={"origins": sorted(default_errors), "horizon": 1, "min_train": 0},
+            model_frequency="monthly", min_improvement=min_improvement, n_boot=800,
+        )
+        self.errors_by_label = errors_by_label
+        self.default_errors = default_errors
+
+    def evaluate(self, spec):
+        d = _detail(self.errors_by_label.get(spec.label(), self.default_errors))
+        return Evaluation(spec=spec, skill=d["skill_vs_naive"], rmse=d["rmse"], r2=None,
+                          coverage_90=d["coverage_90_predictive"], trustworthy=True,
+                          detail=d)
+
+
+# incumbent and a candidate that trade wins origin by origin: the mean favours the
+# candidate, but which origins you drew decides the answer.
+NOISY_BASE = {1: [9.0], 2: [1.0], 3: [9.0], 4: [1.0],
+              5: [9.0], 6: [1.0], 7: [9.0], 8: [1.0]}
+NOISY_CAND = {1: [1.0], 2: [9.0], 3: [1.0], 4: [9.0],
+              5: [1.0], 6: [9.0], 7: [1.0], 8: [8.4]}
+CLEAR_CAND = {o: [2.0] for o in NOISY_BASE}
+
+
+def _target():
+    return ModelSpec(("comp1", "ex_2"), 1, True)       # one step: drop ex_1
+
+
+def test_rolling_referee_moves_to_a_demonstrated_winner():
+    ref = _StubRolling({_target().label(): CLEAR_CAND}, NOISY_BASE)
+    r = search_specification(make_bundle(), fit=lambda x: None, n_holdout=3,
+                             model_frequency="monthly", referee=ref)
+
+    assert r["kept_default"] is False
+    assert r["winner"] == _target().to_dict()
+    assert r["winner_vs_baseline"]["demonstrated"] is True
+    assert r["winner_vs_baseline"]["lo"] > 0
+
+
+def test_rolling_referee_refuses_a_gain_it_cannot_demonstrate():
+    """The whole point: positive on average, not distinguishable from the draw."""
+    ref = _StubRolling({_target().label(): NOISY_CAND}, NOISY_BASE)
+    r = search_specification(make_bundle(), fit=lambda x: None, n_holdout=3,
+                             model_frequency="monthly", referee=ref)
+
+    assert r["kept_default"] is True, "an undemonstrated gain must not win"
+    assert r["winner_vs_baseline"] is None
+
+    tried = {h["label"]: h for h in r["history"]}
+    vs = tried[_target().label()]["vs_incumbent"]
+    assert vs["gain"] > 0.01, "the point estimate did favour the candidate"
+    assert vs["lo"] <= 0 and vs["demonstrated"] is False
+
+
+def test_the_old_threshold_would_have_accepted_that_same_candidate():
+    """
+    Same forecasts, same point estimate, opposite verdict — this is the behaviour change.
+    The threshold rule sees a gain above 0.01 and moves; the paired rule sees an interval
+    through zero and stays.
+    """
+    base = _detail(NOISY_BASE)
+    cand = _detail(NOISY_CAND)
+
+    inc_ev = Evaluation(spec=ModelSpec((), 1, True), skill=base["skill_vs_naive"],
+                        rmse=None, r2=None, coverage_90=None, trustworthy=True,
+                        detail=base)
+    cand_ev = Evaluation(spec=_target(), skill=cand["skill_vs_naive"], rmse=None,
+                         r2=None, coverage_90=None, trustworthy=True, detail=cand)
+
+    old = SingleHoldoutReferee(None, None, n_holdout=6, model_frequency="monthly",
+                               min_improvement=0.01)
+    new = _StubRolling({}, NOISY_BASE)
+
+    old_cmp = old.compare(inc_ev, cand_ev)
+    new_cmp = new.compare(inc_ev, cand_ev)
+
+    assert old.decisive(old_cmp) is True,  "the threshold rule accepts it"
+    assert new.decisive(new_cmp) is False, "the paired rule does not"
+    assert old_cmp["gain"] == pytest.approx(new_cmp["gain"], abs=1e-9)
+    assert old_cmp["demonstrated"] is None, "a single window cannot answer this"
+
+
+def test_the_referee_records_how_it_judged():
+    """A pharma client asking why the model has this form needs the protocol, not a score."""
+    ref = _StubRolling({_target().label(): CLEAR_CAND}, NOISY_BASE)
+    r = search_specification(make_bundle(), fit=lambda x: None, n_holdout=3,
+                             model_frequency="monthly", referee=ref)
+
+    d = r["referee"]
+    assert d["referee"] == "rolling_origin"
+    assert d["resampled_over"] == "origins, not points"
+    assert "clears zero" in d["decision_rule"]
+    assert d["n_fits_per_candidate"] == 8
+
+
+def test_the_default_referee_is_still_the_single_holdout():
+    """Nothing changes for callers that do not ask for the new referee."""
+    r = run_with_scores({})
+    assert r["referee"]["referee"] == "single_holdout"
+    assert r["referee"]["n_fits_per_candidate"] == 1
+
+
+def test_history_keeps_the_per_origin_evidence_but_not_every_forecast():
+    """The trail has to be interrogable without storing a row per forecast per candidate."""
+    ref = _StubRolling({_target().label(): CLEAR_CAND}, NOISY_BASE)
+    r = search_specification(make_bundle(), fit=lambda x: None, n_holdout=3,
+                             model_frequency="monthly", referee=ref)
+
+    for h in r["history"]:
+        assert "detail" in h
+        assert "points" not in h["detail"], "per-forecast rows must not reach the output"
+        assert h["detail"]["n_origins"] == 8

@@ -25,19 +25,135 @@ parsimony — a more complex specification has to earn its complexity — withou
 
 Cost is the real constraint: every candidate is a full MCMC fit. The search samples at
 reduced draws, then refits the winner properly.
+
+One thing the search must never be given is the periods its winner will later be judged
+on. `plan_search_split` and `selection_independence` below exist for that; the argument is
+with them.
 """
 
 from __future__ import annotations
 
+import math
 import time
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Sequence
 
 from src.logger import get_logger
 from src.search.spec import ModelSpec, apply_to_bundle, neighbours
+from src.validation.backtest import backtest_spec, paired_gain
+from src.validation.backtest import decisive as backtest_decisive
 from src.validation.holdout import score_holdout, split_bundle, verify_forward_model
 
 logger = get_logger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# keeping the reported holdout out of the search's hands
+# ---------------------------------------------------------------------------
+
+# The search's own holdout must not be more than a third of what the search can see.
+# Below that the scores it selects on are noisier than the quantity it is trying to
+# improve, and the winner is whichever candidate the noise favoured.
+MIN_SEARCH_TRAIN_RATIO = 2
+
+
+def plan_search_split(n_total: int, n_report: int, n_search: int) -> dict:
+    """
+    Decide whether the search can run without seeing the periods that will be reported
+    as its winner's out-of-sample evidence.
+
+    The search chooses a specification by maximising `skill_vs_naive` on held-out
+    periods. If those are the same periods later reported as that specification's
+    holdout evidence, the reported number is the maximum over however many candidates
+    were tried — not an estimate of how the model forecasts. The approval gate binds on
+    that number, so it has to mean what it says.
+
+    The fix is two windows. The last `n_report` periods are withheld from the search
+    entirely and are what `holdout_metrics` reports. The search gets its own holdout of
+    `n_search` periods carved out of what remains, and selects on that.
+
+    Returns a plan; when `feasible` is false, `reason` says why. The caller is expected
+    to skip the search rather than fall back to sharing one window — a contaminated
+    score is worse than no search, because it looks like evidence.
+    """
+    n_search_train = n_total - n_report - n_search
+
+    if n_report <= 0:
+        reason = "no periods are reserved for reporting (MMM_HOLDOUT_PERIODS is 0)"
+    elif n_search <= 0:
+        reason = "the search has no holdout to select on (MMM_SEARCH_HOLDOUT_PERIODS is 0)"
+    elif n_search_train < MIN_SEARCH_TRAIN_RATIO * n_search:
+        reason = (
+            f"T={n_total} cannot carry two holdout windows: reserving {n_report} periods "
+            f"for reporting and {n_search} for selection leaves {n_search_train} to train "
+            f"on, under the {MIN_SEARCH_TRAIN_RATIO}x minimum "
+            f"({MIN_SEARCH_TRAIN_RATIO * n_search}). Lower MMM_SEARCH_HOLDOUT_PERIODS or "
+            "MMM_HOLDOUT_PERIODS, or do not search on a series this short."
+        )
+    else:
+        reason = None
+
+    return {
+        "feasible": reason is None,
+        "reason": reason,
+        "n_total": int(n_total),
+        "n_report": int(n_report),
+        "n_search_holdout": int(n_search),
+        "n_search_train": int(n_search_train),
+    }
+
+
+def selection_independence(spec_search: Optional[dict]) -> dict:
+    """
+    Were the periods the holdout reports on withheld from the specification search?
+
+    Only `True` buys the reported `skill_vs_naive` its usual meaning. Every other answer
+    says the number is a selected maximum, and the approval gate reads this verdict
+    rather than inferring it.
+    """
+    if spec_search is None:
+        return {
+            "selection_independent": True,
+            "selection_note": (
+                "no specification search ran; the specification was not chosen by any score"
+            ),
+        }
+
+    if spec_search.get("error"):
+        return {
+            "selection_independent": True,
+            "selection_note": (
+                "the specification search did not run "
+                f"({spec_search['error']}); the default specification was used"
+            ),
+        }
+
+    if spec_search.get("kept_default", False):
+        return {
+            "selection_independent": True,
+            "selection_note": (
+                "the search kept the default specification, so the reported score is that "
+                "specification's own score and not the best of the candidates tried"
+            ),
+        }
+
+    if spec_search.get("evaluation_reserved", False):
+        return {
+            "selection_independent": True,
+            "selection_note": (
+                "the search selected on earlier periods; the periods reported here were "
+                "withheld from it"
+            ),
+        }
+
+    return {
+        "selection_independent": False,
+        "selection_note": (
+            "the specification was selected by maximising skill on the periods reported "
+            "here, so this score is the maximum over the candidates tried and not "
+            "out-of-sample evidence"
+        ),
+    }
 
 
 @dataclass
@@ -52,9 +168,16 @@ class Evaluation:
     trustworthy: bool
     error: Optional[str] = None
     seconds: float = 0.0
+    # Referee-specific evidence. The rolling-origin referee puts its per-origin scores
+    # and its per-point forecasts here; the per-point forecasts are what make a paired
+    # comparison possible, and they are dropped from `to_dict` because the recorded
+    # history does not need a row per forecast per candidate.
+    detail: Optional[dict] = None
+    # How this candidate compared with the incumbent it was judged against.
+    comparison: Optional[dict] = None
 
     def to_dict(self) -> dict:
-        return {
+        out = {
             "spec": self.spec.to_dict(),
             "label": self.spec.label(),
             "skill_vs_naive": self.skill,
@@ -65,10 +188,20 @@ class Evaluation:
             "error": self.error,
             "seconds": round(self.seconds, 1),
         }
+        if self.detail is not None:
+            out["detail"] = {k: v for k, v in self.detail.items() if k != "points"}
+        if self.comparison is not None:
+            out["vs_incumbent"] = self.comparison
+        return out
 
     @property
     def usable(self) -> bool:
-        return self.error is None and self.trustworthy and self.skill is not None
+        if self.error is not None or not self.trustworthy or self.skill is None:
+            return False
+        # A nan score is not a score. `skill_vs_naive` is nan whenever the naive
+        # baseline had no variance to beat, and nan loses every comparison silently
+        # rather than visibly.
+        return not math.isnan(float(self.skill))
 
 
 def evaluate_spec(
@@ -120,6 +253,173 @@ def evaluate_spec(
         )
 
 
+# ---------------------------------------------------------------------------
+# referees — how one candidate is scored, and how two are compared
+# ---------------------------------------------------------------------------
+#
+# The loop below does not care how a candidate is judged, only whether a comparison was
+# decisive. That split exists because the two referees answer the comparison question
+# very differently: one subtracts two numbers and checks the difference against a fixed
+# threshold, the other forms an interval around the difference and asks whether it clears
+# zero. The second can say "I cannot tell", which is the answer most often true on 33
+# monthly observations and the one the first cannot express.
+
+
+class SingleHoldoutReferee:
+    """
+    One fit per candidate, scored on one trailing window, compared with a threshold.
+
+    The original referee, kept as the default so existing behaviour is unchanged. Its
+    limitation is not fixable by tuning: on the dovato shape its score has a sampling sd
+    of about 0.26, so the 0.01 threshold is 0.04 of one standard deviation. It stops the
+    search random-walking across ties, which is what it was built for, and it cannot
+    distinguish a real gain from a lucky one.
+    """
+
+    name = "single_holdout"
+
+    def __init__(self, bundle_full, fit, *, n_holdout, model_frequency,
+                 min_improvement=0.01):
+        self.bundle_full = bundle_full
+        self.fit = fit
+        self.n_holdout = n_holdout
+        self.model_frequency = model_frequency
+        self.min_improvement = min_improvement
+
+    def evaluate(self, spec: ModelSpec) -> Evaluation:
+        # Resolved from module globals at call time, so tests can substitute it.
+        return evaluate_spec(
+            spec, self.bundle_full, self.n_holdout, self.model_frequency, self.fit
+        )
+
+    def compare(self, incumbent: Evaluation, candidate: Evaluation) -> dict:
+        if incumbent.skill is None or candidate.skill is None:
+            return {"gain": None, "demonstrated": None, "reason": "a score is missing"}
+        return {
+            "gain": candidate.skill - incumbent.skill,
+            # This referee has one number per candidate and no way to put an interval
+            # around their difference. Not "no" — unknown.
+            "demonstrated": None,
+            "min_improvement": self.min_improvement,
+            "basis": "two scores from one holdout window, subtracted",
+        }
+
+    def decisive(self, comparison: dict) -> bool:
+        gain = comparison.get("gain")
+        return gain is not None and gain > self.min_improvement
+
+    def describe(self) -> dict:
+        return {
+            "referee": self.name,
+            "n_holdout": self.n_holdout,
+            "min_improvement": self.min_improvement,
+            "n_fits_per_candidate": 1,
+            "decision_rule": "gain > min_improvement",
+            "caveat": (
+                "a single window cannot bound the noise on its own score, so a gain "
+                "below that noise is indistinguishable from selection"
+            ),
+        }
+
+
+class RollingOriginReferee:
+    """
+    Expanding-window origins per candidate, compared point by point with a bootstrap
+    interval over origins.
+
+    Every candidate is scored on the same (origin, period) forecasts, so the comparison
+    is paired: the shared difficulty of the periods cancels, leaving the difference
+    between the specifications. A candidate wins only when the interval on that
+    difference clears zero — see `validation.backtest.decisive`.
+
+    Costs one MCMC fit per origin per candidate. That is the trade: resolution is bought
+    with evaluation points, and it cannot be bought with candidates.
+    """
+
+    name = "rolling_origin"
+
+    def __init__(self, bundle_full, fit, *, plan, model_frequency,
+                 min_improvement=0.01, max_draws=500, n_boot=2000, seed=0):
+        self.bundle_full = bundle_full
+        self.fit = fit
+        self.plan = plan
+        self.model_frequency = model_frequency
+        self.min_improvement = min_improvement
+        self.max_draws = max_draws
+        self.n_boot = n_boot
+        self.seed = seed
+
+    def evaluate(self, spec: ModelSpec) -> Evaluation:
+        started = time.time()
+        try:
+            scored = apply_to_bundle(self.bundle_full, spec)
+            scored["model_frequency"] = self.model_frequency
+            scored["original_frequency"] = self.bundle_full.get("original_frequency")
+
+            result = backtest_spec(
+                scored,
+                self.fit,
+                origins=self.plan["origins"],
+                horizon=self.plan["horizon"],
+                model_frequency=self.model_frequency,
+                max_draws=self.max_draws,
+                seed=self.seed,
+            )
+
+            return Evaluation(
+                spec=spec,
+                skill=result["skill_vs_naive"],
+                rmse=result["rmse"],
+                r2=None,
+                # The predictive interval, which includes observation noise — not the
+                # narrower mu interval `holdout.score_holdout` reports. Both are in
+                # `detail`.
+                coverage_90=result["coverage_90_predictive"],
+                trustworthy=bool(result["trustworthy"]),
+                detail=result,
+                seconds=time.time() - started,
+            )
+
+        except Exception as exc:  # noqa: BLE001 - a bad candidate must not end the search
+            logger.warning(
+                f"Candidate rejected ({spec.label()}): {type(exc).__name__}: {exc}"
+            )
+            return Evaluation(
+                spec=spec, skill=None, rmse=None, r2=None, coverage_90=None,
+                trustworthy=False, error=f"{type(exc).__name__}: {exc}",
+                seconds=time.time() - started,
+            )
+
+    def compare(self, incumbent: Evaluation, candidate: Evaluation) -> dict:
+        if incumbent.detail is None or candidate.detail is None:
+            return {"gain": None, "demonstrated": None,
+                    "reason": "a candidate has no backtest to pair against"}
+        return paired_gain(
+            incumbent.detail, candidate.detail, n_boot=self.n_boot, seed=self.seed
+        )
+
+    def decisive(self, comparison: dict) -> bool:
+        return backtest_decisive(comparison, self.min_improvement)
+
+    def describe(self) -> dict:
+        return {
+            "referee": self.name,
+            "origins": self.plan["origins"],
+            "horizon": self.plan["horizon"],
+            "min_train": self.plan["min_train"],
+            "min_improvement": self.min_improvement,
+            "n_fits_per_candidate": len(self.plan["origins"]),
+            "n_boot": self.n_boot,
+            "decision_rule": (
+                "the 90% bootstrap interval on the paired gain clears zero AND the gain "
+                "exceeds min_improvement"
+            ),
+            "paired_on": "identical (origin, period, geo, sub_brand) forecasts",
+            "resampled_over": "origins, not points",
+            "coverage_90_is": "predictive (includes sigma)",
+        }
+
+
 def search_specification(
     bundle_full: dict,
     fit: Callable[[dict], object],
@@ -129,6 +429,7 @@ def search_specification(
     max_rounds: int = 3,
     min_improvement: float = 0.01,
     max_fits: int = 40,
+    referee=None,
 ) -> dict:
     """
     Stepwise search from the default specification.
@@ -137,18 +438,24 @@ def search_specification(
     out-of-sample score, and why the search stopped. The trail matters as much as the
     answer — a specification nobody can interrogate is not evidence.
     """
+    if referee is None:
+        referee = SingleHoldoutReferee(
+            bundle_full, fit, n_holdout=n_holdout, model_frequency=model_frequency,
+            min_improvement=min_improvement,
+        )
+
     all_controls = list(bundle_full["coords"].get("control", []))
     incumbent = ModelSpec.default(all_controls, model_frequency)
 
     logger.info(
-        f"SPEC SEARCH | start {incumbent.label()} | "
+        f"SPEC SEARCH | start {incumbent.label()} | referee={referee.name} | "
         f"holdout={n_holdout} max_rounds={max_rounds} max_fits={max_fits}"
     )
 
     history: List[Evaluation] = []
     fits = 0
 
-    base = evaluate_spec(incumbent, bundle_full, n_holdout, model_frequency, fit)
+    base = referee.evaluate(incumbent)
     history.append(base)
     fits += 1
 
@@ -169,6 +476,7 @@ def search_specification(
             "n_fits": fits,
             "stop_reason": "the default specification could not be scored",
             "n_holdout": n_holdout,
+            "referee": referee.describe(),
             "history": [e.to_dict() for e in history],
         }
 
@@ -194,7 +502,7 @@ def search_specification(
                 stop_reason = f"reached the fit budget ({max_fits})"
                 break
 
-            ev = evaluate_spec(cand, bundle_full, n_holdout, model_frequency, fit)
+            ev = referee.evaluate(cand)
             history.append(ev)
             fits += 1
 
@@ -202,12 +510,21 @@ def search_specification(
                 logger.info(f"SPEC SEARCH |   skip {cand.label()} — {ev.error or 'untrustworthy'}")
                 continue
 
-            delta = ev.skill - round_best.skill
-            improved = delta > min_improvement
+            comparison = referee.compare(round_best, ev)
+            ev.comparison = comparison
+            improved = referee.decisive(comparison)
 
+            gain = comparison.get("gain")
+            detail = ""
+            if comparison.get("lo") is not None:
+                detail = (
+                    f" [{comparison['lo']:+.3f}, {comparison['hi']:+.3f}]"
+                    f" p={comparison['p_better']:.2f}"
+                )
             logger.info(
                 f"SPEC SEARCH |   {cand.label()} skill={ev.skill:+.4f} "
-                f"({delta:+.4f}){' WIN' if improved else ''}"
+                f"({'n/a' if gain is None else f'{gain:+.4f}'}){detail}"
+                f"{' WIN' if improved else ''}"
             )
 
             if improved:
@@ -237,6 +554,10 @@ def search_specification(
     improvement = best.skill - base.skill
     kept_default = best.spec == incumbent
 
+    # The headline claim, stated the way the referee can support it. Pairing is pure
+    # arithmetic over forecasts already made, so this costs no fits.
+    winner_vs_baseline = None if kept_default else referee.compare(base, best)
+
     logger.info(
         f"SPEC SEARCH | done after {fits} fits — "
         + (
@@ -255,8 +576,10 @@ def search_specification(
         "baseline_skill": base.skill,
         "winner_skill": best.skill,
         "improvement": improvement,
+        "winner_vs_baseline": winner_vs_baseline,
         "n_fits": fits,
         "stop_reason": stop_reason,
         "n_holdout": n_holdout,
+        "referee": referee.describe(),
         "history": [e.to_dict() for e in history],
     }

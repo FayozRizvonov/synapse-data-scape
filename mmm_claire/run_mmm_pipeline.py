@@ -30,6 +30,9 @@ from src.validation.holdout import (
     score_holdout,
     verify_forward_model,
 )
+# Pure helpers — src.search.search pulls in no sampler, so this stays a cheap import.
+from src.search.search import plan_search_split, selection_independence
+from src.validation.backtest import backtest_spec, plan_origins
 
 from src.logger import get_logger
 from src.parser.build_tensors import build_tensors, build_spend_tensor
@@ -182,6 +185,138 @@ def spec_search_requested() -> bool:
     return os.environ.get("MMM_SPEC_SEARCH", "").strip().lower() in ("1", "true", "yes", "on")
 
 
+def search_holdout_periods_requested(default: int) -> int:
+    """
+    How many periods the search may select on, from MMM_SEARCH_HOLDOUT_PERIODS.
+
+    Defaults to MMM_HOLDOUT_PERIODS. This is a *second* window, earlier in the series
+    than the one `holdout_metrics` reports — see `plan_search_split`. A malformed value
+    is a configuration mistake and must not silently reshape the split.
+    """
+    raw = os.environ.get("MMM_SEARCH_HOLDOUT_PERIODS", "").strip()
+    if not raw:
+        return default
+    try:
+        n = int(raw)
+    except ValueError:
+        raise ValueError(
+            f"MMM_SEARCH_HOLDOUT_PERIODS must be an integer, got {raw!r}"
+        )
+    if n <= 0:
+        raise ValueError(
+            f"MMM_SEARCH_HOLDOUT_PERIODS must be positive, got {n}; "
+            "unset it to default to MMM_HOLDOUT_PERIODS"
+        )
+    return n
+
+
+def _positive_int_env(name: str, default: int) -> int:
+    """Read a non-negative integer setting, refusing a malformed one."""
+    raw = os.environ.get(name, "").strip()
+    if not raw:
+        return default
+    try:
+        n = int(raw)
+    except ValueError:
+        raise ValueError(f"{name} must be an integer, got {raw!r}")
+    if n < 0:
+        raise ValueError(f"{name} must not be negative, got {n}")
+    return n
+
+
+def backtest_origins_requested() -> int:
+    """
+    How many expanding-window origins to backtest, from MMM_BACKTEST_ORIGINS.
+
+    `0` (default) keeps the single-window referee and writes no `backtest_metrics`, so
+    every existing run is untouched. Above zero this costs one MCMC fit per origin per
+    specification — see `validation/backtest.py` on why that is the right place to spend
+    compute, and why no number of candidates substitutes for it.
+    """
+    return _positive_int_env("MMM_BACKTEST_ORIGINS", 0)
+
+
+def backtest_horizon_requested() -> int:
+    """Forecast horizon per origin, from MMM_BACKTEST_HORIZON (default 1 period)."""
+    return max(1, _positive_int_env("MMM_BACKTEST_HORIZON", 1))
+
+
+def run_backtest_validation(bundle: dict, model_freq: str, spec_search: dict = None):
+    """
+    Score the production specification as a sequence of one-step-ahead forecasts.
+
+    Where `run_holdout_validation` fits once and forecasts the whole reserved window in
+    one go, this fits once per period in that window and forecasts the next period each
+    time — the same periods, the same independence from the search, but N separate
+    forecasts from N separate models rather than one N-step extrapolation. That yields
+    per-origin evidence, an interval, and a predictive coverage figure that includes
+    observation noise.
+
+    The origins are chosen so that every forecast target lies inside the window withheld
+    from the specification search, so this is independent evidence by construction.
+    Returns None when disabled. Never raises into the main pipeline.
+    """
+    n_origins = backtest_origins_requested()
+    if n_origins == 0:
+        return None
+
+    n_reserved = holdout_periods_requested()
+    if n_reserved <= 0:
+        logger.error(
+            "MMM_BACKTEST_ORIGINS is set but MMM_HOLDOUT_PERIODS is not, so there is no "
+            "window withheld from the search to score against. Skipping the backtest."
+        )
+        return {"enabled": True, "error": "MMM_BACKTEST_ORIGINS requires MMM_HOLDOUT_PERIODS > 0"}
+
+    horizon = backtest_horizon_requested()
+    T = bundle["shapes"]["T"]
+
+    # Exactly the reserved window: origin T-n forecasts period T-n, ..., origin T-1
+    # forecasts period T-1. Asking for more origins than that would reach back into
+    # periods the search was allowed to select on.
+    if n_origins > n_reserved:
+        logger.warning(
+            f"MMM_BACKTEST_ORIGINS={n_origins} would forecast periods the search could "
+            f"see; capping at MMM_HOLDOUT_PERIODS={n_reserved}."
+        )
+        n_origins = n_reserved
+
+    plan = plan_origins(T, n_origins, horizon)
+    if not plan["feasible"]:
+        logger.error(f"Skipping the backtest: {plan['reason']}")
+        return {"enabled": True, "error": plan["reason"], "plan": plan}
+
+    logger.info(
+        f"Backtest enabled: {len(plan['origins'])} origins "
+        f"({plan['origins'][0]}..{plan['origins'][-1]}) at horizon {horizon} — "
+        f"this fits {len(plan['origins'])} more models"
+    )
+
+    def _fit(train_bundle):
+        trace, _diag, _pred, _level = run_stable_model(
+            bundle=train_bundle, debug_mode=DEBUG_MODE,
+        )
+        return trace
+
+    try:
+        result = backtest_spec(
+            bundle, _fit,
+            origins=plan["origins"], horizon=horizon, model_frequency=model_freq,
+        )
+        result["enabled"] = True
+        result["plan"] = plan
+        result.update(selection_independence(spec_search))
+
+        # The per-forecast rows are what make pairing possible, but the stored output
+        # does not need them; the per-origin summaries carry the interrogable trail.
+        result.pop("points", None)
+        return result
+
+    except Exception as exc:  # noqa: BLE001 - must not fail the production model
+        logger.exception("Backtest validation failed")
+        return {"enabled": True, "error": f"{type(exc).__name__}: {exc}"}
+
+
 def run_spec_search(bundle: dict, model_freq: str):
     """
     Search for a specification that forecasts held-out periods better than the default.
@@ -192,6 +327,13 @@ def run_spec_search(bundle: dict, model_freq: str):
     The search needs somewhere to stand: without held-out periods there is no referee,
     and a search scored in-sample would simply add parameters until it overfit. So this
     refuses to run rather than silently optimising the wrong thing.
+
+    It also needs to stand somewhere *else* than where its winner is judged. The last
+    `MMM_HOLDOUT_PERIODS` periods are what `holdout_metrics` reports and what the
+    approval gate binds on, so the search never sees them: it is handed the series with
+    those periods already removed and selects on its own earlier window. Sharing one
+    window made the reported skill the maximum over every candidate tried, which the
+    gate then read as out-of-sample evidence. See `plan_search_split`.
     """
     if not spec_search_requested():
         return None, bundle
@@ -206,6 +348,73 @@ def run_spec_search(bundle: dict, model_freq: str):
             "enabled": True,
             "error": "MMM_SPEC_SEARCH requires MMM_HOLDOUT_PERIODS > 0",
         }, bundle
+
+    n_search_holdout = search_holdout_periods_requested(n_holdout)
+    plan = plan_search_split(bundle["shapes"]["T"], n_holdout, n_search_holdout)
+
+    if not plan["feasible"]:
+        logger.error(
+            f"Skipping the specification search: {plan['reason']} Searching and "
+            "reporting on the same periods would make the reported skill a selected "
+            "maximum, and the approval gate binds on it."
+        )
+        return {
+            "enabled": True,
+            "error": plan["reason"],
+            "split_plan": plan,
+        }, bundle
+
+    logger.info(
+        f"SPEC SEARCH | reserving the last {n_holdout} of {plan['n_total']} periods for "
+        f"reporting; the search trains on {plan['n_search_train']} and selects on "
+        f"{plan['n_search_holdout']}"
+    )
+
+    # Which referee judges the candidates. The rolling-origin one compares them on
+    # identical forecasts and requires the paired gain's interval to clear zero; the
+    # single-window one subtracts two scores and checks a threshold it cannot calibrate.
+    fit_budget = int(os.environ.get("MMM_SEARCH_MAX_FITS", "20"))
+    min_improvement = float(os.environ.get("MMM_SEARCH_MIN_IMPROVEMENT", "0.01"))
+    candidate_budget = fit_budget
+    origin_plan = None
+    n_origins = backtest_origins_requested()
+
+    if n_origins > 0:
+        origin_plan = plan_origins(plan["n_total"] - n_holdout, n_origins,
+                                   backtest_horizon_requested())
+        if not origin_plan["feasible"]:
+            logger.error(
+                f"Skipping the specification search: {origin_plan['reason']} "
+                "(MMM_BACKTEST_ORIGINS asked for the rolling-origin referee)"
+            )
+            return {
+                "enabled": True,
+                "error": origin_plan["reason"],
+                "split_plan": plan,
+                "origin_plan": origin_plan,
+            }, bundle
+
+        per_candidate = len(origin_plan["origins"])
+        candidate_budget = fit_budget // per_candidate
+
+        if candidate_budget < 2:
+            reason = (
+                f"the rolling-origin referee costs {per_candidate} fits per candidate, "
+                f"so MMM_SEARCH_MAX_FITS={fit_budget} affords {candidate_budget} "
+                "candidates — not even the default plus one. Raise it to at least "
+                f"{per_candidate * 7} to search a round, or lower "
+                "MMM_BACKTEST_ORIGINS."
+            )
+            logger.error(f"Skipping the specification search: {reason}")
+            return {
+                "enabled": True, "error": reason,
+                "split_plan": plan, "origin_plan": origin_plan,
+            }, bundle
+
+        logger.info(
+            f"SPEC SEARCH | rolling-origin referee: {per_candidate} fits per candidate, "
+            f"budget {fit_budget} fits = {candidate_budget} candidates"
+        )
 
     try:
         from src.model.pymc_mmm import build_pymc_model
@@ -222,14 +431,40 @@ def run_spec_search(bundle: dict, model_freq: str):
                 model, draws=draws, tune=draws, chains=chains, target_accept=0.95
             )
 
+        # The search sees only the periods before the reported window. Everything it
+        # scores — including its own holdout — comes out of this shorter series.
+        search_bundle, reserved = split_bundle(bundle, n_holdout)
+        search_bundle["original_frequency"] = bundle.get("original_frequency")
+        search_bundle["model_frequency"] = model_freq
+
+        referee = None
+        if origin_plan is not None:
+            from src.search.search import RollingOriginReferee
+
+            referee = RollingOriginReferee(
+                search_bundle, _fit,
+                plan=origin_plan,
+                model_frequency=model_freq,
+                min_improvement=min_improvement,
+            )
+
         record = search_specification(
-            bundle,
+            search_bundle,
             _fit,
-            n_holdout=n_holdout,
+            n_holdout=n_search_holdout,
             model_frequency=model_freq,
             max_rounds=int(os.environ.get("MMM_SEARCH_ROUNDS", "3")),
-            max_fits=int(os.environ.get("MMM_SEARCH_MAX_FITS", "20")),
+            min_improvement=min_improvement,
+            max_fits=candidate_budget,
+            referee=referee,
         )
+
+        # Recorded so the audit trail shows the protocol, not just the winner, and so
+        # the approval gate can verify independence instead of assuming it.
+        record["evaluation_reserved"] = True
+        record["split_plan"] = plan
+        record["reported_periods_withheld"] = reserved["holdout_periods"]
+        record["search_periods"] = reserved["train_periods"][-n_search_holdout:]
 
         if record.get("error") or record.get("kept_default", True):
             return record, bundle
@@ -245,13 +480,18 @@ def run_spec_search(bundle: dict, model_freq: str):
         return {"enabled": True, "error": f"{type(exc).__name__}: {exc}"}, bundle
 
 
-def run_holdout_validation(bundle: dict, model_freq: str):
+def run_holdout_validation(bundle: dict, model_freq: str, spec_search: dict = None):
     """
     Fit a second model on the earlier periods only and score it on the most recent ones.
 
     Returns None when disabled or not feasible. Never raises into the main pipeline — a
     failed validation must not destroy a production model that already sampled fine, so
     problems are reported in the payload under "error" instead.
+
+    `spec_search` is the search record, if one ran. These scores only mean what they
+    appear to mean when the periods scored here were withheld from that search, so the
+    verdict travels with the numbers under "selection_independent" — the approval gate
+    reads it rather than inferring it.
     """
     n_holdout = holdout_periods_requested()
     if n_holdout == 0:
@@ -289,11 +529,18 @@ def run_holdout_validation(bundle: dict, model_freq: str):
         metrics["train_stability_level"] = int(level_tr)
         metrics["forward_model_check"] = check
         metrics["trustworthy"] = bool(check["matches"])
+        metrics.update(selection_independence(spec_search))
 
         if not check["matches"]:
             logger.error(
                 "Holdout scores computed with a forward model that no longer matches "
                 "the PyMC model — treat them as invalid."
+            )
+
+        if not metrics["selection_independent"]:
+            logger.error(
+                f"HOLDOUT | {metrics['selection_note']}. skill_vs_naive is not "
+                "out-of-sample evidence here and the approval gate will refuse it."
             )
 
         return metrics
@@ -433,7 +680,14 @@ def run_pipeline(
     # output below is bit-identical to a run without it. When enabled it fits a SECOND
     # model on the earlier periods only and scores it on the most recent ones; the
     # production model above still sees all the data, so no existing output changes.
-    holdout_metrics = run_holdout_validation(bundle, model_freq)
+    # The search was handed a bundle stopping short of these periods, so the score is
+    # independent of how the specification was chosen — and says so in its payload.
+    holdout_metrics = run_holdout_validation(bundle, model_freq, spec_search=spec_search)
+
+    # Richer evidence over the same reserved periods: one fit and one forecast per period
+    # instead of one fit and an N-step extrapolation. Off unless MMM_BACKTEST_ORIGINS is
+    # set, and it costs a fit per origin.
+    backtest_metrics = run_backtest_validation(bundle, model_freq, spec_search=spec_search)
 
     # -----------------------------------------------------------------------
     # 5. POSTERIOR EXTRACTION
@@ -510,6 +764,9 @@ def run_pipeline(
 
     if holdout_metrics is not None:
         outputs["holdout_metrics"] = holdout_metrics
+
+    if backtest_metrics is not None:
+        outputs["backtest_metrics"] = backtest_metrics
 
     if spec_search is not None:
         outputs["spec_search"] = spec_search

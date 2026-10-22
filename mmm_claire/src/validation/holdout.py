@@ -47,6 +47,13 @@ def split_bundle(bundle: dict, n_holdout: int) -> Tuple[dict, dict]:
     Returns ``(train_bundle, split_info)``. The split is chronological — the holdout is
     always the most recent periods, never a random sample, because random splits leak
     future information through adstock carryover.
+
+    Known residual: only the time-indexed arrays are sliced. ``X_spend`` is shared by
+    reference, so the spend-share prior shift in `build_pymc_model` is computed from the
+    whole series including the holdout window. It moves prior *means* using aggregate
+    spend totals, never the target, so it is a far milder leak than the split protects
+    against — but it is a leak, and changing it would move the published holdout
+    baseline, so it is documented rather than silently fixed.
     """
 
     T = bundle["shapes"]["T"]
