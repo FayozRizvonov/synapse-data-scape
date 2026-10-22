@@ -63,6 +63,7 @@ CRITICAL RULES:
 4. Include specific numbers and percentages
 5. Provide actionable insights
 6. Use clear, professional language suitable for speech
+6a. Reply in the SAME language the speaker used. English and Russian are both fully supported: if they speak Russian, answer entirely in Russian. The "card:" JSON keys stay in English — the client parses them.
 7. No emojis or special formatting in the answer section (voice will speak this)
 8. Make responses informative but concise for voice delivery
 `;
@@ -186,7 +187,10 @@ serve(async (req) => {
     formData.append('temperature', '0.0');
     
     // Whisper prompt for better pharmaceutical context recognition
-    const whisperPrompt = 'This is a business analytics discussion about pharmaceutical metrics, revenue, sales, performance data, QoQ growth, market access scores, prescriptions, sample-to-script ratios, ROI, rebate spend, total sales, base sales, incremental revenue, promotional spend, seasonality trends, F2F calls, virtual calls, phone calls, digital display, digital video channels.';
+    // Whisper auto-detects the language; this prompt only primes vocabulary. It used
+    // to list English pharma terms exclusively, which biased transcription toward
+    // English and degraded Russian recognition, so both vocabularies are given.
+    const whisperPrompt = 'Business analytics discussion about pharmaceutical commercial metrics, in English or Russian. English terms: revenue, sales, QoQ growth, market access score, prescriptions, sample-to-script ratio, ROI, rebate spend, total sales, base sales, incremental revenue, promotional spend, seasonality, F2F calls, virtual calls, phone calls, digital display, digital video. Russian terms: выручка, продажи, рост квартал к кварталу, доступ на рынок, назначения, ROI, промо-расходы, общие продажи, базовые продажи, инкрементальная выручка, сезонность, визиты, виртуальные визиты, звонки, digital-реклама, медиасплит, оптимизация бюджета.';
     formData.append('prompt', whisperPrompt);
     
     console.log('📡 Calling Whisper API...');
