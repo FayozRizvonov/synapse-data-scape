@@ -43,29 +43,14 @@ interface JourneyPath {
   outcome: string;
 }
 
-function hexToRgba(hex: string, alpha: number) {
-  let c = hex.replace('#', '');
-  if (c.length === 3) c = c[0]+c[0]+c[1]+c[1]+c[2]+c[2];
-  const num = parseInt(c, 16);
-  return `rgba(${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}, ${alpha})`;
-}
-
-function useIsDarkMode() {
-  const [isDark, setIsDark] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    setIsDark(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-  return isDark;
-}
+// No local dark-mode hook: this file used `prefers-color-scheme`, which is the OS
+// preference and disagrees with Tailwind's `dark:` (the `dark` class on <html>).
+// Style with Tailwind's dark: variants, or with colours that work on either
+// surface, rather than branching on a boolean that can be wrong.
 
 const SOJMContainer: React.FC = () => {
   const [activePersona, setActivePersona] = useState<string>('tech-savvy');
   const [showPaths, setShowPaths] = useState(false);
-  const isDarkMode = useIsDarkMode();
 
   const personas: Persona[] = [
     {
@@ -174,13 +159,35 @@ const SOJMContainer: React.FC = () => {
             <div className="space-y-4">
               {personas.map((persona, index) => {
                 const isActive = activePersona === persona.id;
-                const style = isActive && isDarkMode ? { backgroundColor: hexToRgba(persona.color, 0.15), borderColor: persona.color } : undefined;
+                // Selection is carried by the border plus a translucent tint of the
+                // persona's own colour, matching the Conversion Outcomes cards.
+                //
+                // It used to be `bg-blue-50` with no `dark:` variant, rescued by an
+                // inline style gated on a `prefers-color-scheme` media query. Tailwind's
+                // `dark:` keys off the `dark` class on <html>, not the OS preference, so
+                // whenever the app was dark while the OS was light the two disagreed:
+                // the override did not apply, the near-white `bg-blue-50` won, and
+                // `dark:text-white` still did apply — white text on a white card.
+                //
+                // color-mix with `transparent` needs no theme knowledge: it composites
+                // over whatever surface is behind, so the card reads as a light wash in
+                // light mode and a dark one in dark mode, and its own text stays legible
+                // either way. It also actually works with these colours — they are CSS
+                // variables, and the old hexToRgba() parsed `var(--chart-senary)` as NaN,
+                // which `NaN >> 16 & 255` turned into 0, silently painting black at 12%
+                // instead of the persona's colour.
+                const style = isActive
+                  ? {
+                      borderColor: persona.color,
+                      backgroundColor: `color-mix(in srgb, ${persona.color} 14%, transparent)`,
+                    }
+                  : undefined;
                 return (
                   <motion.div
                     key={persona.id}
                     className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 min-h-[120px] ${
                       isActive
-                        ? `border-blue-500 bg-blue-50 shadow-lg${isDarkMode ? '' : ''}`
+                        ? 'shadow-lg'
                         : 'border-slate-200 bg-white hover:border-slate-300 dark:border-white/10 dark:bg-white/5 dark:hover:border-cyan-700'
                     }`}
                     style={style}
