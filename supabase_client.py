@@ -1,7 +1,7 @@
 # supabase_client.py: Supabase integration for CLAIRE AI MMM
 import os
 import json
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
 import logging
 from supabase import create_client, Client
@@ -100,29 +100,67 @@ class SupabaseMMMClient:
             logger.error(f"Error saving model output: {e}")
             return False
     
-    def approve_model(self, model_id: str, user_id: str, approval_notes: Optional[str] = None) -> bool:
-        """Approve a model for use in scenarios"""
+    def model_gate_status(self, model_id: str) -> Optional[Dict[str, Any]]:
+        """
+        What the approval gate thinks of a model, without approving it.
+
+        Returns the gate payload (can_approve, blockers, governance, holdout) or None
+        if it could not be read.
+        """
+        if not self.is_connected():
+            logger.warning("Supabase not connected. Cannot read gate status.")
+            return None
+        try:
+            result = self.client.rpc(
+                'mmm_model_gate_status', {'model_uuid': model_id}
+            ).execute()
+            return result.data
+        except Exception as e:
+            logger.error(f"Error reading gate status for {model_id}: {e}")
+            return None
+
+    def approve_model(
+        self,
+        model_id: str,
+        user_id: str,
+        approval_notes: Optional[str] = None,
+        override_reason: Optional[str] = None,
+    ) -> Tuple[bool, Optional[str]]:
+        """
+        Approve a model for use in scenarios.
+
+        Returns ``(ok, error)``. The gate refuses models without passing convergence
+        evidence, or whose out-of-sample evidence shows no skill, and the reason it
+        refused matters to the caller — returning a bare False would collapse "the
+        database is down" and "this model failed its governance gate" into the same
+        unhelpful answer.
+        """
         if not self.is_connected():
             logger.warning("Supabase not connected. Model approval failed.")
-            return False
-        
+            return False, "Database not connected"
+
+        params = {'model_uuid': model_id, 'approval_notes': approval_notes}
+        if override_reason:
+            params['p_override_reason'] = override_reason
+
         try:
-            # Call the approval function
-            result = self.client.rpc('approve_mmm_model', {
-                'model_uuid': model_id,
-                'approval_notes': approval_notes
-            }).execute()
-            
+            result = self.client.rpc('approve_mmm_model', params).execute()
+
             if result.data:
-                logger.info(f"Model {model_id} approved successfully")
-                return True
-            else:
-                logger.error("Failed to approve model: No data returned")
-                return False
-                
+                logger.info(
+                    f"Model {model_id} approved"
+                    + (" WITH OVERRIDE: " + override_reason if override_reason else "")
+                )
+                return True, None
+
+            logger.error("Failed to approve model: No data returned")
+            return False, "Approval returned no result"
+
         except Exception as e:
-            logger.error(f"Error approving model: {e}")
-            return False
+            # The gate raises with the blocking reasons in the message; pass them on.
+            message = str(e)
+            logger.error(f"Error approving model {model_id}: {message}")
+            return False, message
     
     def get_latest_approved_model(self, project_id: str) -> Optional[Dict[str, Any]]:
         """Get the latest approved model for a project"""
