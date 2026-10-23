@@ -46,7 +46,8 @@ REPORT SECTIONS SCHEMA
 {"report":{"sections":[{"title":"Section Title","short":"One concise line","full":{"snapshot":["Point 1","Point 2"],"chart":{"type":"bar|line|pie","x":{"label":"X","categories":["Cat1","Cat2"]},"y":{"label":"Y"},"series":[{"name":"Series A","data":[...]}],"style":{"colors":["#3B82F6","#10B981","#F59E0B"],"height":300}},"recommendations":["Action 1","Action 2"]}}]}}
 
 CRITICAL RULES
-1) English only.
+1) Reply in the SAME language the user wrote in. English and Russian are both fully supported: if the user writes in Russian, answer entirely in Russian. This applies to every piece of prose you produce — the top-level "text", section titles, "short" lines, snapshot points, recommendations, and chart axis and series labels.
+   JSON FIELD NAMES ARE NOT PROSE. Keys such as "type", "report", "sections", "title", "short", "full", "snapshot", "chart", "recommendations", "x", "y", "categories", "series", "name", "data", "style" and the values of "type" ("text" | "report" | "card") must stay exactly as specified, in English — the client parses them and will fail if they are translated.
 2) Max 2 sections per report (prefer 1).
 3) Each section: max 2 snapshot points and max 2 recommendations.
 4) Recommendations must be concrete & measurable: cite lever, %/$ shift, region/segment, and projected outcome.

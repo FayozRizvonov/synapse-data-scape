@@ -8,68 +8,13 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Label 
 } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, Target, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
+import { useDemoDashboardData } from '@/hooks/useDemoDashboardData';
 
-// Values in $M (e.g., 12 => $12M)
-const salesForecastData = [
-  // Actuals: 12 → 17 through Jun
-  { name: 'Jan', actual: 12, baseline: 12.5, optimistic: 12.5, pessimistic: 12.5 },
-  { name: 'Feb', actual: 13, baseline: 14.0, optimistic: 14.0, pessimistic: 14.0 },
-  { name: 'Mar', actual: 14, baseline: 15.5, optimistic: 15.5, pessimistic: 15.5 },
-  { name: 'Apr', actual: 15, baseline: 16.5, optimistic: 16.5, pessimistic: 16.5 },
-  { name: 'May', actual: 16, baseline: 17.0, optimistic: 17.0, pessimistic: 17.0 },
-  { name: 'Jun', actual: 17, baseline: 17.5, optimistic: 17.5, pessimistic: 17.5 },
-  // Forecasts start in Jul: Baseline to 21, Optimistic to 25.5, Pessimistic to ~15.5 by Dec
-  { name: 'Jul', actual: 13.5, baseline: 18.0, optimistic: 20.5, pessimistic: 13.5 },
-  { name: 'Aug', actual: 14.0, baseline: 18.5, optimistic: 21.5, pessimistic: 14.0 },
-  { name: 'Sep', actual: 14.5, baseline: 19.0, optimistic: 22.5, pessimistic: 14.5 },
-  { name: 'Oct', actual: 15.0, baseline: 19.5, optimistic: 23.5, pessimistic: 15.0 },
-  { name: 'Nov', actual: 15.5, baseline: 20.0, optimistic: 24.5, pessimistic: 15.2 },
-  { name: 'Dec', actual: 16.0, baseline: 20.5, optimistic: 25.5, pessimistic: 15.5 },
-];
-
-const roiForecastData = [
-    { name: 'Jul', sf_calls: 2.4, digital: 3.1, email: 2.1, overall: 2.7 },
-    { name: 'Aug', sf_calls: 2.5, digital: 3.2, email: 2.2, overall: 2.8 },
-    { name: 'Sep', sf_calls: 2.6, digital: 3.3, email: 2.3, overall: 2.9 },
-    { name: 'Oct', sf_calls: 2.7, digital: 3.4, email: 2.4, overall: 3.0 },
-    { name: 'Nov', sf_calls: 2.8, digital: 3.5, email: 2.5, overall: 3.1 },
-    { name: 'Dec', sf_calls: 2.9, digital: 3.6, email: 2.6, overall: 3.2 },
-];
-
-const currentSpendData = [
-    { name: 'SF Calls', value: 45 },
-    { name: 'Digital', value: 30 },
-    { name: '1-to-1 Email', value: 15 },
-    { name: 'Other', value: 9 },
-];
-
-const optimizedSpendData = [
-    { name: 'SF Calls', value: 50 },
-    { name: 'Digital', value: 33 },
-    { name: '1-to-1 Email', value: 10 },
-    { name: 'Other', value: 7 },
-];
-
-const scenarioComparisonData = [
-    { name: 'Baseline', Sales: 1200, Spend: 265, ROI: 2.7 },
-    { name: 'Optimistic', Sales: 1400, Spend: 305, ROI: 2.9 },
-    { name: 'Pessimistic', Sales: 1050, Spend: 239, ROI: 2.4 },
-];
-
-const comparisonTableData = {
-    metrics: [
-        { metric: 'Total Sales', baseline: '21.3', optimistic: '24.5M', pessimistic: '19.17M' },
-        { metric: 'Total Spend', baseline: '$265K', optimistic: '$305K', pessimistic: '$239K' },
-        { metric: 'Overall ROI', baseline: '2.7x', optimistic: '2.9x', pessimistic: '2.4x' },
-        { metric: 'Profit Margin', baseline: '18%', optimistic: '21%', pessimistic: '15%' },
-    ],
-    channels: [
-        { channel: 'SF Calls', baseline: '2.4x', optimistic: '2.6x', pessimistic: '2.1x' },
-        { channel: 'Digital', baseline: '3.1x', optimistic: '3.4x', pessimistic: '2.8x' },
-        { channel: '1-to-1 Email', baseline: '2.1x', optimistic: '2.3x', pessimistic: '1.9x' },
-        { channel: 'Web Virtual Calls', baseline: '2.5x', optimistic: '2.8x', pessimistic: '2.0x' },
-    ]
-};
+// The figures that used to live here are now in Supabase (`demo_dashboard_data`),
+// loaded by useDemoDashboardData. They were hardcoded in three different shapes and
+// disagreed with each other: the spend split summed to 99%, the bar chart showed
+// Sales as 1200 while the table showed 21.3M, and Total Spend read $265K when the
+// story's budget is $1.2M.
 
 const COLORS = [
   'var(--chart-senary)',    // #3b82f6 -> blue-500
@@ -85,7 +30,7 @@ const GRADIENT_PAIRS = [
   ['var(--text-muted)', 'var(--text-muted)']
 ];
 
-const AllocationChart = ({ title, data }: { title: string; data: typeof currentSpendData }) => (
+const AllocationChart = ({ title, data }: { title: string; data: { name: string; value: number }[] }) => (
   <div className="backdrop-blur-[2px] bg-background/5 border border-border/10 rounded-xl p-4">
     <h3 className="text-lg font-semibold text-foreground mb-4">{title}</h3>
     <div style={{ width: '100%', height: 340 }}>
@@ -161,6 +106,46 @@ const AllocationChart = ({ title, data }: { title: string; data: typeof currentS
 );
 
 const ScenarioComparison = () => {
+  const { data: demo, loading, error } = useDemoDashboardData();
+
+  const sc = demo?.scenario_comparison;
+  const sa = demo?.spend_allocation;
+
+  const salesForecastData = demo?.sales_forecast?.points ?? [];
+  const roiForecastData = demo?.roi_forecast?.points ?? [];
+
+  const currentSpendData = (sa?.channels ?? []).map(c => ({ name: c.name, value: c.current_pct }));
+  const optimizedSpendData = (sa?.channels ?? []).map(c => ({ name: c.name, value: c.optimized_pct }));
+
+  // One row per scenario, in $M, so the chart and the table below cannot disagree.
+  const scenarioComparisonData = (sc?.scenarios ?? [])
+    .slice()
+    .sort((a, b) => a.sort - b.sort)
+    .map(x => ({
+      name: x.label,
+      Sales: x.total_sales_m,
+      Spend: x.total_spend_m,
+      ROI: x.incremental_roi,
+    }));
+
+  const fmtM = (v: number) => `$${v.toFixed(2)}M`;
+  const scenarios = (sc?.scenarios ?? []).slice().sort((a, b) => a.sort - b.sort);
+  const byKey = (k: string) => scenarios.find(x => x.key === k);
+  const roiLabel = sc?.roi_label ?? 'Incremental ROI';
+
+  const comparisonTableData = {
+    metrics: [
+      { metric: 'Total Sales',  ...Object.fromEntries(scenarios.map(x => [x.key, fmtM(x.total_sales_m)])) },
+      { metric: 'Media Spend',  ...Object.fromEntries(scenarios.map(x => [x.key, fmtM(x.total_spend_m)])) },
+      { metric: roiLabel,       ...Object.fromEntries(scenarios.map(x => [x.key, `${x.incremental_roi.toFixed(1)}x`])) },
+      { metric: 'Profit Margin',...Object.fromEntries(scenarios.map(x => [x.key, `${x.profit_margin_pct}%`])) },
+    ] as Array<Record<string, string>>,
+    channels: Object.keys(byKey('baseline')?.channel_roi ?? {}).map(ch => ({
+      channel: ch,
+      ...Object.fromEntries(scenarios.map(x => [x.key, `${(x.channel_roi[ch] ?? 0).toFixed(1)}x`])),
+    })) as Array<Record<string, string>>,
+  };
+
   const [hoverLabel, setHoverLabel] = useState<string | null>(null);
   const hoverTint = (label: string | null) => {
     switch (label) {
@@ -178,6 +163,29 @@ const ScenarioComparison = () => {
     return parseFloat(valueStr.replace(/[$,%xM]/g, ''));
   };
 
+  // Say so rather than drawing empty axes. These figures come from Supabase; if they
+  // cannot be read, a blank chart looks like a result and an invented fallback would be
+  // worse still.
+  if (loading) {
+    return (
+      <div className="space-y-8 mt-12 pb-24">
+        <h2 className="text-3xl font-bold text-foreground text-glow">Scenario Comparison</h2>
+        <div className="h-64 rounded-xl bg-white/5 border border-white/10 animate-pulse" />
+      </div>
+    );
+  }
+
+  if (error || !sc || scenarios.length === 0) {
+    return (
+      <div className="space-y-8 mt-12 pb-24">
+        <h2 className="text-3xl font-bold text-foreground text-glow">Scenario Comparison</h2>
+        <div className="rounded-xl bg-white/5 border border-white/10 p-6 text-sm text-muted-foreground">
+          Scenario data is unavailable{error ? `: ${error}` : '.'}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 mt-12 pb-24">
       <div className="flex items-center justify-between">
@@ -185,110 +193,66 @@ const ScenarioComparison = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Baseline Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 hover:border-white/20 transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
-                  <BarChart3 className="w-5 h-5 text-cyan-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Current</h3>
-              </div>
-              <Badge variant="outline" className="border-cyan-500/30 text-cyan-400 bg-cyan-500/10">0.7M Spend</Badge>
-            </div>
-            <div className="space-y-4">
-              <div className="flex items-end gap-2">
-                <span className="text-3xl font-bold text-gray-900 dark:text-white">$21.3M</span>
-                <span className="text-sm text-gray-600 dark:text-white/60">Actual Sales</span>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-gray-600 dark:text-white/80">
-                  <span>SF Calls ROI:</span>
-                  <span className="font-semibold text-cyan-400">2.4x</span>
-                </div>
-                <div className="flex justify-between text-gray-600 dark:text-white/80">
-                  <span>Digital ROI:</span>
-                  <span className="font-semibold text-cyan-400">3.1x</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+        {scenarios.map((x, i) => {
+          const tone =
+            x.key === 'optimistic'
+              ? { icon: TrendingUp,   text: 'text-green-400', ring: 'border-green-500/30', bg: 'from-green-500/20 to-emerald-500/20', badge: 'border-green-500/30 text-green-400 bg-green-500/10' }
+              : x.key === 'pessimistic'
+              ? { icon: TrendingDown, text: 'text-red-400',   ring: 'border-red-500/30',   bg: 'from-red-500/20 to-rose-500/20',     badge: 'border-red-500/30 text-red-400 bg-red-500/10' }
+              : { icon: Target,       text: 'text-cyan-400',  ring: 'border-cyan-500/30',  bg: 'from-cyan-500/20 to-blue-500/20',    badge: 'border-cyan-500/30 text-cyan-400 bg-cyan-500/10' };
+          const Icon = tone.icon;
+          // Spend relative to Baseline — the badge used to be a hardcoded "+15%" that
+          // no longer had to agree with the spend it described.
+          const base = byKey('baseline');
+          const deltaPct = base ? Math.round((x.total_spend_m / base.total_spend_m - 1) * 100) : 0;
 
-        {/* Optimistic Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-        >
-          <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 hover:border-white/20 transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30">
-                  <TrendingUp className="w-5 h-5 text-green-400" />
+          return (
+            <motion.div
+              key={x.key}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: i * 0.1 }}
+            >
+              <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 hover:border-white/20 transition-all duration-300">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg bg-gradient-to-r ${tone.bg} border ${tone.ring}`}>
+                      <Icon className={`w-5 h-5 ${tone.text}`} />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{x.label}</h3>
+                  </div>
+                  <Badge variant="outline" className={tone.badge}>
+                    {deltaPct === 0 ? 'Current Spend' : `${deltaPct > 0 ? '+' : ''}${deltaPct}% Spend`}
+                  </Badge>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Optimistic</h3>
-              </div>
-              <Badge variant="outline" className="border-green-500/30 text-green-400 bg-green-500/10">+15% Spend</Badge>
-            </div>
-            <div className="space-y-4">
-              <div className="flex items-end gap-2">
-                <span className="text-3xl font-bold text-gray-900 dark:text-white">$24.5M</span>
-                <span className="text-sm text-gray-600 dark:text-white/60">Projected Sales</span>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-gray-600 dark:text-white/80">
-                  <span>SF Calls ROI:</span>
-                  <span className="font-semibold text-green-400">2.6x</span>
-                </div>
-                <div className="flex justify-between text-gray-600 dark:text-white/80">
-                  <span>Digital ROI:</span>
-                  <span className="font-semibold text-green-400">3.4x</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Pessimistic Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-        >
-          <div className="backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 hover:border-white/20 transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-gradient-to-r from-red-500/20 to-rose-500/20 border border-red-500/30">
-                  <TrendingDown className="w-5 h-5 text-red-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Pessimistic</h3>
-              </div>
-              <Badge variant="outline" className="border-red-500/30 text-red-400 bg-red-500/10">-10% Spend</Badge>
-            </div>
-            <div className="space-y-4">
-              <div className="flex items-end gap-2">
-                <span className="text-3xl font-bold text-gray-900 dark:text-white">$19.17M</span>
-                <span className="text-sm text-gray-600 dark:text-white/60">Projected Sales</span>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-gray-600 dark:text-white/80">
-                  <span>SF Calls ROI:</span>
-                  <span className="font-semibold text-red-400">2.1x</span>
-                </div>
-                <div className="flex justify-between text-gray-600 dark:text-white/80">
-                  <span>Digital ROI:</span>
-                  <span className="font-semibold text-red-400">2.8x</span>
+                <div className="space-y-4">
+                  <div className="flex items-end gap-2">
+                    <span className="text-3xl font-bold text-gray-900 dark:text-white">{fmtM(x.total_sales_m)}</span>
+                    <span className="text-sm text-gray-600 dark:text-white/60">Projected Sales</span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-gray-600 dark:text-white/80">
+                      <span>Media Spend:</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{fmtM(x.total_spend_m)}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-600 dark:text-white/80">
+                      <span>{roiLabel}:</span>
+                      <span className={`font-semibold ${tone.text}`}>{x.incremental_roi.toFixed(1)}x</span>
+                    </div>
+                    <div className="flex justify-between text-gray-600 dark:text-white/80">
+                      <span>SF Calls ROI:</span>
+                      <span className={`font-semibold ${tone.text}`}>{(x.channel_roi['SF Calls'] ?? 0).toFixed(1)}x</span>
+                    </div>
+                    <div className="flex justify-between text-gray-600 dark:text-white/80">
+                      <span>Digital ROI:</span>
+                      <span className={`font-semibold ${tone.text}`}>{(x.channel_roi['Digital'] ?? 0).toFixed(1)}x</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </motion.div>
+            </motion.div>
+          );
+        })}
       </div>
 
       <Tabs defaultValue="sales_forecast" className="w-full">
@@ -425,13 +389,26 @@ const ScenarioComparison = () => {
                           const y = (vb.y ?? 0) + ((vb.height ?? 0) / 2); // vertical center of chart area
                           return (
                             <text x={x} y={y} fill="var(--chart-axis)" textAnchor="middle" transform={`rotate(-90, ${x}, ${y})`}>
-                              Value (Sales Volume & Spend in $K)
+                              Total Sales ($M)
                             </text>
                           );
                         }}
                       />
                     </YAxis>
-                    <YAxis yAxisId="right" orientation="right" stroke="var(--chart-axis)" tick={{ fill: 'var(--chart-axis)' }} />
+                    <YAxis yAxisId="right" orientation="right" stroke="var(--chart-axis)" tick={{ fill: 'var(--chart-axis)' }}>
+                      <Label
+                        content={({ viewBox }) => {
+                          const vb = (viewBox || {}) as { x?: number; y?: number; width?: number; height?: number };
+                          const x = (vb.x ?? 0) + (vb.width ?? 0) + 40;
+                          const y = (vb.y ?? 0) + ((vb.height ?? 0) / 2);
+                          return (
+                            <text x={x} y={y} fill="var(--chart-axis)" textAnchor="middle" transform={`rotate(90, ${x}, ${y})`}>
+                              Media Spend ($M)
+                            </text>
+                          );
+                        }}
+                      />
+                    </YAxis>
                     <Tooltip
                         cursor={{ fill: hoverTint(hoverLabel), opacity: 1 }}
                         contentStyle={{
@@ -442,10 +419,9 @@ const ScenarioComparison = () => {
                             backdropFilter: 'blur(10px)'
                         }}
                     />
-                    <Legend formatter={(value) => (value === 'Sales' ? 'Sales Volume' : value)} />
-                    <Bar yAxisId="left" dataKey="Sales" name="Sales Volume" fill="var(--chart-primary)" className="hover:opacity-90" />
-                    <Bar yAxisId="left" dataKey="Spend" fill="var(--chart-secondary)" className="hover:opacity-90" />
-                    <Line yAxisId="right" type="monotone" dataKey="ROI" stroke="var(--metric-key)" />
+                    <Legend />
+                    <Bar yAxisId="left" dataKey="Sales" name="Total Sales ($M)" fill="var(--chart-primary)" className="hover:opacity-90" />
+                    <Bar yAxisId="right" dataKey="Spend" name="Media Spend ($M)" fill="var(--chart-secondary)" className="hover:opacity-90" />
                 </BarChart>
             </ResponsiveContainer>
             <div className="grid md:grid-cols-2 gap-8 mt-8">
