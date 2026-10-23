@@ -32,26 +32,37 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   useEffect(() => {
     let timer: any;
-    const fromAny = (supabase as unknown as { from?: (t: string) => any })?.from;
-    if (!fromAny) return;
 
+    // `supabase.from` is called on the client, never taken off it: detached it throws
+    // `Cannot read properties of undefined (reading 'rest')` every time. The old guard
+    // here could not catch that, because `.from` does exist — it is only unbound — so
+    // every poll threw into the empty catch below and the recent list stayed empty.
     const load = async () => {
       try {
-        const { data }: any = await fromAny('messages')
+        const { data, error } = await supabase
+          .from('messages')
           .select('id, chat_id, content, created_at')
           .eq('sender', 'user')
           .order('created_at', { ascending: false })
           .limit(6);
+        if (error) throw error;
+
         let items = (data as any[])?.map((d) => ({ id: d.id, chat_id: d.chat_id, content: d.content, created_at: d.created_at })) || [];
         if (!items.length) {
-          const { data: chats }: any = await fromAny('chats')
+          const { data: chats, error: chatsErr } = await supabase
+            .from('chats')
             .select('id, title, updated_at')
             .order('updated_at', { ascending: false })
             .limit(6);
+          if (chatsErr) throw chatsErr;
           items = (chats as any[])?.map((c) => ({ id: c.id, chat_id: c.id, content: c.title, created_at: c.updated_at })) || [];
         }
         setRecentQuestions(items);
-      } catch (_) {}
+      } catch (err) {
+        // Best effort, but not silent: this polls every 5s, so log once per failure
+        // rather than swallowing it the way the previous empty catch did.
+        console.error('Loading recent questions failed:', err);
+      }
     };
 
     if (!loading) {
