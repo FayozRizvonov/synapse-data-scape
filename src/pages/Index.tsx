@@ -122,7 +122,19 @@ const Index = () => {
           transition={{ duration: 0.4, delay: 0.1 }}
           className="group"
         >
-          <GlowCard className="cursor-pointer h-full" glowColor="blue" customSize>
+          {/* Until now this card had cursor-pointer but no handler, so it looked
+              clickable and did nothing. isChatOpen was only ever set reactively,
+              when a reply arrived from the composer — this is the first way to
+              open the assistant deliberately. Mirrors the Pharma S&M card below. */}
+          <div
+            role="button"
+            tabIndex={0}
+            aria-label="Open the CLAIRE AI Assistant"
+            onClick={() => setIsChatOpen(true)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsChatOpen(true); } }}
+            className="cursor-pointer"
+          >
+          <GlowCard className="h-full" glowColor="blue" customSize>
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
                 <MessageSquare className="w-5 h-5 text-cyan-400" />
@@ -138,6 +150,7 @@ const Index = () => {
               </span>
             </div>
           </GlowCard>
+          </div>
         </motion.div>
 
         <motion.div
