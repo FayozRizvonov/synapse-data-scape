@@ -205,6 +205,15 @@ Copy `env_template.txt` to `.env`. Key variables:
 - `MMM_SPEC_SEARCH` — search model specifications, scored out-of-sample; off by default,
   requires `MMM_HOLDOUT_PERIODS`. Tune with `MMM_SEARCH_DRAWS` / `MMM_SEARCH_CHAINS` /
   `MMM_SEARCH_ROUNDS` / `MMM_SEARCH_MAX_FITS`
+- `MMM_SEARCH_HOLDOUT_PERIODS` — periods the search selects on, in its **own** window
+  before the reported one; defaults to `MMM_HOLDOUT_PERIODS`. Lower it when the series
+  cannot carry both windows — see *Specification search*
+- `MMM_SEARCH_MIN_IMPROVEMENT` — how much a candidate must gain to be worth its
+  complexity (default 0.01). Necessary, never sufficient — see *Rolling-origin backtesting*
+- `MMM_BACKTEST_ORIGINS` — expanding-window origins to backtest; `0` (off) by default.
+  Above zero it switches the search to the **paired rolling-origin referee** and writes a
+  `backtest_metrics` output. Costs **one MCMC fit per origin per candidate**
+- `MMM_BACKTEST_HORIZON` — periods forecast from each origin (default 1)
 - `MMM_WATCH_PROJECTS` — project uuids to watch for new data and retrain; empty (off) by
   default. `MMM_WATCH_INTERVAL_SECONDS` sets the poll interval (900)
 - `MMM_HOLDOUT_PERIODS` — trailing periods to hold out for out-of-sample scoring; `0` (off)
@@ -302,8 +311,15 @@ never saw. It optimises `skill_vs_naive`, never in-sample fit, because in-sample
 the score a search will exploit: it rewards adding parameters, and on 33 observations
 there is ample room to add parameters that explain nothing.
 
-A candidate must beat the incumbent by `min_improvement` (default 0.01). **A tie keeps
-the incumbent.** An earlier version also moved to the simpler of two tied specs, which
+How a candidate is judged is the referee's business, not the loop's: `single_holdout`
+(the default, one fit and a threshold) or `rolling_origin` (paired forecasts and a
+bootstrap interval, via `MMM_BACKTEST_ORIGINS`). The loop only asks whether a comparison
+was decisive. See *Rolling-origin backtesting* — on 33 monthly observations the second
+referee can say "I cannot tell", which is usually the true answer and the one the first
+cannot express.
+
+Under the default referee a candidate must beat the incumbent by `min_improvement`
+(default 0.01). **A tie keeps the incumbent.** An earlier version also moved to the simpler of two tied specs, which
 seemed principled and was not — each tie licensed another step, so on flat ground the
 search stripped the model down round after round and the winner depended on the round
 budget rather than the evidence.
@@ -312,8 +328,37 @@ Everything tried is recorded in the `spec_search` output with its score, so a co
 can be interrogated rather than taken on trust. The winner is then refitted at full
 sampling settings; search fits use `MMM_SEARCH_DRAWS` (400) and `MMM_SEARCH_CHAINS` (2).
 
-On the 33-month dovato data, holdout 6 — it dropped the competitor control and added a
-harmonic, nearly quadrupling out-of-sample skill and fixing most of the overconfidence:
+### The search never sees the periods its winner is judged on
+
+Two windows, not one. The last `MMM_HOLDOUT_PERIODS` periods are what `holdout_metrics`
+reports and what the approval gate binds on, so the search is handed the series with
+those periods already removed and selects on its own earlier window of
+`MMM_SEARCH_HOLDOUT_PERIODS` (default: the same size). On dovato that is 33 periods →
+train on 21, select on 2024-10…2025-03, report on 2025-04…2025-09.
+
+Until 2026-10-22 both jobs used the same window: the pipeline reassigned the bundle to
+the winning spec and then scored the holdout on the very periods the search had just
+maximised skill over. `skill_vs_naive` for a searched model was therefore the maximum
+over every candidate tried, and `approve_mmm_model` read it as out-of-sample evidence —
+shown the best of ~15–20 draws and treating it as one. On this data shape (6 holdout
+observations at G=SB=1, estimator sd ≈ 0.26) that inflates by +0.22 to +0.41 depending on
+how correlated the candidates' errors are.
+
+`plan_search_split` refuses the search outright when the series cannot carry both windows
+— the search's own training window must be at least 2× its holdout. A shared window is
+worse than no search, because it produces a number that looks like evidence. Lower
+`MMM_SEARCH_HOLDOUT_PERIODS` to make a short series fit.
+
+`holdout_metrics.selection_independent` carries the verdict with the scores, and the gate
+reads it rather than inferring it. It is true when no search ran, when the search failed,
+when the search kept the default (the incumbent's score is its own, not a maximum), or
+when the reported window was withheld.
+
+> The result below was produced under the **old, shared-window** protocol, so the gain is
+> not a clean out-of-sample estimate — the expected maximum of ~8 statistically identical
+> candidates on this data is itself about +0.17. Re-run under the two-window split before
+> citing it. The coverage improvement is the more trustworthy half: coverage has a known
+> null (0.9), skill has none. Analysis in `docs/llm-spec-proposal-evaluation.md`.
 
 | | skill_vs_naive | coverage_90 |
 |---|---|---|
@@ -380,8 +425,15 @@ read by nothing.
 | no `model_config.governance` | yes — 129 of 142 existing models, all legacy |
 | `governance.passed` ≠ true | yes |
 | holdout present and `trustworthy` ≠ true | yes |
+| holdout present and `selection_independent` = false | yes — the score is a selected maximum |
+| holdout present, a non-default `spec_search`, and `selection_independent` unrecorded | yes — can't confirm the periods were withheld |
 | holdout present and `skill_vs_naive` ≤ 0 | yes |
 | no holdout at all | allowed — `MMM_HOLDOUT_PERIODS` defaults to 0 |
+
+Independence is checked **before** the score is read, because binding on a number the
+model's own form was selected by is circular — see *Specification search*. Legacy holdout
+models are unaffected: with no `spec_search` output there was no selection to contaminate
+them, and they are judged exactly as before.
 
 Holdout evidence is optional but **binding when present**. Pass `override_reason` to approve
 anyway; the override and the blockers it bypassed are recorded in `model_approvals.evidence`.
@@ -408,10 +460,60 @@ the remainder, and scores it on periods it never saw. The production model still
 everything, so all 13 existing outputs are byte-identical to a run with the flag unset — verified.
 Results land in a new `holdout_metrics` output.
 
+Two fields qualify every number in it, and the approval gate blocks on both: `trustworthy`
+(the NumPy forward pass still mirrors PyMC) and `selection_independent` (these periods were
+withheld from the specification search). A score can be perfectly computed and still not be
+evidence — see *Specification search*.
+
 Read `skill_vs_naive` first: it is `1 - rmse/rmse_of_predicting_the_training_mean`. At or below
 zero the model carries no out-of-sample information whatever its r² says. `coverage_90` is the
 share of actuals falling inside the 90% predictive interval — well under 0.9 means the model is
 overconfident. On the 33-month dovato data with `N=6`: skill `+0.065`, coverage `0.50`.
+
+### Rolling-origin backtesting — paired, and with an interval
+
+`MMM_HOLDOUT_PERIODS=6` gives one number from one fit, computed on **six observations**
+(`n_holdout × G × SB` = 6 × 1 × 1 on dovato). The sampling sd of `skill_vs_naive` on six
+points is about **0.26**, against a `min_improvement` of **0.01** — four hundredths of one
+standard deviation. The search was comparing specifications with an instrument that cannot
+resolve differences forty times larger than the one it claimed to detect, and no amount of
+threshold tuning fixes that.
+
+`MMM_BACKTEST_ORIGINS=N` fits once per origin instead: train on `[0, o)`, forecast
+`[o, o+horizon)`, step forward. Two things follow, and the second matters more:
+
+- **More points.** Twelve origins at horizon 1 give twelve genuine out-of-sample forecasts
+  from twelve fits, each one a model forecasting a period it never saw.
+- **Pairing.** Every candidate is scored on the *same* (origin, period, geo, sub-brand)
+  forecasts, so the comparison is made point by point. Most of the noise in a skill score
+  is shared between two specifications that saw the same data — it is the periods that
+  were hard, not the specification — and differencing removes it. Unlike the unpaired
+  figure, the paired noise shrinks as origins are added.
+
+So the search's decision rule is no longer a threshold on a difference. A candidate wins
+only when the **90% bootstrap interval on the paired gain clears zero** *and* the gain
+exceeds `MMM_SEARCH_MIN_IMPROVEMENT`. Clearing noise is necessary; complexity still has to
+earn itself. The interval is resampled over **origins, not points** — forecasts from one
+fitted model share that model's luck, so bootstrapping over points reports an interval
+several times too narrow.
+
+| | referee | fits per candidate | decision rule |
+|---|---|---|---|
+| default | `single_holdout` | 1 | gain > `min_improvement` |
+| `MMM_BACKTEST_ORIGINS=N` | `rolling_origin` | N | interval clears zero **and** gain > `min_improvement` |
+
+**Cost is the honest trade.** `MMM_SEARCH_MAX_FITS` is a budget in *fits*, so the rolling
+referee divides it by the origin count to get the candidate budget; a budget that cannot
+afford the default plus one candidate is **refused**, not silently shrunk. 12 origins ×
+~15 candidates is 180 fits where the old loop paid 15. That buys resolution no candidate
+count can: 12 paired points beats 6 unpaired ones, and 200 candidates on 6 unpaired points
+beats nothing.
+
+`backtest_metrics` reports the production specification the same way, with its origins
+chosen so every forecast target falls inside the window withheld from the search — so it
+is independent evidence by construction. It carries `coverage_90_predictive` (includes
+`sigma`) alongside `coverage_90_mu`; the latter is what `holdout_metrics.coverage_90` has
+always been, and it omits observation noise entirely, so the two are not interchangeable.
 
 > Scoring needs a forward pass outside PyMC, because adstock is a recursive scan whose length is
 > compiled into the graph. `src/validation/holdout.py` reimplements the model's deterministic
