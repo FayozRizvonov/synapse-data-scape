@@ -1,6 +1,6 @@
 import { useState, useCallback, createContext, useContext, ReactNode } from 'react';
 import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '@/integrations/supabase/client';
-import { metricsKnowledgeBase, MetricCard, getTopPerformingChannels, getRegionalPerformance, getMarketingRecommendations, getScenarioComparisons } from '@/data/metricsKnowledgeBase';
+import { metricsKnowledgeBase, MetricCard } from '@/data/metricsKnowledgeBase';
 import { useAuth } from '@/contexts/AuthContext';
 import { loadMergedPharmaMetrics, metricCardsToCompactKbPayload } from '@/lib/pharmaSmMetrics';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
@@ -76,10 +76,6 @@ interface AIAssistantContextType {
   error: string | null;
   sendMessage: (message: string, opts?: { chatId?: string; titleHint?: string }) => Promise<{ chatId?: string }>;
   clearChat: () => void;
-  getTopChannels: () => Array<{ channel: string; roi: string; spend: string; performance: string; }>;
-  getRegionalData: () => Array<{ region: string; performance: string; target: string; gap: string; }>;
-  getRecommendations: () => MetricCard[];
-  getScenarios: () => MetricCard[];
 }
 
 const AIAssistantContext = createContext<AIAssistantContextType | undefined>(undefined);
@@ -648,22 +644,6 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
     setError(null);
   }, []);
 
-  const getTopChannels = useCallback(() => {
-    return getTopPerformingChannels();
-  }, []);
-
-  const getRegionalData = useCallback(() => {
-    return getRegionalPerformance();
-  }, []);
-
-  const getRecommendations = useCallback(() => {
-    return getMarketingRecommendations();
-  }, []);
-
-  const getScenarios = useCallback(() => {
-    return getScenarioComparisons();
-  }, []);
-
   const value = {
     sendMessage,
     messages,
@@ -671,10 +651,6 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
     clearChat,
     isLoading,
     error,
-    getTopChannels,
-    getRegionalData,
-    getRecommendations,
-    getScenarios
   };
 
   return (
