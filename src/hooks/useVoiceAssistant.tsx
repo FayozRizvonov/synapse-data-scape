@@ -25,6 +25,13 @@ interface VoiceAssistantState {
   isAutoMode: boolean;
 }
 
+// How long a single question may be recorded before the recorder is stopped
+// regardless of what silence detection thinks.
+const MAX_RECORDING_MS = 20000;
+
+// Ambient level is sampled for this long before any judgement is made about speech.
+const CALIBRATION_MS = 500;
+
 export const useVoiceAssistant = () => {
   const useStreaming = useFeatureFlag('streaming_orchestrator');
 
@@ -55,6 +62,7 @@ export const useVoiceAssistant = () => {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const graceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const maxDurationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const soundLevelIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   const isAutoModeRef = useRef<boolean>(true);
@@ -189,6 +197,19 @@ export const useVoiceAssistant = () => {
 
       mediaRecorderRef.current.start(250); // Collect data every 250ms
 
+      // A backstop, not a feature. Silence detection decides when a question has
+      // finished; if it misjudges, this guarantees the recorder still stops and the
+      // answer still comes back. Without it the only thing that ended a recording was
+      // the user closing the card — which is why answers appeared to arrive on close:
+      // the request had not been sent until then, and the whole wait was the user
+      // being recorded.
+      maxDurationTimeoutRef.current = setTimeout(() => {
+        if (mediaRecorderRef.current?.state === 'recording') {
+          console.warn(`⏱️ Max recording duration (${MAX_RECORDING_MS}ms) reached — stopping`);
+          stopListening();
+        }
+      }, MAX_RECORDING_MS);
+
       // Start silence detection after small grace period
       graceTimeoutRef.current = setTimeout(() => {
         // Ensure state is updated
@@ -231,6 +252,11 @@ export const useVoiceAssistant = () => {
       graceTimeoutRef.current = null;
     }
 
+    if (maxDurationTimeoutRef.current) {
+      clearTimeout(maxDurationTimeoutRef.current);
+      maxDurationTimeoutRef.current = null;
+    }
+
     if (soundLevelIntervalRef.current) {
       clearInterval(soundLevelIntervalRef.current);
       soundLevelIntervalRef.current = null;
@@ -266,6 +292,17 @@ export const useVoiceAssistant = () => {
     hasDetectedSoundRef.current = false;
     silenceStartRef.current = Date.now();
 
+    // The threshold is calibrated against this microphone in this room rather than
+    // fixed. It used to be `const soundThreshold = 15` — an absolute level on raw FFT
+    // data compared with whatever gain the device happens to have — which fails in both
+    // directions: too quiet and speech is never detected, so silence is never counted;
+    // too noisy and the silence timer resets every tick. Either way the recorder never
+    // stops on its own. (The comment on that line, "Increase threshold from 3 to 15",
+    // is the previous attempt to guess a value that works everywhere.)
+    const calibrationStart = Date.now();
+    const calibrationSamples: number[] = [];
+    let soundThreshold: number | null = null;
+
     const checkSilence = () => {
       // Check MediaRecorder directly
       if (!analyserRef.current || !mediaRecorderRef.current || mediaRecorderRef.current.state !== 'recording') {
@@ -280,11 +317,25 @@ export const useVoiceAssistant = () => {
       analyserRef.current.getByteFrequencyData(dataArray);
       const average = dataArray.reduce((a, b) => a + b) / bufferLength;
       
-      // Increase sound detection threshold for better recognition
-      const soundThreshold = 15; // Increase threshold from 3 to 15
+      // Calibrate first; judge nothing until the noise floor is known.
+      if (soundThreshold === null) {
+        calibrationSamples.push(average);
+        if (Date.now() - calibrationStart < CALIBRATION_MS) return;
+
+        const floor = calibrationSamples.reduce((a, b) => a + b, 0) / calibrationSamples.length;
+        // Speech has to clear the room, not an arbitrary number: well above the floor,
+        // with a small absolute minimum so a silent mic cannot set a zero threshold.
+        soundThreshold = Math.max(floor * 2.2, floor + 5, 4);
+        silenceStartRef.current = Date.now();
+        console.log(
+          `🎚️ Calibrated: noise floor ${floor.toFixed(1)} → threshold ${soundThreshold.toFixed(1)}`,
+        );
+        return;
+      }
+
       const isSound = average > soundThreshold;
-      
-      console.log('🎚️ Audio level:', average.toFixed(2), 'threshold:', soundThreshold, 'hasDetectedSound:', hasDetectedSoundRef.current, 'isSound:', isSound);
+
+      console.log('🎚️ Audio level:', average.toFixed(2), 'threshold:', soundThreshold.toFixed(1), 'hasDetectedSound:', hasDetectedSoundRef.current, 'isSound:', isSound);
       
       if (isSound) {
         if (!hasDetectedSoundRef.current) {
@@ -633,6 +684,11 @@ export const useVoiceAssistant = () => {
     if (graceTimeoutRef.current) {
       clearTimeout(graceTimeoutRef.current);
       graceTimeoutRef.current = null;
+    }
+
+    if (maxDurationTimeoutRef.current) {
+      clearTimeout(maxDurationTimeoutRef.current);
+      maxDurationTimeoutRef.current = null;
     }
 
     if (soundLevelIntervalRef.current) {
