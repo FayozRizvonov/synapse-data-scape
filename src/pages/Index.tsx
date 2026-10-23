@@ -274,7 +274,11 @@ const Index = () => {
   const renderContent = () => {
     switch (activeSection) {
       case 'chat-history':
-        return <ChatHistory onOpenChat={(id) => console.log('open chat', id)} />;
+        // No onOpenChat: ChatHistory falls back to navigating to /chat/:id, which is
+        // a real route rendering ChatThread. It used to be handed a console.log stub,
+        // and because the prop was *provided* the navigation branch never ran — so
+        // clicking a conversation did nothing visible.
+        return <ChatHistory />;
       case 'pharma-sm':
         return <FarmaMetricsWithAssistant />;
       case 'admin-overview':

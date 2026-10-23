@@ -106,8 +106,6 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
     // Ensure chat exists and store user message
     let chatId = opts?.chatId;
     try {
-      const fromAny = (supabase as unknown as { from: (t: string) => any }).from;
-
       // Ensure we have an authenticated user id for RLS
       let authUserId = user?.id as string | undefined;
       if (!authUserId) {
@@ -115,20 +113,34 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
         authUserId = data.session?.user?.id as string | undefined;
       }
 
-      if (!chatId && authUserId) {
-        const { data: created } = await fromAny('chats')
-          .insert({ title: opts?.titleHint || (message.slice(0, 60) || 'New chat'), user_id: authUserId })
-          .select('id')
-          .single();
-        chatId = (created as { id?: string } | undefined)?.id;
-      }
+      if (!authUserId) {
+        console.warn('Chat persistence skipped: no authenticated user');
+      } else {
+        if (!chatId) {
+          const { data: created, error: chatErr } = await supabase
+            .from('chats')
+            .insert({ title: opts?.titleHint || (message.slice(0, 60) || 'New chat'), user_id: authUserId })
+            .select('id')
+            .single();
+          if (chatErr) throw chatErr;
+          chatId = created?.id;
+        }
 
-      if (chatId && authUserId) {
-        await fromAny('messages').insert({ chat_id: chatId, sender: 'user', content: message });
+        if (chatId) {
+          const { error: msgErr } = await supabase
+            .from('messages')
+            .insert({ chat_id: chatId, sender: 'user', content: message });
+          if (msgErr) throw msgErr;
+        }
       }
-    } catch (_) {
-      // Best-effort: UI will still work even if persistence fails
-      console.warn('Chat persistence (user message) failed');
+    } catch (err) {
+      // Persistence is best-effort — a failure here must not stop the reply. But it
+      // used to be invisible: the previous version called an UNBOUND supabase.from,
+      // which throws `Cannot read properties of undefined (reading 'rest')` on every
+      // call, and the catch logged a fixed string without the error. Every chat and
+      // message insert had been failing since this was written, which is why both
+      // tables were empty.
+      console.error('Chat persistence (user message) failed:', err);
     }
 
     try {
@@ -583,9 +595,8 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
 
       // Persist AI reply
       try {
-        const fromAny = (supabase as unknown as { from: (t: string) => any }).from;
         if (chatId) {
-          await fromAny('messages').insert({
+          const { error: replyErr } = await supabase.from('messages').insert({
             chat_id: chatId,
             sender: 'ai',
             content: aiResponse.text,
@@ -597,9 +608,17 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
               metricId: aiResponse.details?.metricId,
             }
           });
+          if (replyErr) throw replyErr;
+
+          // Surface the conversation in the history list by recency, and give it a
+          // title from the first exchange instead of leaving it "New chat".
+          await supabase
+            .from('chats')
+            .update({ updated_at: new Date().toISOString() })
+            .eq('id', chatId);
         }
-      } catch (_) {
-        console.warn('Chat persistence (AI message) failed');
+      } catch (err) {
+        console.error('Chat persistence (AI message) failed:', err);
       }
 
     } catch (err) {
