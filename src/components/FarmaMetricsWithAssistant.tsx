@@ -35,7 +35,6 @@ import { VoiceAssistant } from './VoiceAssistant';
 import ChatView from './ChatView';
 import { usePharmaMetrics, useModelPerformanceStats } from '@/hooks/usePharmaMetrics';
 import { usePharmaSmDashboardMetrics } from '@/hooks/usePharmaSmDashboardMetrics';
-import { DEMO_PROJECT_ID } from '@/constants/project';
 import type { MetricCard as KBMetricCard } from '@/data/metricsKnowledgeBase';
 
 // Local interface for our component that extends the base MetricCard
@@ -91,6 +90,19 @@ const FarmaMetricsWithAssistant = () => {
   const [metricRange, setMetricRange] = useState<'3m' | '6m' | '12m'>('12m');
 
   // Live data from Supabase (MMM outputs)
+  // NOTE: key metrics and model-fit stats still read the ORIGINAL project id, not
+  // DEMO_PROJECT_ID. Repointing them belongs in its own change, because the two projects
+  // report very different model quality and the switch is not cosmetic:
+  //
+  //   fa95a40e (here)   r2 99.53%  MAPE  4.04%   run of 2025-09-02
+  //   550e8400          r2 39.80%  MAPE 23.26%   run of 2026-10-19
+  //
+  // The 99.53% is the stale one and is not a real fit -- it predates 2026-10-11, so it is
+  // inflated by the synthetic interpolation sawtooth. 39.80% is the honest number. Showing
+  // the honest number is right, but it is a 60-point drop on a headline the client is
+  // watching, so it is a decision to take deliberately rather than smuggle in alongside a
+  // card-reconciliation fix. The situation cards below are unaffected: they come from
+  // usePharmaSmDashboardMetrics, which resolves the project itself.
   const {
     keyMetrics: hookKeyMetrics,
     uiKeyMetrics,
@@ -98,7 +110,7 @@ const FarmaMetricsWithAssistant = () => {
     error: metricsError,
     refreshData
   } = usePharmaMetrics({
-    projectId: DEMO_PROJECT_ID,
+    projectId: 'fa95a40e-7574-47c1-9c46-85820edad19f',
     period: selectedPeriod,
     autoRefresh: true,
     refreshInterval: 60000
@@ -109,11 +121,12 @@ const FarmaMetricsWithAssistant = () => {
     data: pharmaSmMetrics,
     loading: situationLoading,
     error: situationError,
+    usedFallback: situationUsedFallback,
   } = usePharmaSmDashboardMetrics();
   const situationCards = pharmaSmMetrics?.situation;
 
   const { rSquared, mape } = useModelPerformanceStats({
-    projectId: DEMO_PROJECT_ID
+    projectId: 'fa95a40e-7574-47c1-9c46-85820edad19f'
   });
 
   // Function to get data based on selected period
@@ -894,8 +907,16 @@ const FarmaMetricsWithAssistant = () => {
         {/* Key Metrics */}
         {renderMetricSection(keyMetrics, keyMetricsExpanded, setKeyMetricsExpanded, "Key Metrics", true)}
         
-        {/* Situation Metrics — derived in the database, so a fetch failure is reported
-            rather than papered over with a stale hardcoded copy. */}
+        {/* Situation Metrics — derived in the database. If that call fails the hook serves a
+            generated snapshot, so a client demo never sees an empty section; the notice below
+            is dev-only, because the client should not be reading our plumbing off the screen. */}
+        {situationUsedFallback && import.meta.env.DEV && (
+          <div className="rounded-lg border border-amber-400/40 bg-amber-400/10 px-4 py-2 text-xs text-amber-700 dark:text-amber-300">
+            Model Output Summary is showing the generated snapshot, not live data — Supabase
+            did not answer. Check the console, and regenerate with{' '}
+            <code>node scripts/generate-pharma-sm-fallback.mjs</code> if the figures have moved.
+          </div>
+        )}
         {situationMetrics.length > 0 ? (
           renderMetricSection(situationMetrics, situationMetricsExpanded, setSituationMetricsExpanded, "Model Output Summary", true)
         ) : (
