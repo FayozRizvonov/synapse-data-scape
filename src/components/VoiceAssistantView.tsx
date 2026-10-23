@@ -6,6 +6,7 @@ import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { AIVoiceInput } from './AIVoiceInput';
 import ChatMetricCardEnhanced from './ChatMetricCardEnhanced';
 import { getMetricById } from '@/data/metricsKnowledgeBase';
+import { usePharmaSmDashboardMetrics } from '@/hooks/usePharmaSmDashboardMetrics';
 import { cn } from '@/lib/utils';
 import { downloadClosestCard } from '@/lib/exportImage';
 
@@ -22,6 +23,14 @@ const VoiceAssistantView: React.FC<VoiceAssistantViewProps> = ({
   isSidebarCollapsed = false,
   onNavigateToSection
 }) => {
+  // Metric cards are derived in the database (get_pharma_sm_metrics_merged). The bundled
+  // knowledge base is only a fallback for ids the database does not serve.
+  const { data: pharmaSmMetrics } = usePharmaSmDashboardMetrics();
+  const dbMetricsById = React.useMemo(() => {
+    const all = [...(pharmaSmMetrics?.key ?? []), ...(pharmaSmMetrics?.situation ?? [])];
+    return new Map(all.map(c => [c.id, c] as const));
+  }, [pharmaSmMetrics]);
+
   const {
     isListening,
     isTranscribing,
@@ -244,7 +253,7 @@ const VoiceAssistantView: React.FC<VoiceAssistantViewProps> = ({
               {cardData && (
                 <div>
                   {(() => {
-                    const metric = getMetricById(cardData.metric_id);
+                    const metric = dbMetricsById.get(cardData.metric_id) ?? getMetricById(cardData.metric_id);
                     if (!metric) {
                       return (
                         <div className="p-4 backdrop-blur-[2px] bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all duration-300 shadow-md">

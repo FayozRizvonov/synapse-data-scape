@@ -34,6 +34,8 @@ import { LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line, Area, Re
 import { VoiceAssistant } from './VoiceAssistant';
 import ChatView from './ChatView';
 import { usePharmaMetrics, useModelPerformanceStats } from '@/hooks/usePharmaMetrics';
+import { usePharmaSmDashboardMetrics } from '@/hooks/usePharmaSmDashboardMetrics';
+import { DEMO_PROJECT_ID } from '@/constants/project';
 import type { MetricCard as KBMetricCard } from '@/data/metricsKnowledgeBase';
 
 // Local interface for our component that extends the base MetricCard
@@ -96,14 +98,22 @@ const FarmaMetricsWithAssistant = () => {
     error: metricsError,
     refreshData
   } = usePharmaMetrics({
-    projectId: 'fa95a40e-7574-47c1-9c46-85820edad19f',
+    projectId: DEMO_PROJECT_ID,
     period: selectedPeriod,
     autoRefresh: true,
     refreshInterval: 60000
   });
 
+  // Situation cards, derived in the database (see get_pharma_sm_metrics_merged)
+  const {
+    data: pharmaSmMetrics,
+    loading: situationLoading,
+    error: situationError,
+  } = usePharmaSmDashboardMetrics();
+  const situationCards = pharmaSmMetrics?.situation;
+
   const { rSquared, mape } = useModelPerformanceStats({
-    projectId: 'fa95a40e-7574-47c1-9c46-85820edad19f'
+    projectId: DEMO_PROJECT_ID
   });
 
   // Function to get data based on selected period
@@ -564,267 +574,29 @@ const FarmaMetricsWithAssistant = () => {
     }
   ];
 
-  const situationMetrics: LocalMetricCard[] = [
-    {
-      id: 'total-sales',
-      title: 'Total Sales',
-      value: '$21.3M',
-      change: '+85.2%',
-      changeType: 'positive',
-      comparison: 'Total Revenue',
-      icon: DollarSign,
-      category: 'situation',
-      section: 'situation',
-      description: 'Total sales revenue including all attributions for the current period.',
-      details: {
-        description: 'Total sales revenue including all attributions for the current period.',
-        breakdown: [
-          { label: 'All Channels', value: '$21.3M' },
-          { label: 'Growth YoY', value: '+85.2%' },
-          { label: 'Net Sales', value: '$18.7M' }
-        ]
-      }
-    },
-    {
-      id: 'base-sales',
-      title: 'Base Sales',
-      value: '$12.0M',
-      change: '+93.14%',
-      changeType: 'positive',
-      comparison: 'Revenue Attribution',
-      icon: Activity,
-      category: 'situation',
-      section: 'situation',
-      description: 'This base sales component represents the baseline revenue that would occur without any promotional efforts',
-      details: {
-        description: 'This base sales component represents the baseline revenue that would occur without any promotional efforts',
-        breakdown: [
-          { label: 'Confidence Interval', value: '85%' },
-          { label: 'P-value', value: '0.01' },
-          { label: 'Historical Impact', value: '2019-2023' }
-        ]
-      }
-    },
-    {
-      id: 'incremental',
-      title: 'Incremental',
-      value: '$7.3M',
-      change: '+18.2%',
-      changeType: 'positive',
-      comparison: 'Incremental Revenue',
-      icon: BarChart3,
-      category: 'situation',
-      section: 'situation',
-      description: 'Revenue generated above the baseline due to marketing activities.',
-      details: {
-        description: 'Revenue generated above the baseline due to marketing activities.',
-        breakdown: [
-          { label: 'Marketing Impact', value: '$6.8M' },
-          { label: 'Other Factors', value: '$0.5M' }
-        ]
-      }
-    },
-    {
-      id: 'promotional-spend',
-      title: 'Promotional Spend',
-      value: '$1.2M',
-      change: '+12.5%',
-      changeType: 'positive',
-      comparison: 'Total Promotional Budget',
-      icon: BarChart3,
-      category: 'situation',
-      section: 'situation',
-      description: 'Total spend on promotional activities for the current period.',
-      details: {
-        description: 'Total spend on promotional activities for the current period.',
-        breakdown: [
-          { label: 'Digital', value: '$0.6M' },
-          { label: 'Field Force', value: '$0.5M' },
-          { label: 'Events', value: '$0.1M' }
-        ]
-      }
-    },
-    {
-      id: 'roi',
-      title: 'ROI',
-      value: '2.7x',
-      change: '+21.7%',
-      changeType: 'positive',
-      comparison: 'Incremental Return on Investment',
-      icon: TrendingUp,
-      category: 'situation',
-      section: 'situation',
-      description: 'Media-driven revenue per dollar of media spend.',
-      details: {
-        // Was Revenue $21.3M / Spend $0.7M / ROI 6x — no two of those agreed
-        // (21.3/0.7 = 30x). Aligned to the scenario story: incremental ROI, so
-        // media-driven revenue = spend x ROI and the three figures reconcile.
-        description: 'Media-driven revenue per dollar of media spend. Total revenue also includes base (non-media) demand.',
-        breakdown: [
-          { label: 'Total Revenue', value: '$21.3M' },
-          { label: 'Media Spend', value: '$1.20M' },
-          { label: 'Media-driven Revenue', value: '$3.24M' },
-          { label: 'Incremental ROI', value: '2.7x' }
-        ]
-      }
-    },
-    {
-      id: 'vrr',
-      title: 'VRR',
-      value: '3.6x',
-      change: '+18.2%',
-      changeType: 'positive',
-      comparison: 'Volume Response Rate',
-      icon: BarChart3,
-      category: 'situation',
-      section: 'situation',
-      description: 'Volume Response Rate measures the effectiveness of marketing activities in driving volume increases.',
-      details: {
-        description: 'Volume Response Rate measures the effectiveness of marketing activities in driving volume increases.',
-        breakdown: [
-          { label: 'Volume Impact', value: '+18.2%' },
-          { label: 'Response Rate', value: '3.6x' },
-          { label: 'Efficiency Score', value: '92%' }
-        ]
-      }
-    },
-    {
-      id: 'seasonality',
-      title: 'Seasonality',
-      value: '$0.3M',
-      change: '+6.86%',
-      changeType: 'positive',
-      comparison: 'Revenue Attribution',
-      icon: Calendar,
-      category: 'situation',
-      section: 'situation',
-      description: 'Seasonal revenue patterns and cyclical business variations',
-      details: {
-        description: 'Seasonal revenue patterns and cyclical business variations',
-        breakdown: [
-          { label: 'Q1 Seasonal Impact', value: '$0.1M' },
-          { label: 'Q2 Seasonal Impact', value: '$0.1M' },
-          { label: 'Q3 Seasonal Impact', value: '$0.1M' }
-        ]
-      }
-    },
-    {
-      id: 'trend',
-      title: 'Trend',
-      value: '$0.5M',
-      change: '+2.1%',
-      changeType: 'positive',
-      comparison: 'Revenue Attribution',
-      icon: TrendingUp,
-      category: 'situation',
-      section: 'situation',
-      description: 'Long-term growth trend in pharmaceutical sales performance',
-      details: {
-        description: 'Long-term growth trend in pharmaceutical sales performance',
-        breakdown: [
-          { label: 'Annual Growth Rate', value: '8.4%' },
-          { label: 'Market Expansion', value: '12.2%' },
-          { label: 'Product Adoption', value: '15.7%' }
-        ]
-      }
-    },
-    {
-      id: 'f2f-calls',
-      title: 'F2F Calls',
-      value: '$4.0M',
-      change: '+7.5%',
-      changeType: 'positive',
-      comparison: 'Revenue Attribution',
-      icon: Users,
-      category: 'situation',
-      section: 'situation',
-      description: 'Revenue attributed to face-to-face sales calls.',
-      details: {
-        description: 'Revenue attributed to face-to-face sales calls.',
-        breakdown: [
-          { label: 'Number of Calls', value: '3,200' },
-          { label: 'Conversion Rate', value: '12.5%' }
-        ]
-      }
-    },
-    {
-      id: 'web-virtual-calls',
-      title: 'Web Virtual Calls',
-      value: '$0.6M',
-      change: '+5.2%',
-      changeType: 'positive',
-      comparison: 'Revenue Attribution',
-      icon: Stethoscope,
-      category: 'situation',
-      section: 'situation',
-      description: 'Revenue attributed to web-based virtual sales calls.',
-      details: {
-        description: 'Revenue attributed to web-based virtual sales calls.',
-        breakdown: [
-          { label: 'Virtual Calls', value: '2,100' },
-          { label: 'Engagement Rate', value: '9.8%' }
-        ]
-      }
-    },
-    {
-      id: 'symposium',
-      title: 'Symposium',
-      value: '$0.5M',
-      change: '+3.9%',
-      changeType: 'positive',
-      comparison: 'Revenue Attribution',
-      icon: Calendar,
-      category: 'situation',
-      section: 'situation',
-      description: 'Revenue generated from symposium events and conferences.',
-      details: {
-        description: 'Revenue generated from symposium events and conferences.',
-        breakdown: [
-          { label: 'Events Held', value: '8' },
-          { label: 'Attendees', value: '1,200' }
-        ]
-      }
-    },
-    {
-      id: 'sfmc-emails',
-      title: 'SFMC Emails',
-      value: '$0.3M',
-      change: '+2.7%',
-      changeType: 'positive',
-      comparison: 'Revenue Attribution',
-      icon: Mail,
-      category: 'situation',
-      section: 'situation',
-      description: 'Revenue attributed to Salesforce Marketing Cloud email campaigns.',
-      details: {
-        description: 'Revenue attributed to Salesforce Marketing Cloud email campaigns.',
-        breakdown: [
-          { label: 'Emails Sent', value: '45,000' },
-          { label: 'Open Rate', value: '22.1%' }
-        ]
-      }
-    },
-    {
-      id: 'mass-email',
-      title: 'Mass Email',
-      value: '$0.4M',
-      change: '+15.3%',
-      changeType: 'positive',
-      comparison: 'Revenue Attribution',
-      icon: Mail,
-      category: 'situation',
-      section: 'situation',
-      description: 'Direct impact of mass email campaigns on revenue generation',
-      details: {
-        description: 'Direct impact of mass email campaigns on revenue generation',
-        breakdown: [
-          { label: 'Emails Sent', value: '120,000' },
-          { label: 'Open Rate', value: '24.7%' },
-          { label: 'Revenue per Email', value: '$3.33' }
-        ]
-      }
-    }
-  ];
+  // Situation ("Model Output Summary") cards come from Supabase via
+  // get_pharma_sm_metrics_merged, which derives every figure from monthly volume x price
+  // and the channel spend/ROI split. They used to be a 261-line hardcoded array here, which
+  // is why the dashboard and the assistant showed different totals for the same metric:
+  // nothing forced the two copies to agree, and the headline, the quarterly breakdown and
+  // the base/incremental split had each drifted separately.
+  //
+  // Deliberately no static fallback: a stale hardcoded copy standing in for the real thing
+  // is the failure this replaced. If the fetch fails the section reports it instead.
+  const situationMetrics: LocalMetricCard[] = (situationCards ?? []).map(c => ({
+    id: c.id,
+    title: c.title,
+    value: c.value,
+    change: c.change,
+    changeType: c.changeType,
+    comparison: c.comparison,
+    icon: uiIconMap[c.icon] || Activity,
+    category: 'situation',
+    section: 'situation',
+    description: c.description ?? '',
+    details: c.details,
+    chartData: c.chartData,
+  }));
 
   const handleCardClick = (card: LocalMetricCard) => {
     // For prototype: clicking Digital DTC Compaign opens a modal with a history chart
@@ -864,10 +636,11 @@ const FarmaMetricsWithAssistant = () => {
     let afterVRR: LocalMetricCard[] = [];
     if (title === 'Channel Impact' || title === 'Model Output Summary') {
       const topOrder = ['total-sales','base-sales','incremental','promotional-spend','roi','vrr','seasonality','trend'];
-      const modelOrder = ['f2f-calls','web-virtual-calls','symposium','sfmc-emails','mass-email'];
       const byId = new Map(metrics.map(m => [m.id, m] as const));
       beforeVRR = topOrder.map(id => byId.get(id)).filter(Boolean) as LocalMetricCard[];
-      afterVRR = modelOrder.map(id => byId.get(id)).filter(Boolean) as LocalMetricCard[];
+      // Anything not in topOrder is a channel-level card. Listing those ids explicitly used
+      // to silently drop any card the list didn't name, so keep the order the source gave us.
+      afterVRR = metrics.filter(m => !topOrder.includes(m.id));
     } else {
       // For Key Metrics and others: single grid; no subsection
       beforeVRR = [];
@@ -1121,8 +894,22 @@ const FarmaMetricsWithAssistant = () => {
         {/* Key Metrics */}
         {renderMetricSection(keyMetrics, keyMetricsExpanded, setKeyMetricsExpanded, "Key Metrics", true)}
         
-        {/* Situation Metrics */}
-        {renderMetricSection(situationMetrics, situationMetricsExpanded, setSituationMetricsExpanded, "Model Output Summary", true)}
+        {/* Situation Metrics — derived in the database, so a fetch failure is reported
+            rather than papered over with a stale hardcoded copy. */}
+        {situationMetrics.length > 0 ? (
+          renderMetricSection(situationMetrics, situationMetricsExpanded, setSituationMetricsExpanded, "Model Output Summary", true)
+        ) : (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-glow">Model Output Summary</h2>
+            <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl p-6 text-sm text-gray-600 dark:text-white/70">
+              {situationLoading
+                ? 'Loading model output summary…'
+                : situationError
+                  ? `Could not load the model output summary: ${situationError}`
+                  : 'No model output summary is available for this project yet.'}
+            </div>
+          </div>
+        )}
 
         {/* Model Performance Stats */}
         <div className="space-y-4">

@@ -48,7 +48,10 @@ function toFarmaCard(m: MetricCard): FarmaSmCard {
 
 /**
  * Merged PHARMA S&M cards (global + company/brand overrides).
- * Returns { data, loading } — data is null if DB empty or error.
+ *
+ * Returns { data, loading, error }. `error` matters: `get_pharma_sm_metrics_merged` did not
+ * exist for the whole time this hook was in the tree, and because the failure was swallowed
+ * the callers quietly rendered hardcoded copies instead. A fetch that fails now says so.
  */
 export function usePharmaSmDashboardMetrics() {
   const { companyId } = useAuth();
@@ -57,10 +60,12 @@ export function usePharmaSmDashboardMetrics() {
     situation: FarmaSmCard[];
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setError(null);
     (async () => {
       try {
         const merged = await loadMergedPharmaMetrics(supabase, companyId ?? null, null);
@@ -74,8 +79,12 @@ export function usePharmaSmDashboardMetrics() {
             .map(toFarmaCard);
           setSplit({ key, situation });
         }
-      } catch {
-        if (!cancelled) setSplit(null);
+      } catch (err) {
+        if (cancelled) return;
+        const message = err instanceof Error ? err.message : String(err);
+        console.error('Pharma S&M metrics fetch failed:', err);
+        setSplit(null);
+        setError(message);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -85,5 +94,5 @@ export function usePharmaSmDashboardMetrics() {
     };
   }, [companyId]);
 
-  return { data: split, loading };
+  return { data: split, loading, error };
 }

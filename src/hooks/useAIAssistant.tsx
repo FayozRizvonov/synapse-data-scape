@@ -146,12 +146,17 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log('Sending message to AI assistant:', message);
 
+      // Prefer the database-derived cards. The bundled KB is only a last resort: it is a
+      // separate hardcoded copy, and while this catch was silent it was in fact serving
+      // every answer, because `get_pharma_sm_metrics_merged` did not exist and the error
+      // was indistinguishable from an empty result.
       let activeKb: MetricCard[] = metricsKnowledgeBase;
       try {
         const merged = await loadMergedPharmaMetrics(supabase, companyId ?? null, null);
         if (merged.length > 0) activeKb = merged;
-      } catch (_) {
-        /* keep bundled KB */
+        else console.warn('Pharma S&M metrics returned no rows; using the bundled knowledge base.');
+      } catch (err) {
+        console.error('Pharma S&M metrics fetch failed; using the bundled knowledge base:', err);
       }
 
       const compactKb = metricCardsToCompactKbPayload(activeKb);
