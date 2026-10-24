@@ -375,28 +375,28 @@ export const pharmaSmFallbackCards: MetricCard[] = [
     "id": "vrr",
     "icon": "Activity",
     "title": "VRR",
-    "value": "135 u/$k",
-    "change": "-1.5%",
+    "value": "3.6x",
+    "change": "+18.0%",
     "details": {
       "breakdown": [
+        {
+          "label": "Response Rate",
+          "value": "3.6x"
+        },
         {
           "label": "Incremental Units",
           "value": "162,500 units"
         },
         {
-          "label": "Promotional Spend",
-          "value": "$1.20M"
+          "label": "Volume Growth YoY",
+          "value": "+4.4%"
         },
         {
-          "label": "Units per $1k",
-          "value": "135.4"
-        },
-        {
-          "label": "FY2023 Units per $1k",
-          "value": "137.5"
+          "label": "FY2023 Response Rate",
+          "value": "3.1x"
         }
       ],
-      "description": "The volume-basis counterpart to ROI. It can move the opposite way to ROI when realised price changes, because the same revenue is then worth fewer or more units."
+      "description": "A stored presentational figure, like seasonality and trend. It sits outside the base + seasonality + trend + incremental identity, so it participates in no sum. At a flat realised price a volume-basis return equals the value-basis ROI, so this is deliberately not derived as incremental / spend."
     },
     "section": "pharma-sm",
     "category": "situation",
@@ -411,19 +411,19 @@ export const pharmaSmFallbackCards: MetricCard[] = [
       "data": [
         {
           "name": "FY2023",
-          "revenue": 137.5
+          "revenue": 3.1
         },
         {
           "name": "Current",
-          "revenue": 135.4
+          "revenue": 3.6
         }
       ],
       "type": "bar",
       "valueKey": "revenue"
     },
-    "changeType": "negative",
+    "changeType": "positive",
     "comparison": "Volume Response Rate",
-    "description": "Incremental units gained per $1,000 of promotional spend."
+    "description": "How strongly promotional activity converts into incremental volume."
   },
   {
     "id": "seasonality",
@@ -552,7 +552,7 @@ export const pharmaSmFallbackCards: MetricCard[] = [
     "icon": "BarChart3",
     "title": "SF Calls",
     "value": "$1.35M",
-    "change": "-7.7%",
+    "change": "2.50x",
     "details": {
       "breakdown": [
         {
@@ -572,7 +572,7 @@ export const pharmaSmFallbackCards: MetricCard[] = [
           "value": "41.5%"
         }
       ],
-      "description": "Channel contribution is spend x channel ROI. The change shown is this channel's ROI against the overall ROI."
+      "description": "Channel contribution is spend x channel ROI. The figure beside the value is this channel ROI, coloured by whether it beats the blended rate."
     },
     "section": "pharma-sm",
     "category": "situation",
@@ -604,7 +604,7 @@ export const pharmaSmFallbackCards: MetricCard[] = [
     "icon": "BarChart3",
     "title": "Digital",
     "value": "$1.19M",
-    "change": "+21.8%",
+    "change": "3.30x",
     "details": {
       "breakdown": [
         {
@@ -624,7 +624,7 @@ export const pharmaSmFallbackCards: MetricCard[] = [
           "value": "36.6%"
         }
       ],
-      "description": "Channel contribution is spend x channel ROI. The change shown is this channel's ROI against the overall ROI."
+      "description": "Channel contribution is spend x channel ROI. The figure beside the value is this channel ROI, coloured by whether it beats the blended rate."
     },
     "section": "pharma-sm",
     "category": "situation",
@@ -656,7 +656,7 @@ export const pharmaSmFallbackCards: MetricCard[] = [
     "icon": "BarChart3",
     "title": "1-to-1 Email",
     "value": "$0.40M",
-    "change": "-18.8%",
+    "change": "2.20x",
     "details": {
       "breakdown": [
         {
@@ -676,7 +676,7 @@ export const pharmaSmFallbackCards: MetricCard[] = [
           "value": "12.3%"
         }
       ],
-      "description": "Channel contribution is spend x channel ROI. The change shown is this channel's ROI against the overall ROI."
+      "description": "Channel contribution is spend x channel ROI. The figure beside the value is this channel ROI, coloured by whether it beats the blended rate."
     },
     "section": "pharma-sm",
     "category": "situation",
@@ -708,7 +708,7 @@ export const pharmaSmFallbackCards: MetricCard[] = [
     "icon": "BarChart3",
     "title": "Web Virtual Calls",
     "value": "$0.31M",
-    "change": "-4.0%",
+    "change": "2.60x",
     "details": {
       "breakdown": [
         {
@@ -728,7 +728,7 @@ export const pharmaSmFallbackCards: MetricCard[] = [
           "value": "9.5%"
         }
       ],
-      "description": "Channel contribution is spend x channel ROI. The change shown is this channel's ROI against the overall ROI."
+      "description": "Channel contribution is spend x channel ROI. The figure beside the value is this channel ROI, coloured by whether it beats the blended rate."
     },
     "section": "pharma-sm",
     "category": "situation",
