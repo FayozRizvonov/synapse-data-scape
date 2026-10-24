@@ -3,6 +3,7 @@ import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '@/integrations
 import { metricsKnowledgeBase, MetricCard, getTopPerformingChannels, getRegionalPerformance, getMarketingRecommendations, getScenarioComparisons } from '@/data/metricsKnowledgeBase';
 import { useAuth } from '@/contexts/AuthContext';
 import { loadMergedPharmaMetrics, metricCardsToCompactKbPayload } from '@/lib/pharmaSmMetrics';
+import { pharmaSmFallbackCards } from '@/data/pharmaSmFallback';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 
 // Share the client's resolved config rather than re-reading import.meta.env:
@@ -146,12 +147,22 @@ export const AIAssistantProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log('Sending message to AI assistant:', message);
 
-      let activeKb: MetricCard[] = metricsKnowledgeBase;
+      // Prefer the database-derived cards. While this catch was silent it was in fact serving
+      // every answer, because `get_pharma_sm_metrics_merged` did not exist and the error was
+      // indistinguishable from an empty result.
+      //
+      // The fallback is the bundled key metrics plus the GENERATED situation snapshot. The
+      // snapshot is needed because the situation cards no longer live in this file: without it
+      // a failed fetch would leave the assistant with no sales figures at all, and a model
+      // told that every numeric claim must come from the dataset would simply decline.
+      const fallbackKb: MetricCard[] = [...metricsKnowledgeBase, ...pharmaSmFallbackCards];
+      let activeKb: MetricCard[] = fallbackKb;
       try {
         const merged = await loadMergedPharmaMetrics(supabase, companyId ?? null, null);
         if (merged.length > 0) activeKb = merged;
-      } catch (_) {
-        /* keep bundled KB */
+        else console.warn('Pharma S&M metrics returned no rows; using the generated snapshot.');
+      } catch (err) {
+        console.error('Pharma S&M metrics fetch failed; using the generated snapshot:', err);
       }
 
       const compactKb = metricCardsToCompactKbPayload(activeKb);
