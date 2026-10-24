@@ -12,7 +12,13 @@ export async function loadMergedPharmaMetrics(
     p_company_id: companyId,
     p_brand_id: brandId,
   });
-  if (error || !data?.length) return [];
+  // A real failure has to throw. This used to fold errors into the same empty array as "no
+  // rows", so when the function was missing from the database entirely every caller treated
+  // it as an empty result and silently fell back to hardcoded numbers.
+  if (error) {
+    throw new Error(error.message ?? 'get_pharma_sm_metrics_merged failed');
+  }
+  if (!data?.length) return [];
   return (data as MergedRow[])
     .sort((a, b) => a.sort_order - b.sort_order)
     .map((r) => r.card);
