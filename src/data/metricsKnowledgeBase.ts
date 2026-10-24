@@ -217,110 +217,16 @@ export const getMetricsByCategory = (category: 'key' | 'situation' | 'scenario')
   return metricsKnowledgeBase.filter(metric => metric.category === category);
 };
 
-export const getTopPerformingChannels = () => [
-  { channel: 'Phone Calls ABC', roi: '2.5x', spend: '$520K', performance: 'Top performer' },
-  { channel: 'Digital Pharma Video', roi: '2.4x', spend: '$500K', performance: 'Best digital channel' },
-  { channel: 'Web Virtual Calls ABC', roi: '2.2x', spend: '$410K', performance: 'Strong virtual performance' },
-  { channel: 'Digital Pharma Display', roi: '2.1x', spend: '$430K', performance: 'Good digital performance' },
-  { channel: 'Veeva Emails', roi: '1.9x', spend: '$420K', performance: 'Good email performance' }
-];
-
-export const getRegionalPerformance = () => [
-  { region: 'South Region', performance: '85% rep call coverage, +6% script lift', target: '80%', gap: '+5%' },
-  { region: 'Central Region', performance: '62% coverage, −3% script lift', target: '75%', gap: '-13%' },
-  { region: 'North Region', performance: '58% coverage, flat script trend', target: '70%', gap: '-12%' }
-];
-
-export const getMarketingRecommendations = (): MetricCard[] => [
-  {
-    id: 'f2f-east-region',
-    title: 'Increase F2F Calls in East Region',
-    value: 'High Impact',
-    change: 'β=2.34',
-    changeType: 'positive',
-    comparison: 'ROI Coefficient',
-    description: 'Highest ROI region for F2F calls',
-    icon: 'Target',
-    category: 'scenario',
-    section: 'recommendations',
-    keywords: ['f2f', 'east', 'region', 'high impact'],
-    details: {
-      description: 'East region shows highest potential for F2F call optimization',
-      breakdown: [
-        { label: 'Current Coverage', value: '45%' },
-        { label: 'Target Coverage', value: '75%' },
-        { label: 'Expected ROI', value: '2.34x' },
-        { label: 'Investment Required', value: '$250K' }
-      ]
-    }
-  }
-];
-
-export const getScenarioComparisons = (): MetricCard[] => [
-  {
-    id: 'scenario-baseline',
-    title: 'Baseline Scenario',
-    value: '$21.3M',
-    change: '2.7x',
-    changeType: 'positive',
-    comparison: 'ROI',
-    description: 'Current plan projection',
-    icon: 'BarChart3',
-    category: 'scenario',
-    section: 'scenarios',
-    keywords: ['baseline', 'current', 'plan'],
-    details: {
-      description: 'Baseline scenario based on current marketing plan',
-      breakdown: [
-        { label: 'Media Spend', value: '$1.20M' },
-        { label: 'Projected Sales', value: '$21.3M' },
-        { label: 'Incremental ROI', value: '2.7x' },
-        { label: 'Profit Margin', value: '18%' }
-      ]
-    }
-  },
-  {
-    id: 'scenario-optimistic',
-    title: 'Optimistic Scenario',
-    value: '$24.5M',
-    change: '2.9x',
-    changeType: 'positive',
-    comparison: 'ROI',
-    description: 'Optimistic growth projection with 15% spend increase',
-    icon: 'TrendingUp',
-    category: 'scenario',
-    section: 'scenarios',
-    keywords: ['optimistic', 'growth', 'increase'],
-    details: {
-      description: 'Optimistic scenario with increased marketing investment',
-      breakdown: [
-        { label: 'Media Spend', value: '$1.38M (+15%)' },
-        { label: 'Projected Sales', value: '$24.5M' },
-        { label: 'Incremental ROI', value: '2.9x' },
-        { label: 'Profit Margin', value: '21%' }
-      ]
-    }
-  },
-  {
-    id: 'scenario-pessimistic',
-    title: 'Pessimistic Scenario',
-    value: '$19.17M',
-    change: '2.4x',
-    changeType: 'negative',
-    comparison: 'ROI',
-    description: 'Conservative projection with 10% spend reduction',
-    icon: 'TrendingDown',
-    category: 'scenario',
-    section: 'scenarios',
-    keywords: ['pessimistic', 'conservative', 'reduction'],
-    details: {
-      description: 'Conservative scenario with reduced marketing spend',
-      breakdown: [
-        { label: 'Media Spend', value: '$1.08M (-10%)' },
-        { label: 'Projected Sales', value: '$19.17M' },
-        { label: 'Incremental ROI', value: '2.4x' },
-        { label: 'Profit Margin', value: '15%' }
-      ]
-    }
-  }
-];
+// `getTopPerformingChannels`, `getRegionalPerformance`, `getMarketingRecommendations` and
+// `getScenarioComparisons` were removed. They were hand-authored copies of figures that the
+// database now owns -- scenarios in particular live in `demo_dashboard_data` and are read by
+// ScenarioComparison -- but nothing consumed them: `useAIAssistant` exposed each one on its
+// context as `getTopChannels` / `getRegionalData` / `getRecommendations` / `getScenarios`,
+// and no component ever destructured any of them. They were deleted rather than pointed at
+// Supabase because wiring unreachable API surface to a live source buys nothing, and a
+// second copy of reconciled figures only drifts.
+//
+// Note the assistant still has no scenario figures: the `kb` payload carries metric cards
+// only, and the orchestrator replaces it with pharma situation metrics server-side
+// (supabase/functions/_shared/tenant-brain.ts). Giving the assistant scenarios is an
+// orchestrator change, not a frontend one.
