@@ -300,6 +300,7 @@ const ScenarioComparison = () => {
                           tickFormatter={(value) => `${Number(value).toFixed(1)}M`}
                         />
                         <Tooltip
+                          cursor={{ stroke: 'var(--chart-hover-ring)', strokeWidth: 1, strokeDasharray: '4 4' }}
                             contentStyle={{
                                 background: 'var(--chart-tooltip-bg)',
                                 borderColor: 'var(--chart-tooltip-border)',
@@ -332,6 +333,7 @@ const ScenarioComparison = () => {
                     <XAxis dataKey="name" tick={{ fill: 'var(--chart-axis)' }} />
                     <YAxis tickFormatter={(value) => `${value.toFixed(1)}x`} tick={{ fill: 'var(--chart-axis)' }} label={{ value: 'ROI (x)', angle: -90, position: 'insideLeft', fill: 'var(--chart-axis)' }} />
                     <Tooltip
+                      cursor={{ stroke: 'var(--chart-hover-ring)', strokeWidth: 1, strokeDasharray: '4 4' }}
                         contentStyle={{
                             background: 'var(--chart-tooltip-bg)',
                             borderColor: 'var(--chart-tooltip-border)',
