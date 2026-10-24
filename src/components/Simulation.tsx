@@ -265,7 +265,8 @@ const Simulation = () => {
                             domain={[0, Math.ceil(maxM * 1.2)]}
                             tickFormatter={(value) => `${Number(value).toFixed(1)}M`}
                           />
-                          <Tooltip 
+                          <Tooltip
+                            cursor={{ stroke: 'var(--chart-hover-ring)', strokeWidth: 1, strokeDasharray: '4 4' }} 
                             contentStyle={{
                               backgroundColor: 'var(--chart-tooltip-bg)',
                               border: '1px solid var(--chart-tooltip-border)',
