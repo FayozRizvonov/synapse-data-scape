@@ -69,6 +69,8 @@ DEFAULT_OPTIMIZATION_TIMEOUT=60
 MAX_OPTIMIZATION_ITERATIONS=1000
 
 # Elasticity Norms (Pharma-specific)
+# Not read by any code. The legacy Orbit ranges are hardcoded in claire_ai_agent.py,
+# and the PyMC5 model has no elasticity bounds.
 SALES_FORCE_MIN_ELASTICITY=0.02
 SALES_FORCE_MAX_ELASTICITY=0.15
 DIGITAL_MIN_ELASTICITY=0.01

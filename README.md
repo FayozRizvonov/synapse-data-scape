@@ -7,12 +7,12 @@
 ### **🤖 Autonomous AI Agent**
 - **Prompt-driven operation** for natural language interaction
 - **End-to-end pipeline** from data ingestion to optimization
-- **Pharma-specific safeguards** with elasticity norms and compliance checks
+- **Pharma-specific safeguards** with compliance checks (elasticity range warnings on the legacy Orbit path only)
 - **Automatic model versioning** with MLflow integration
 
 ### **📊 Advanced Analytics**
 - **Orbit-ML Integration** with DLT/KTR models for time-varying coefficients
-- **Bayesian priors** for pharmaceutical elasticities
+- **Bayesian priors** for pharmaceutical elasticities (legacy Orbit path; the current PyMC5 model uses a funnel hierarchy over channel subtypes)
 - **Multi-objective optimization** (TMB/TSV scenarios)
 - **Real-time insights** with bilingual support (EN/RU)
 
@@ -164,7 +164,7 @@ Data Source → Validation → Cleaning → Orbit-ML Model → Optimization → 
 ### **Model Architecture**
 
 - **Orbit-ML DLT/KTR**: Time-varying coefficient models
-- **Bayesian Priors**: Pharmaceutical elasticity constraints
+- **Bayesian Priors**: Pharmaceutical elasticity ranges (legacy Orbit path)
 - **Adstock Modeling**: Decay rate analysis
 - **Seasonal Decomposition**: Trend and seasonal components
 
@@ -250,18 +250,19 @@ response = requests.post("http://localhost:8000/insights/generate", json={
 ### **Pharma-Specific Safeguards**
 
 - **Data Leakage Prevention**: Future data detection
-- **Elasticity Norms**: Industry-standard constraints
+- **Elasticity Norms**: Range warnings on the legacy Orbit path only; the PyMC5 model has no elasticity bounds
 - **Audit Trails**: Comprehensive logging
 - **Compliance Checks**: Regulatory validation
 
 ### **Business Rules**
 
+Example reference ranges from the legacy Orbit path (`ChannelDetector` in `claire_ai_agent.py`). They raise warnings and don't bound the PyMC5 model:
+
 ```python
 elasticity_norms = {
     'sales_force': (0.02, 0.15),
     'digital': (0.01, 0.08),
-    'email': (0.04, 0.25),
-    'f2f': (0.03, 0.12)
+    'email': (0.04, 0.25)
 }
 ```
 
