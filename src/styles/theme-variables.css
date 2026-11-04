@@ -101,6 +101,15 @@
   --chart-tooltip-bg: rgba(10, 10, 10, 0.95); /* фон тултипа Recharts */
   --chart-tooltip-text: #fff; /* текст тултипа Recharts */
   --chart-tooltip-shadow: 0 4px 6px -1px rgba(59,130,246,0.15); /* тень тултипа */
+
+  /* Hover/active state for Recharts marks.
+     Recharts' default Tooltip cursor is a Rectangle stroked '#ccc', drawn BEHIND the
+     hovered bar -- a near-white block on a dark surface. Bar charts drop the cursor
+     entirely (cursor={false}) and lift the hovered bar instead; line/area/scatter keep a
+     crosshair, but a tokenised one rather than the library's light grey. */
+  --chart-hover-fill: #60a5fa; /* blue-400 - the lifted bar */
+  --chart-hover-ring: #bfdbfe; /* blue-200 - its outline, and the crosshair */
+  --chart-hover-wash: rgba(59, 130, 246, 0.12); /* optional column tint */
   
   /* Статусы */
   --success: #22c55e; /* green-500 */
@@ -244,6 +253,13 @@
   --chart-tooltip-bg: rgba(255, 255, 255, 0.98); /* почти белый фон */
   --chart-tooltip-text: #0f172a; /* slate-900 - глубокий чёрный */
   --chart-tooltip-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.15); /* тень с синим оттенком */
+
+  /* Hover/active state for Recharts marks -- see the :root block for why.
+     On a light surface '#ccc' is inoffensive, so these exist to keep the two themes
+     consistent rather than to fix a defect. */
+  --chart-hover-fill: #1d4ed8; /* blue-700 - the lifted bar */
+  --chart-hover-ring: #1e3a8a; /* blue-900 - its outline, and the crosshair */
+  --chart-hover-wash: rgba(37, 99, 235, 0.08); /* optional column tint */
   
   /* Статусы - улучшенные */
   --success: 161 94% 30%; /* emerald-600 */
@@ -364,6 +380,11 @@
   --chart-tooltip-bg: rgba(10, 10, 10, 0.9);
   --chart-tooltip-border: #333;
   --chart-tooltip-text: #fff;
+
+  /* Hover/active state for Recharts marks -- see the :root block for the rationale. */
+  --chart-hover-fill: #60a5fa; /* blue-400 - the lifted bar */
+  --chart-hover-ring: #bfdbfe; /* blue-200 - its outline, and the crosshair */
+  --chart-hover-wash: rgba(59, 130, 246, 0.12); /* optional column tint */
   
   --success: 142 70% 45%;
   --success-light: 142 70% 58%;

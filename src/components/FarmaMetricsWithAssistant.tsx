@@ -1073,7 +1073,8 @@ const FarmaMetricsWithAssistant = () => {
                       fontSize={12}
                       tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
                     />
-                    <Tooltip 
+                    <Tooltip
+                      cursor={{ stroke: 'var(--chart-hover-ring)', strokeWidth: 1, strokeDasharray: '4 4' }} 
                       contentStyle={{
                         backgroundColor: '#1f2937',
                         border: '1px solid #374151',
@@ -1230,7 +1231,8 @@ const FarmaMetricsWithAssistant = () => {
                       fontSize={12}
                       tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
                     />
-                    <Tooltip 
+                    <Tooltip
+                      cursor={{ stroke: 'var(--chart-hover-ring)', strokeWidth: 1, strokeDasharray: '4 4' }} 
                       contentStyle={{
                         backgroundColor: '#1f2937',
                         border: '1px solid #374151',

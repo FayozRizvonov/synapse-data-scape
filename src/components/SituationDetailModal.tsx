@@ -248,6 +248,7 @@ const SituationDetailModal: React.FC<SituationDetailModalProps> = ({
                       label={{ value: 'Clicks', angle: -90, position: 'insideLeft', fill: '#ffffff', dx: -20, fontSize: 14 }}
                     />
                     <Tooltip
+                      cursor={false}
                       contentStyle={{
                         background: 'var(--chart-tooltip-bg)',
                         borderColor: 'var(--chart-primary-color)',
@@ -266,7 +267,8 @@ const SituationDetailModal: React.FC<SituationDetailModalProps> = ({
                       stroke="var(--chart-senary)"
                       fillOpacity={1}
                       radius={[6, 6, 0, 0]}
-                      activeBar={{ fill: 'var(--chart-senary)', fillOpacity: 0.78 } as unknown as object}
+                      activeBar={{ fill: 'var(--chart-hover-fill)', fillOpacity: 1,
+                                   stroke: 'var(--chart-hover-ring)', strokeWidth: 2 } as unknown as object}
                     />
                   </BarChart>
                 </ResponsiveContainer>

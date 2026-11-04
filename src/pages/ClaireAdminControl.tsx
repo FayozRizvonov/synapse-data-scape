@@ -1215,7 +1215,8 @@ const ClaireAdminControl = () => {
                           fontSize={12}
                           tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
                         />
-                        <Tooltip 
+                        <Tooltip
+                          cursor={{ stroke: 'var(--chart-hover-ring)', strokeWidth: 1, strokeDasharray: '4 4' }} 
                           contentStyle={{
                             backgroundColor: 'rgba(17, 24, 39, 0.9)',
                             border: '1px solid #374151',
@@ -1289,7 +1290,8 @@ const ClaireAdminControl = () => {
                           fontSize={12}
                           tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
                         />
-                        <Tooltip 
+                        <Tooltip
+                          cursor={{ stroke: 'var(--chart-hover-ring)', strokeWidth: 1, strokeDasharray: '4 4' }} 
                           contentStyle={{
                             backgroundColor: 'rgba(17, 24, 39, 0.9)',
                             border: '1px solid #374151',
@@ -1353,7 +1355,8 @@ const ClaireAdminControl = () => {
                           fontSize={12}
                           tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
                         />
-                        <Tooltip 
+                        <Tooltip
+                          cursor={{ stroke: 'var(--chart-hover-ring)', strokeWidth: 1, strokeDasharray: '4 4' }} 
                           contentStyle={{
                             backgroundColor: 'rgba(17, 24, 39, 0.9)',
                             border: '1px solid #374151',
@@ -1436,7 +1439,8 @@ const ClaireAdminControl = () => {
                             fontSize={12}
                             domain={[-1, 1]}
                           />
-                          <Tooltip 
+                          <Tooltip
+                            cursor={false} 
                             contentStyle={{
                               backgroundColor: 'rgba(17, 24, 39, 0.9)',
                               border: '1px solid #374151',
@@ -1448,6 +1452,8 @@ const ClaireAdminControl = () => {
                              dataKey="correlation" 
                              fill="#3B82F6"
                              radius={[4, 4, 0, 0]}
+                             activeBar={{ fill: 'var(--chart-hover-fill)', fillOpacity: 1,
+                               stroke: 'var(--chart-hover-ring)', strokeWidth: 2 } as unknown as object}
                            />
                         </RechartsBarChart>
                       </ResponsiveContainer>
@@ -1471,7 +1477,8 @@ const ClaireAdminControl = () => {
                             name="P-Value"
                             stroke="#6B7280"
                           />
-                          <Tooltip 
+                          <Tooltip
+                            cursor={{ stroke: 'var(--chart-hover-ring)', strokeWidth: 1, strokeDasharray: '4 4' }} 
                             contentStyle={{
                               backgroundColor: 'rgba(17, 24, 39, 0.9)',
                               border: '1px solid #374151',
@@ -1517,7 +1524,8 @@ const ClaireAdminControl = () => {
                           stroke="#6B7280"
                           fontSize={12}
                         />
-                        <Tooltip 
+                        <Tooltip
+                          cursor={{ stroke: 'var(--chart-hover-ring)', strokeWidth: 1, strokeDasharray: '4 4' }} 
                           contentStyle={{
                             backgroundColor: 'rgba(17, 24, 39, 0.9)',
                             border: '1px solid #374151',
@@ -2039,7 +2047,8 @@ const ClaireAdminControl = () => {
                             tick={{ fontSize: 12 }}
                             tickFormatter={(value) => `${(value / 1000000).toFixed(2)}M`}
                           />
-                          <Tooltip 
+                          <Tooltip
+                            cursor={{ stroke: 'var(--chart-hover-ring)', strokeWidth: 1, strokeDasharray: '4 4' }} 
                             contentStyle={{
                               backgroundColor: 'rgba(255, 255, 255, 0.95)',
                               border: '1px solid #E5E7EB',
@@ -2269,7 +2278,8 @@ const ClaireAdminControl = () => {
                               tick={{ fontSize: 12 }}
                               tickFormatter={(value) => `${value.toFixed(2)}M`}
                             />
-                            <Tooltip 
+                            <Tooltip
+                              cursor={{ stroke: 'var(--chart-hover-ring)', strokeWidth: 1, strokeDasharray: '4 4' }} 
                               contentStyle={{
                                 backgroundColor: 'rgba(255, 255, 255, 0.95)',
                                 border: '1px solid #E5E7EB',

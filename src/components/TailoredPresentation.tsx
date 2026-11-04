@@ -233,7 +233,8 @@ const TailoredPresentation: React.FC = () => {
                       tickFormatter={(v) => v.toLocaleString()}
                       label={{ value: 'Sales Value', angle: -90, position: 'insideLeft', fill: 'var(--chart-axis)', fontSize: 12 }}
                     />
-                    <Tooltip content={<DimTooltip />} />
+                    <Tooltip
+                      cursor={{ stroke: 'var(--chart-hover-ring)', strokeWidth: 1, strokeDasharray: '4 4' }} content={<DimTooltip />} />
                     <Legend />
                     {/* Gradients for diminishing curves area fill */}
                     <defs>
@@ -312,7 +313,8 @@ const TailoredPresentation: React.FC = () => {
                       fontSize={12}
                       tickFormatter={(v) => `${(v * 100).toFixed(0)}%`}
                     />
-                    <Tooltip content={<BudgetTooltip />} />
+                    <Tooltip
+                      cursor={{ stroke: 'var(--chart-hover-ring)', strokeWidth: 1, strokeDasharray: '4 4' }} content={<BudgetTooltip />} />
                     <Legend formatter={(value) => value.replace('_', ' ').toUpperCase()} />
                     {/* Gradients for channel fill */}
                     <defs>
