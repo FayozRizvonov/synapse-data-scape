@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import AnimatedNumber from './AnimatedNumber';
 import { MetricCard } from '@/data/metricsKnowledgeBase';
+import { metricValue } from '@/lib/metricCard';
 import ChartRenderer, { inferChartType } from '@/components/ChartRenderer';
 import { cn } from '@/lib/utils';
 
@@ -55,6 +56,13 @@ const ChatMetricCardEnhanced: React.FC<ChatMetricCardEnhancedProps> = ({
 }) => {
   const { theme } = useTheme();
   const IconComponent = iconMap[metric.icon as keyof typeof iconMap] || Activity;
+
+  // The headline figure, or null when the card has none. `MetricCard` types `value` as a
+  // required string, but cards reaching this component are not all ours: the chat parses
+  // them out of the assistant's JSON and the voice path reads them from a Supabase RPC.
+  // Reading `.includes` straight off `metric.value` threw on the first card that arrived
+  // without one, and with no error boundary that unmounted the whole app.
+  const headline = metricValue(metric);
 
   const parseValue = (valueStr: string) => {
     return parseFloat(valueStr.replace(/[$,%xM+]/g, ''));
@@ -139,13 +147,16 @@ const ChatMetricCardEnhanced: React.FC<ChatMetricCardEnhancedProps> = ({
             </div>
           </div>
 
-          {/* Main Value */}
+          {/* Main Value — omitted entirely when the card has none, rather than
+              rendering "NaN". A chart-only card is legitimate: the assistant can
+              reasonably answer with a series and no single headline figure. */}
           <div className="mt-4 flex items-end gap-2">
-            <span className={`text-2xl font-bold ${metric.value.includes('%') ? 'text-success-foreground' : 'text-gray-900 dark:text-white'}`}>
-              <AnimatedNumber 
-                value={parseValue(metric.value)}
+            {headline !== null && (
+            <span className={`text-2xl font-bold ${headline.includes('%') ? 'text-success-foreground' : 'text-gray-900 dark:text-white'}`}>
+              <AnimatedNumber
+                value={parseValue(headline)}
                 formatter={(val) => {
-                  const original = metric.value;
+                  const original = headline;
                   if (original.includes('M')) return `$${(val).toFixed(1)}M`;
                   if (original.includes('%')) return `${val.toFixed(1)}%`;
                   if (original.includes('x')) return `${val.toFixed(1)}x`;
@@ -153,6 +164,7 @@ const ChatMetricCardEnhanced: React.FC<ChatMetricCardEnhancedProps> = ({
                 }}
               />
             </span>
+            )}
             {metric.change && (
               <div className="flex items-center gap-1">
                 {metric.changeType === 'positive' ? (
