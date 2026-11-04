@@ -9,6 +9,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import ChatMetricCardEnhanced from './ChatMetricCardEnhanced';
 import ChatReportSection from './ChatReportSection';
 import type { MetricCard } from '@/data/metricsKnowledgeBase';
+import { isRenderableMetricCard } from '@/lib/metricCard';
+import CardErrorBoundary from './CardErrorBoundary';
 import { 
   User, 
   Bot, 
@@ -254,10 +256,13 @@ const ChatView: React.FC<ChatViewProps> = ({
       const parsed = JSON.parse(jsonString) as unknown;
       const p = parsed as { type?: string; report?: ExtractedReport; sections?: ExtractedSection[]; card?: MetricCard; title?: string; value?: string; chartData?: MetricCard['chartData'] };
       if (p.type === 'report' && p.report?.sections) return { report: p.report };
-      if (p.type === 'card' && p.card) return { card: p.card };
+      // Validated, not cast. `p.card` is whatever the model wrote; a cast asserts it is
+      // a MetricCard without checking, and a card with no string `value` threw during
+      // render (`value.includes('%')`) and unmounted the whole app.
+      if (p.type === 'card' && isRenderableMetricCard(p.card)) return { card: p.card };
       // Bare shapes
       if (p.sections) return { report: { sections: p.sections } };
-      if (p.title && (p.value || p.chartData)) return { card: p as unknown as MetricCard };
+      if (isRenderableMetricCard(p)) return { card: p };
     } catch {
       // ignore
     }
@@ -326,11 +331,23 @@ const ChatView: React.FC<ChatViewProps> = ({
     }
     
     // Try to recover structured content from raw text if not provided
-    const recovered: ExtractedResult = (!message.report && !message.card && isAI)
+    // `message.card` is persisted in Supabase, so a card stored malformed once comes
+    // back on every later load of that conversation. It needs the same validation as a
+    // freshly parsed one — `as MetricCard` gave it none — and when it fails we still try
+    // to recover a card from the message text rather than showing nothing.
+    const recovered: ExtractedResult = (isAI && !message.report && !isRenderableMetricCard(message.card))
       ? extractStructuredFromText(message.content)
       : {} as ExtractedResult;
     const recoveredReport = recovered.report;
     const recoveredCard = recovered.card;
+
+    // The one card this message renders, validated. Computed once: the render site
+    // previously repeated `(message.card as MetricCard) || (recoveredCard as MetricCard)`
+    // three times, so the guard and the two id reads could disagree about which card
+    // they were looking at.
+    const card: MetricCard | null = isRenderableMetricCard(message.card)
+      ? message.card
+      : (recoveredCard ?? null);
 
     const hasStructured = !!(message.report || message.card || recoveredReport || recoveredCard);
 
@@ -514,7 +531,7 @@ const ChatView: React.FC<ChatViewProps> = ({
         )}
 
         {/* Card display */}
-        {isAI && (message.card || recoveredCard) && (
+        {isAI && card && (
           <div className="flex gap-3 mb-4 justify-start">
             <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
               <Bot className="w-5 h-5 text-white" />
@@ -558,13 +575,15 @@ const ChatView: React.FC<ChatViewProps> = ({
                   )}
 
                   {/* Card itself */}
-                  <ChatMetricCardEnhanced
-                    metric={(message.card as MetricCard) || (recoveredCard as MetricCard)}
-                    onGoToCard={handleGoToCard}
-                    onShowChart={handleShowChart}
-                    isExpanded={expandedCards.has(((message.card as MetricCard) || (recoveredCard as MetricCard)).id)}
-                    onToggleExpand={() => handleToggleExpand(((message.card as MetricCard) || (recoveredCard as MetricCard)).id)}
-                  />
+                  <CardErrorBoundary label="chat metric card">
+                    <ChatMetricCardEnhanced
+                      metric={card}
+                      onGoToCard={handleGoToCard}
+                      onShowChart={handleShowChart}
+                      isExpanded={expandedCards.has(card.id)}
+                      onToggleExpand={() => handleToggleExpand(card.id)}
+                    />
+                  </CardErrorBoundary>
                 </CardContent>
                 <div className="absolute -left-2 top-6 h-3 w-3 rotate-45 bg-white/10 dark:bg-white/5 border-l border-t border-white/15" />
               </Card>
