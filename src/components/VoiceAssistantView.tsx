@@ -5,6 +5,7 @@ import { X, Mic, Volume2, VolumeX, Target, BarChart3, Download } from 'lucide-re
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { AIVoiceInput } from './AIVoiceInput';
 import ChatMetricCardEnhanced from './ChatMetricCardEnhanced';
+import CardErrorBoundary from './CardErrorBoundary';
 import { getMetricById } from '@/data/metricsKnowledgeBase';
 import { usePharmaSmDashboardMetrics } from '@/hooks/usePharmaSmDashboardMetrics';
 import { cn } from '@/lib/utils';
@@ -288,13 +289,15 @@ const VoiceAssistantView: React.FC<VoiceAssistantViewProps> = ({
                     }
                     
                     return (
-                      <ChatMetricCardEnhanced
-                        metric={metric}
-                        onGoToCard={handleGoToCard}
-                        onShowChart={handleShowChart}
-                        isExpanded={expandedCards.has(metric.id)}
-                        onToggleExpand={() => handleToggleExpand(metric.id)}
-                      />
+                      <CardErrorBoundary label="voice metric card">
+                        <ChatMetricCardEnhanced
+                          metric={metric}
+                          onGoToCard={handleGoToCard}
+                          onShowChart={handleShowChart}
+                          isExpanded={expandedCards.has(metric.id)}
+                          onToggleExpand={() => handleToggleExpand(metric.id)}
+                        />
+                      </CardErrorBoundary>
                     );
                   })()}
                 </div>
