@@ -17,12 +17,27 @@ import { DEMO_PROJECT_ID, isValidProjectId } from '@/constants/project';
 
 export type ScenarioKey = 'baseline' | 'optimistic' | 'pessimistic';
 
+/**
+ * A scenario decomposes the same way the situation cards do:
+ *
+ *   total_sales_m = base_sales_m + seasonality_m + trend_m + media_sales_m
+ *
+ * Seasonality and trend are constant across scenarios by design — the scenarios vary media
+ * investment, which does not change the seasonal shape of demand or the underlying trend.
+ *
+ * Only `total_sales_m`, `total_spend_m`, `incremental_roi` and `profit_margin_pct` are drawn
+ * today. The rest are here so the split is representable; if you render them, render them as
+ * the four-way sum above, because that is what the Model Output Summary shows and the two
+ * must not disagree.
+ */
 export interface DemoScenario {
   key: ScenarioKey;
   label: string;
   sort: number;
   total_sales_m: number;
   base_sales_m: number;
+  seasonality_m: number;
+  trend_m: number;
   media_sales_m: number;
   total_spend_m: number;
   incremental_roi: number;
