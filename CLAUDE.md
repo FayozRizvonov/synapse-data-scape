@@ -1,7 +1,7 @@
 # CLAIRE AI — Synapse Data Scape
 
 ## What This Project Is
-CLAIRE AI is an autonomous AI-powered **Marketing Mix Modeling (MMM)** platform for pharmaceutical and CPG companies. It helps optimize marketing budgets using a hierarchical Bayesian MMM (PyMC5) with geometric adstock, Hill saturation, and pharma-specific elasticity constraints. The platform includes a conversational AI interface, voice input, scenario comparison, and bilingual (EN/RU) insights generation.
+CLAIRE AI is an autonomous AI-powered **Marketing Mix Modeling (MMM)** platform for pharmaceutical and CPG companies. It helps optimize marketing budgets using a hierarchical Bayesian MMM (PyMC5) with geometric adstock, Hill saturation, and a funnel hierarchy over channel subtypes. The platform includes a conversational AI interface, voice input, scenario comparison, and bilingual (EN/RU) insights generation.
 
 This is the **demo version** of the **Trigma.ai platform**.
 
@@ -247,7 +247,9 @@ Copy `env_template.txt` to `.env`. Key variables:
 - **Configs**: Use dataclasses (`ModelConfig`, `OptimizationConfig`) for typed configuration.
 
 ### ML/Analytics
-- Channel elasticity ranges are pharma-specific — don't change without business justification.
+- **Legacy Orbit path only:** channel elasticity ranges in `ChannelDetector` are pharma-specific — don't
+  change without business justification. They only raise validation warnings. The PyMC5 model has no
+  elasticity bounds, and nothing reads the `*_ELASTICITY` values in `env_template.txt`.
 - **PyMC5 (current):** hierarchical funnel model — geometric adstock, Hill saturation, and a
   funnel hierarchy (`base_beta` / `delta_mid` / `delta_upper`) taken from the `subtype` column of
   `info.csv` (`upper` / `mid` / `lower`). Channel grouping comes from that declared metadata, not
