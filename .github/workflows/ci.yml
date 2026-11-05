@@ -94,3 +94,75 @@ jobs:
             exit 1
           fi
           echo "no tracked .env, no committed keys"
+
+      # The check above passed for 16 months while .cursor/mcp.json held a live
+      # Supabase PAT and a Postgres URL with its password, on a PUBLIC repo. It
+      # missed them because it only looked for two key NAMES followed by a JWT:
+      # an `sbp_` token is not a JWT, and `postgresql://user:pass@host` contains
+      # no key name at all.
+      #
+      # So these patterns match the SHAPE OF THE CREDENTIAL rather than the
+      # variable it happens to be assigned to. A leak does not announce itself by
+      # being called SERVICE_ROLE_KEY, and the next one will arrive in a file none
+      # of us predicted — an agent config, editor settings, a scratch script.
+      - name: Reject credentials by shape, anywhere in the tree
+        run: |
+          status=0
+
+          # Supabase personal access token: `sbp_` + 40 hex. Account-scoped
+          # management API — it can delete entire projects.
+          if git grep -nE 'sbp_[0-9a-f]{40}' -- . ':(exclude)package-lock.json'; then
+            echo "::error::a Supabase personal access token (sbp_…) is committed"
+            status=1
+          fi
+
+          # Postgres URL carrying a password. The templates and README legitimately
+          # show placeholder forms, so those exact placeholders are filtered out.
+          if git grep -nE 'postgres(ql)?://[^:/ ]+:[^@ "]+@' -- . ':(exclude)package-lock.json' \
+             | grep -vE ':(pass|password|your[-_]?password|changeme|\[YOUR-PASSWORD\])@'; then
+            echo "::error::a Postgres URL with a real embedded password is committed"
+            status=1
+          fi
+
+          # Supabase SECRET key only. `sb_publishable_…` is deliberately NOT matched:
+          # it is compiled into the browser bundle by design and is useless without
+          # RLS, so flagging it would train people to ignore this job — which is the
+          # fastest way to get the next real leak waved through. See the comment in
+          # src/integrations/supabase/client.ts.
+          if git grep -nE 'sb_secret_[A-Za-z0-9_-]{20,}' -- . ':(exclude)package-lock.json'; then
+            echo "::error::a Supabase secret key (sb_secret_…) is committed"
+            status=1
+          fi
+
+          # OpenAI / Anthropic keys.
+          if git grep -nE '(sk-proj-|sk-ant-)[A-Za-z0-9_-]{20,}' -- . ':(exclude)package-lock.json'; then
+            echo "::error::an OpenAI or Anthropic API key is committed"
+            status=1
+          fi
+
+          if [ "$status" -ne 0 ]; then
+            echo "::error::ROTATE the exposed credential first — deleting the file does not revoke it"
+            exit 1
+          fi
+          echo "no credentials matched by shape"
+
+      # Agent and editor config is the blind spot that produced this incident: it
+      # is not source, so nobody reviews it, and it is exactly where a token gets
+      # pasted to make a tool work. Any such file that is TRACKED must reference
+      # env vars, never carry values.
+      - name: Agent/editor config must not hold inline credentials
+        run: |
+          tracked=$(git ls-files '.cursor/mcp.json' '.mcp.json' '.vscode/mcp.json' '*/mcp.json' || true)
+          if [ -z "$tracked" ]; then
+            echo "no tracked agent/editor MCP config"
+            exit 0
+          fi
+          echo "tracked agent config: $tracked"
+          # A credential-shaped field whose value is not a ${...} reference.
+          if printf '%s\n' "$tracked" \
+             | xargs grep -nE '"[A-Za-z_]*(TOKEN|KEY|SECRET|PASSWORD|_URL)"[[:space:]]*:[[:space:]]*"[^"]{12,}"' \
+             | grep -v '"\${'; then
+            echo "::error::agent config holds an inline credential — use \${ENV_VAR} references"
+            exit 1
+          fi
+          echo "no agent config with inline credentials"
