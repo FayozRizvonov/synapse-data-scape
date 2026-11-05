@@ -46,6 +46,67 @@ what commercial MMM vendors ship.
 | `build_governance` (`run_mmm_pipeline.py:121-159`) binds on R-hat, ESS and divergences only. A model with 19 of 26 parameters prior-only passes it perfectly. | audit |
 | Absent `(date, region, sub_brand, variable)` rows become a modelled `0.0` — tensors are `np.zeros` (`build_tensors.py:113-123`) and populated row-by-row (`:129-150`) with no imputation or completeness report anywhere in `mmm_claire/src/`. | audit |
 
+## Who actually reads the model outputs
+
+Established 2026-11-05 by tracing the consumer side; previously recorded as an open question.
+**All of the following is verified**, against the code and the live database.
+
+**Exactly one frontend file reads `mmm_model_outputs`:** `src/hooks/usePharmaMetrics.ts`, at `:80`
+and `:227`. Both queries filter `.eq('output_type', 'outputs')` — a single row type — and read only
+`output_data.model_metrics.{r_squared, mape, rmse}` plus a flat `roi` map.
+
+That `'outputs'` row is not one of the pipeline's 12 types. `save_model_outputs`
+(`mmm_claire/src/database/supabase_client.py:222-242`) writes it separately, and its own comment says
+why: *"Legacy summary row consumed by the frontend usePharmaMetrics hook."*
+
+**Consequence: `adstock_curves`, `saturation_curves`, `roi_key_points`, `coefficients`,
+`media_contribution`, `marginal_roi_curves`, `channel_efficiency`, `predictions_timeseries`,
+`base_contribution` and `reconciliation` are read by no frontend code at all.** They are written,
+stored, and consumed by nothing — which is why T10 carries no demo risk, and why the
+"cut every channel to 20% of spend" defect in `roi_key_points` never reached a client.
+
+### And the dashboard is not reading the pinned model
+
+`FarmaMetricsWithAssistant.tsx` — the mounted component (`src/pages/Index.tsx:296`) — passes
+`fa95a40e-7574-47c1-9c46-85820edad19f` to both hooks (`:113`, `:129`). But the PyMC5 outputs live
+under a **different project**:
+
+| project | output types | rows each | newest |
+|---|---|---|---|
+| `550e8400-…-446655440000` (`DEMO_PROJECT_ID`) | all 13 PyMC5 types | 16 | **2026-10-19** |
+| `11111111-2222-…-555555555555` | all 13 PyMC5 types | 1 | 2026-08-19 |
+| `fa95a40e-…-85820edad19f` **(what the dashboard reads)** | `outputs`, `model_statistics` only | 3 / 1 | **2025-09-02** |
+
+So the model-performance figures on screen come from a legacy summary row written **2025-09-02**,
+fourteen months old and predating the PyMC5 engine. Its contents:
+
+```
+r_squared  0.9952623378613464      <- what the dashboard displays
+mape       0.0404
+roi        comp1, f2f_call, symposium_cost, rebate_spend, samples_cost,
+           webinar_cost, digital_display, digital_video, ...
+```
+
+Three things follow, and each is worth more than the task it affects:
+
+1. **The displayed r² is 0.995, not the 0.398 this repo documents for the pinned model.** Nothing on
+   the dashboard is showing `83e46e03-…`'s fit.
+2. **That `roi` map is incoherent as a channel list.** `comp1` is a *control* variable, and
+   `*_cost` entries are spend columns, not channels — both are being presented as channels with an
+   ROI. The channel names (`f2f_call`, `digital_display`, `rebate_spend`) are not the dovato
+   dataset's either. **This is the likeliest source of the implausible symposium figure**
+   (`symposium_cost`), rather than the spend-share prior — a conclusion the engine-side audit could
+   not have reached.
+3. **T5–T9 therefore move far less of the client-facing surface than their DEMO flags imply**, as
+   long as the dashboard keeps reading `fa95a40e…`. That is not a reason to relax — it means the
+   demo is disconnected from the engine, which is a worse problem than the flags described, and it
+   makes T11 the first thing to settle rather than a formality.
+
+Not yet determined: whether any other surface (the AI chat, voice, or `FarmaMetrics.tsx`, which does
+pass `DEMO_PROJECT_ID` at `:87`) presents figures derived from the PyMC5 rows. The metric cards are a
+separate path — they come from `get_pharma_sm_metrics_merged` via
+`usePharmaSmDashboardMetrics`, not from `mmm_model_outputs`.
+
 ## Risk key
 
 **DEMO** — moves stored `mmm_model_outputs` and so can shadow the pinned demo model
@@ -73,13 +134,16 @@ default so the scheduler cannot fire on its own. `backups/demo-model-83e46e03.js
 | T7 | Cut media parameters from 19 to ~4 (channel grouping) | 1 | **DEMO** | ☐ |
 | T8 | Fix the intercept / control location conflict | 1 | **DEMO** | ☐ |
 | T9 | Remove the spend-share prior shift | 2 | **DEMO** | ☐ |
-| T10 | Fix the three structurally wrong outputs | 2 | **DEMO** | ☐ |
+| T10 | Fix the three structurally wrong outputs | 2 | none† | ☐ |
 | T11 | Decide explicitly what the demo shows | 2 | decision | ☐ |
 | T12 | Build the knowledge layer | 3 | **DEMO** | ☐ |
 | T13 | Give the spec search media dimensions to search over | 3 | none | ☐ |
 | T14 | Delete dead code that looks like working code | 3 | none | ☐ |
 
 \* T3 is risk-free only if the gate change is additive — see the task.
+
+† T10 was flagged **DEMO** until 2026-11-05. It is not: nothing in the frontend reads the
+outputs it changes — see *Who actually reads the model outputs*.
 
 ---
 
@@ -332,7 +396,7 @@ nothing holding them down, and will sample worse, not better. Order matters here
 
 ---
 
-### T10 — Fix the three structurally wrong outputs · tier 2 · **DEMO**
+### T10 — Fix the three structurally wrong outputs · tier 2 · no demo risk
 
 **Change.**
 - `write_outputs.py:150-181` (`adstock_curves`) — θ^lag at θ≈0.40 for all six channels, so the
@@ -362,16 +426,40 @@ the grid floor, and `current.roi` must equal `roi.csv`.
 
 ### T11 — Decide explicitly what the demo shows · tier 2 · decision
 
-Either (a) keep the pinned model and present it as a UI/workflow demo while the engine is rebuilt, or
-(b) re-pin to a post-fix model and re-snapshot. T5–T10 all move stored outputs; there is no ordering
-that fixes the model without moving the demo.
+**Revised 2026-11-05.** This task was written on the assumption that engine fixes would move the
+demo, so the choice was "keep the pinned model or re-pin". That premise was wrong, and the real
+question is less comfortable.
 
-Context: `.env` sets `MMM_UPSAMPLE_MONTHLY=1` as the reproducibility guard, which means the pinned
-model sits on the `monthly_constrained` path — the one with `economic_strength = 0.8` and
-`gamma_cap = 1.5`, i.e. the *stronger* prior shift. Its r² of 0.398 came from the upsampling path and
-per CLAUDE.md is not comparable to anything.
+The dashboard does not read the PyMC5 outputs at all. It reads a legacy summary row under project
+`fa95a40e…`, last written **2025-09-02**, showing **r² 0.995** and an `roi` map containing a control
+variable and spend columns as if they were channels — see *Who actually reads the model outputs*. The
+pinned model `83e46e03…` lives under `550e8400…` and is displayed nowhere.
 
-**Sequencing. Before T5 ships.**
+So T5–T10 can proceed without moving what the client sees. That is not relief — it means **the demo
+is disconnected from the engine**, which is worse than the risk originally flagged: the engine can be
+fixed without the demo improving, and the demo can keep showing a 14-month-old 0.995 r² from a
+different dataset however good the model becomes.
+
+The decision is therefore:
+
+- **(a)** Point the dashboard at `DEMO_PROJECT_ID` / `550e8400…` so it shows the real PyMC5 model.
+  Honest, and immediately drops the displayed r² from 0.995 to 0.398 — which per *Out-of-sample
+  validation* in CLAUDE.md is itself an upsampling artefact, so this is a decision to show a worse
+  number that is still not trustworthy. Do not take it before T2–T5.
+- **(b)** Keep the current wiring and present the platform explicitly as a UI/workflow demo, with the
+  model figures labelled as illustrative. Defensible if stated; indefensible if a client asks what
+  r² 0.995 was computed on.
+- **(c)** Replace the model-performance panel with figures the engine can currently support — which
+  after T3 would be contraction and informed-parameter count rather than r².
+
+What must not happen is the status quo by default: a fabricated Durbin–Watson (T1) beside a
+fourteen-month-old r² from a dataset with different channels, presented as this model's fit.
+
+Context for whichever path: `.env` sets `MMM_UPSAMPLE_MONTHLY=1` as the reproducibility guard, so the
+pinned model sits on the `monthly_constrained` path — `economic_strength = 0.8`, `gamma_cap = 1.5`,
+i.e. the *stronger* prior shift.
+
+**Sequencing. Settle this before T5 ships, and settle T1 regardless of which way it goes.**
 
 ---
 
@@ -553,9 +641,11 @@ Two ordering constraints that are not preferences:
   only the harness can answer. Plan for "fix them from the KB and report them as assumptions".
 - **The sample size at which media becomes identifiable.** `--periods` is exposed but unswept. One
   seed, one T. Commercially material — it sets the minimum dataset CLAIRE can accept.
-- **Whether the pinned demo model's stored rows exhibit the T10 artefacts.** No Supabase rows were
-  read. Worth ten minutes against `backups/demo-model-83e46e03.json` before the next client meeting
-  — specifically whether the six adstock curves are identical.
+- ~~Whether the frontend reads the outputs T10 changes.~~ **Closed 2026-11-05 — it does not.**
+  See *Who actually reads the model outputs* above.
+- **Whether the stored `adstock_curves` rows under `550e8400…` are in fact six identical curves.**
+  Predicted by the θ cap collision but unverified — no row contents were inspected. Cheap to check,
+  and it would confirm the mechanism end to end rather than by inference.
 - **Whether the recovery FAIL reproduces on the pinned model.** The study is synthetic data at the
   demo's sample size, not a re-fit. Its θ/γ conclusions are scale-free and almost certainly transfer;
   the β magnitudes may not.
